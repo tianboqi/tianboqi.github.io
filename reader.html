@@ -151,8 +151,13 @@
       box-shadow: 0 2px 12px rgba(0,0,0,0.5);
       background: white;
       position: relative;
+      max-width: 100%;
     }
-    .page-wrapper canvas { display: block; }
+    .page-wrapper canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
 
     #status {
       color: #ddd;
@@ -165,6 +170,10 @@
     #status.file-error a { color: #9cf; }
 
     #toc-list { list-style: none; display: none; }
+
+    @media (max-width: 700px) {
+      #pdf-container { padding: 10px 8px; gap: 10px; }
+    }
 
     /* Mobile: TOC overlays content */
     @media (max-width: 700px) {

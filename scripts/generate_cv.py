@@ -240,10 +240,22 @@ def render_entries(lines: list[dict]) -> str:
                 current["bullets"].append(text)
         else:
             role, inst = left.split(" | ", 1) if " | " in left else (left, "")
+            role = role.strip()
+            inst = inst.strip()
+            date = right.strip()
+
+            # Date sometimes gets merged into inst when it falls inside the 62% cutoff;
+            # pull it back out if it appears at the end of the inst string.
+            if not date:
+                m = re.search(r'\s+(\d{4}\s*[–—\-]\s*\d{0,4})\s*$', inst)
+                if m:
+                    date = m.group(1)
+                    inst = inst[:m.start()].strip()
+
             current = {
-                "role":    escape(role.strip()),
-                "inst":    escape(inst.strip()),
-                "date":    escape(right),
+                "role":    escape(role),
+                "inst":    escape(inst),
+                "date":    escape(date),
                 "bullets": [],
             }
             entries.append(current)
