@@ -1,0 +1,34 @@
+name: Update CV from PDF
+
+on:
+  push:
+    paths:
+      - 'files/CV_website.pdf'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pdfplumber
+
+      - name: Generate cv.html
+        run: python scripts/generate_cv.py
+
+      - name: Commit updated cv.html
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cv.html
+          git diff --staged --quiet || git commit -m "Auto-update cv.html from PDF"
+          git push

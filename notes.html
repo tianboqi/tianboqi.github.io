@@ -1,65 +1,92 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
 <head>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="css/style.css" type="text/css">
+  <title>Science notes — Tianbo Qi</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="icon" type="image/x-icon" href="/images/favicon.ico?">
-  <title>Science notes</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-<div class="container-fluid">
-    <div class="row top-buffer vertical-align">
-        <div class="col">
-            <div class="section_title">
-              <p><b>Science notes</b>&emsp;
-                <a href="index.html"><i class="fa-solid fa-house-chimney-user" aria-hidden="true" style="font-size:16px;" title="Back to Home"></i></a>
-              </p>
-            </div>
-            <p>
-            This is a collection of notes I compiled while exploring various fields in the sciences, including mathematics, statistics, physics, and computer science. 
-	    My goal in writing these notes was to present beautiful theories using more intuitive explanations and fundamental mathematics. As a result, the only prerequisites for understanding these notes are college-level calculus and linear algebra. 
-	    Additionally, to address the lack of accessible resources in Chinese, I chose to write these notes in Chinese.
-	    If you have any comments, suggestions or concerns, please <a href="mailto: tiaqi@scripps.edu" target="_blank">let me know</a>.
-            </p>
-            <p>
-            这里有我学习其他科学领域时记的笔记，包括数学、统计学、物理和计算机等。我写这些笔记的目的是希望我从一个非数理专业的视角，可以用更直观、更低门槛的数学来解释这些美妙的理论。所以这些笔记所要求的数理基础只有本科的微积分和线性代数。
-            同时，由于中文资源较为匮乏，我选择用中文写出这些笔记。如果您有任何建议或意见，请<a href="mailto: tiaqi@scripps.edu" target="_blank">联系我</a>。
-            </p>
-            <ul>
-              <li><a href="files/linalg.pdf" target="_blank">线性代数 Linear Algebra</a></li>本笔记融合了 <i>Linear Algebra Done Right</i> 的抽象思路和 Gilbert Strang 的 <i>Linear Algebra</i> 的直观性和实用性，力图在二者间取到平衡。同时还给出了线性代数在许多领域中的应用。
-              <li><a href="files/stochastic.pdf" target="_blank">随机过程 Stochatic Processes</a></li>这是一个早期的笔记，与其他笔记不同，基本上只有知识点和公式的罗列。
-              <li><a href="files/tda.pdf" target="_blank">拓扑学与拓扑数据分析 Topology and Topological Data Analysis</a></li>本笔记前半部分介绍了基础的拓扑学知识，包括基础的点集拓扑和代数拓扑（单纯同调论），后半部分则介绍了拓扑数据分析的主流算法——持续同调。
-	      <li><a href="files/dimred.pdf" target="_blank">数据降维算法 Dimensionality Reduction Algorithms</a></li>本笔记总结了数据科学中常用的降维算法，包括无监督线性降维（PCA、FA）、有监督线性降维（LDA）和无监督非线性降维（t-SNE/UMAP、Isomap/LLE 和 自编码器）。
-	      <li><a href="files/diffusion.pdf" target="_blank">扩散模型 Diffusion Models</a></li>本笔记介绍了当今最火的图像生成模型——扩散模型。本笔记先介绍了 DDPM 算法，然后从基于分数的角度和 SDE 的角度总结了统一的框架，最终还介绍了一些比较新的进阶技巧。
-              <li><a href="files/gr.pdf" target="_blank">广义相对论 General Relativity</a></li>本笔记基本跟随梁灿彬《微分几何与广义相对论》的思路，稍降低了数学性、增加了直观性，并使用了比梁书更常用的指标记号。同时也参考了 Carroll、Weinberg 和 Schutz 的教材。
-            </ul>
-	    <br>
-	    <p>
-	    Here are some excellent textbooks I’ve read. I found them so well-written that I couldn’t create better notes myself, so I’ve listed them here directly.
-	    </p>
-	    <p>
-	    以下是我学过的一些非常好的教材，我觉得写的太好了以至于我总结不出来一个更好的笔记了，所以我把它们直接列在这里。
-	    </p>
-	    <ul>
-              <li>动力系统：<i>Nonlinear dynamics and Chaos</i> by Steven Strogatz
-              <li>统计物理：<i>Entropy, Order Parameters, and Complexity</i> by James P. Sethna
-            </ul>
-        </div>
+<header class="banner">
+  <div class="banner-inner">
+    <div class="banner-text">
+      <h1 class="banner-name">Science notes</h1>
+      <p class="banner-sub"><a href="index.html">← Tianbo Qi</a></p>
     </div>
-    <hr>
+  </div>
+</header>
 
-    <!-- Footer -->
-    <div class="footer-copyright text-center py-0">
-        <p><font size="2">Tianbo Qi&emsp;2025</font></p>
-    </div>
-    <!-- Footer -->
+<main>
 
-</div>
+  <section>
+    <p>
+    This is a collection of notes I wrote while exploring various fields in the sciences, including mathematics, statistics, physics, and computer science.
+    My goal was to present beautiful theories through more intuitive explanations, keeping the mathematical prerequisites to a minimum — college-level calculus and linear algebra are all that is needed.
+    To address the lack of accessible resources in Chinese, I also chose to write these notes in Chinese.
+    If you have any comments, suggestions or concerns, please <a href="mailto:tiaqi@scripps.edu">let me know</a>.
+    </p>
+    <p>
+    这里有我学习其他科学领域时记的笔记，包括数学、统计学、物理和计算机等。我写这些笔记的目的是希望我从一个非数理专业的视角，可以用更直观、更低门槛的数学来解释这些美妙的理论。所以这些笔记所要求的数理基础只有本科的微积分和线性代数。
+    同时，由于中文资源较为匮乏，我选择用中文写出这些笔记。如果您有任何建议或意见，请<a href="mailto:tiaqi@scripps.edu">联系我</a>。
+    </p>
+  </section>
+
+  <section>
+    <h2>Notes</h2>
+    <ul class="notes-list">
+      <li>
+        <a href="reader.html?file=files/linalg.pdf&title=线性代数 Linear Algebra" target="_blank">线性代数 Linear Algebra</a>
+        <span class="notes-desc">本笔记融合了 <i>Linear Algebra Done Right</i> 的抽象思路和 Gilbert Strang 的 <i>Linear Algebra</i> 的直观性和实用性，力图在二者间取到平衡。同时还给出了线性代数在许多领域中的应用。</span>
+      </li>
+      <li>
+        <a href="reader.html?file=files/stochastic.pdf&title=随机过程 Stochastic Processes" target="_blank">随机过程 Stochastic Processes</a>
+        <span class="notes-desc">这是一个早期的笔记，与其他笔记不同，基本上只有知识点和公式的罗列。</span>
+      </li>
+      <li>
+        <a href="reader.html?file=files/tda.pdf&title=拓扑学与拓扑数据分析 Topology and TDA" target="_blank">拓扑学与拓扑数据分析 Topology and Topological Data Analysis</a>
+        <span class="notes-desc">本笔记前半部分介绍了基础的拓扑学知识，包括基础的点集拓扑和代数拓扑（单纯同调论），后半部分则介绍了拓扑数据分析的主流算法——持续同调。</span>
+      </li>
+      <li>
+        <a href="reader.html?file=files/dimred.pdf&title=数据降维算法 Dimensionality Reduction" target="_blank">数据降维算法 Dimensionality Reduction Algorithms</a>
+        <span class="notes-desc">本笔记总结了数据科学中常用的降维算法，包括无监督线性降维（PCA、FA）、有监督线性降维（LDA）和无监督非线性降维（t-SNE/UMAP、Isomap/LLE 和 自编码器）。</span>
+      </li>
+      <li>
+        <a href="reader.html?file=files/diffusion.pdf&title=扩散模型 Diffusion Models" target="_blank">扩散模型 Diffusion Models</a>
+        <span class="notes-desc">本笔记介绍了当今最火的图像生成模型——扩散模型。本笔记先介绍了 DDPM 算法，然后从基于分数的角度和 SDE 的角度总结了统一的框架，最终还介绍了一些比较新的进阶技巧。</span>
+      </li>
+      <li>
+        <a href="reader.html?file=files/gr.pdf&title=广义相对论 General Relativity" target="_blank">广义相对论 General Relativity</a>
+        <span class="notes-desc">本笔记基本跟随梁灿彬《微分几何与广义相对论》的思路，稍降低了数学性、增加了直观性，并使用了比梁书更常用的指标记号。同时也参考了 Carroll、Weinberg 和 Schutz 的教材。</span>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Recommended textbooks</h2>
+    <p>
+      以下是我学过的一些非常好的教材，我觉得写的太好了以至于我总结不出来一个更好的笔记了，所以我把它们直接列在这里。
+    </p>
+    <hr class="section-rule">
+    <ul class="notes-list notes-list--compact">
+      <li>动力系统：<i>Nonlinear Dynamics and Chaos</i> by Steven Strogatz</li>
+      <li>统计物理：<i>Entropy, Order Parameters, and Complexity</i> by James P. Sethna</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>&copy; 2026 Tianbo Qi. All rights reserved.</p>
+  </div>
+</footer>
 
 </body>
+</html>
