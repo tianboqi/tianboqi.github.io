@@ -260,20 +260,23 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 11px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--ink-soft);
-  background: var(--surface);
-  border: 1px solid var(--rule-bold);
-  border-radius: 4px;
+  padding: 7px 16px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  border: none;
+  border-radius: 6px;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s;
+}
+.banner-socials .cv-download {
+  font-size: 0.98rem;
+  padding: 8px 19px;
+  color: #fff;
+  background: #0c3282;
 }
 .banner-socials .cv-download:hover {
-  background: #e8e8e8;
-  border-color: #999;
-  color: var(--link-hover);
+  background: #f07535;
+  color: #fff;
   text-decoration: none;
 }
 

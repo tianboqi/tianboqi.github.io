@@ -382,7 +382,42 @@ RENDERERS = {
     "REFERENCE CONTACTS":      render_list,
 }
 
+SECTION_ID = {
+    "EDUCATION":               "education",
+    "RESEARCH EXPERIENCE":     "research",
+    "SELECTED PUBLICATIONS":   "publications",
+    "SKILLS":                  "skills",
+    "SCHOLARSHIPS AND AWARDS": "awards",
+    "POSTERS AND TALKS":       "talks",
+    "OTHER EXPERIENCES":       "other",
+    "REFERENCE CONTACTS":      "references",
+}
+
+NAV_LINKS = [
+    ("← Home",       "index.html"),
+    ("Education",    "#education"),
+    ("Research",     "#research"),
+    ("Publications", "#publications"),
+    ("Skills",       "#skills"),
+    ("Awards",       "#awards"),
+    ("Talks",        "#talks"),
+]
+
 # ── HTML template ────────────────────────────────────────────────────────────
+
+def _build_nav() -> str:
+    links = "".join(
+        f'      <a href="{href}">{label}</a>\n'
+        for label, href in NAV_LINKS
+    )
+    return (
+        '<nav class="topnav" id="cv-topnav">\n'
+        '  <div class="topnav-inner">\n'
+        + links +
+        '  </div>\n'
+        '</nav>\n'
+    )
+
 
 HTML_HEAD = """\
 <!DOCTYPE html>
@@ -391,6 +426,9 @@ HTML_HEAD = """\
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CV — Tianbo Qi</title>
+  <meta name="description" content="Curriculum vitae of Tianbo Qi (齐天博), neuroscientist and postdoctoral associate at Scripps Research / HHMI.">
+  <meta name="author" content="Tianbo Qi">
+  <meta name="robots" content="index, follow">
   <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -408,15 +446,12 @@ HTML_HEAD = """\
       <p class="banner-sub"><a href="index.html">← Tianbo Qi</a></p>
     </div>
     <div class="banner-socials">
-      <a href="files/CV_website.pdf" download class="cv-download">
-        <i class="fa-solid fa-download"></i> PDF
+      <a href="files/CV_website.pdf" target="_blank" rel="noopener" class="cv-download">
+        <i class="fa-solid fa-file-arrow-down"></i> Download CV (PDF)
       </a>
     </div>
   </div>
 </header>
-
-<main>
-
 """
 
 HTML_FOOT = """\
@@ -428,18 +463,41 @@ HTML_FOOT = """\
   </div>
 </footer>
 
+<script>
+  // Scroll-spy: highlight active nav link
+  const navLinks = document.querySelectorAll('#cv-topnav a[href^="#"]');
+  if (navLinks.length) {
+    const sections = Array.from(navLinks)
+      .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+      .filter(Boolean);
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(a => a.classList.remove('active'));
+          const link = document.querySelector(
+            '#cv-topnav a[href="#' + e.target.id + '"]');
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(s => observer.observe(s));
+  }
+</script>
+
 </body>
 </html>
 """
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
-def build_section(key: str, lines: list[dict]) -> str:
-    title = SECTION_TITLE[key]
-    sub   = ' <span class="section-sub">(*co-first authors)</span>' \
-            if key == "SELECTED PUBLICATIONS" else ""
-    body  = RENDERERS[key](lines)
-    return f'  <section>\n    <h2>{title}{sub}</h2>\n{body}  </section>\n\n'
+def build_section(key: str, lines: list[dict], first: bool = False) -> str:
+    title      = SECTION_TITLE[key]
+    section_id = SECTION_ID.get(key, key.lower().replace(" ", "-"))
+    sub        = ' <span class="section-sub">(*co-first authors)</span>' \
+                 if key == "SELECTED PUBLICATIONS" else ""
+    body       = RENDERERS[key](lines)
+    nav        = _build_nav() + "\n<main>\n\n" if first else ""
+    return f'{nav}  <section id="{section_id}">\n    <h2>{title}{sub}</h2>\n{body}  </section>\n\n'
 
 
 def main() -> None:
@@ -456,8 +514,8 @@ def main() -> None:
         print(f"WARNING: sections not detected: {missing}", file=sys.stderr)
 
     html = [HTML_HEAD]
-    for key, sec_lines in sections:
-        html.append(build_section(key, sec_lines))
+    for i, (key, sec_lines) in enumerate(sections):
+        html.append(build_section(key, sec_lines, first=(i == 0)))
     html.append(HTML_FOOT)
 
     OUTPUT.write_text("".join(html), encoding="utf-8")

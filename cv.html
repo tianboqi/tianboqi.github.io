@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CV — Tianbo Qi</title>
+  <meta name="description" content="Curriculum vitae of Tianbo Qi (齐天博), neuroscientist and postdoctoral associate at Scripps Research / HHMI.">
+  <meta name="author" content="Tianbo Qi">
+  <meta name="robots" content="index, follow">
   <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,16 +24,27 @@
       <p class="banner-sub"><a href="index.html">← Tianbo Qi</a></p>
     </div>
     <div class="banner-socials">
-      <a href="files/CV_website.pdf" download class="cv-download">
-        <i class="fa-solid fa-download"></i> PDF
+      <a href="files/CV_website.pdf" target="_blank" rel="noopener" class="cv-download">
+        <i class="fa-solid fa-file-arrow-down"></i> Download CV (PDF)
       </a>
     </div>
   </div>
 </header>
+<nav class="topnav" id="cv-topnav">
+  <div class="topnav-inner">
+      <a href="index.html">← Home</a>
+      <a href="#education">Education</a>
+      <a href="#research">Research</a>
+      <a href="#publications">Publications</a>
+      <a href="#skills">Skills</a>
+      <a href="#awards">Awards</a>
+      <a href="#talks">Talks</a>
+  </div>
+</nav>
 
 <main>
 
-  <section>
+  <section id="education">
     <h2>Education</h2>
     <div class="cv-entry">
       <div>
@@ -55,7 +69,7 @@
     </div>
   </section>
 
-  <section>
+  <section id="research">
     <h2>Research Experience</h2>
     <div class="cv-entry">
       <div>
@@ -80,7 +94,7 @@
     </div>
   </section>
 
-  <section>
+  <section id="publications">
     <h2>Selected Publications <span class="section-sub">(*co-first authors)</span></h2>
     <ul class="cv-pub-list">
       <li><b>Qi T</b>, Krull C, Leung VH, Mardare V, Yang D, Lal N, Ma J, Wang S, Shen H, Zhang A, Zhao B, Seradj SH, Korotkova T, Kennedy A, Ye L. Top-down regulation of ingestive behavior fragmentation. <span class="pub-status">(BioRxiv)</span></li>
@@ -93,7 +107,7 @@
     </ul>
   </section>
 
-  <section>
+  <section id="skills">
     <h2>Skills</h2>
     <div class="cv-skill"><span class="cv-skill-label">Theoretical: </span>Computational neuroscience and neural modelling, machine learning and deep learning, statistics and data science.</div>
     <div class="cv-skill"><span class="cv-skill-label">Experimental: </span>Animal behavior, stereotaxic surgery, fiber photometry, optogenetics and chemogenetics.</div>
@@ -102,7 +116,7 @@
     <div class="cv-skill"><span class="cv-skill-label">Others: </span>Webpage design (HTML/CSS) and management.</div>
   </section>
 
-  <section>
+  <section id="awards">
     <h2>Scholarships and Awards</h2>
     <ul class="cv-list">
       <li>2021 Helen L. Dorris Scholar, Scripps Research</li>
@@ -111,7 +125,7 @@
     </ul>
   </section>
 
-  <section>
+  <section id="talks">
     <h2>Posters and Talks</h2>
     <ul class="cv-list">
       <li>2025 Society for Neuroscience annual meeting (San Diego, CA) – Poster presentation</li>
@@ -121,7 +135,7 @@
     </ul>
   </section>
 
-  <section>
+  <section id="other">
     <h2>Other Experiences</h2>
     <ul class="cv-list">
       <li>Mentored undergraduate students and technicians (initials): S.A., J.v.R., C.K.</li>
@@ -136,6 +150,27 @@
     <p>&copy; 2026 Tianbo Qi. All rights reserved.</p>
   </div>
 </footer>
+
+<script>
+  // Scroll-spy: highlight active nav link
+  const navLinks = document.querySelectorAll('#cv-topnav a[href^="#"]');
+  if (navLinks.length) {
+    const sections = Array.from(navLinks)
+      .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+      .filter(Boolean);
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(a => a.classList.remove('active'));
+          const link = document.querySelector(
+            '#cv-topnav a[href="#' + e.target.id + '"]');
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(s => observer.observe(s));
+  }
+</script>
 
 </body>
 </html>
