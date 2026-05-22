@@ -23,35 +23,32 @@ OUTPUT   = Path("cv.html")
 SECTIONS = [
     "EDUCATION",
     "RESEARCH EXPERIENCE",
-    "SELECTED PUBLICATIONS",
+    "PUBLICATIONS",
     "SKILLS",
-    "SCHOLARSHIPS AND AWARDS",
-    "POSTERS AND TALKS",
-    "OTHER EXPERIENCES",
-    "REFERENCE CONTACTS",
+    "AWARDS & HONORS",
+    "POSTERS & TALKS",
+    "MENTORSHIP & TEACHING",
 ]
 
 # Match a section by its first distinct word (handles small-caps line-splitting)
 SECTION_BY_FIRST_WORD = {
     "EDUCATION":    "EDUCATION",
     "RESEARCH":     "RESEARCH EXPERIENCE",
-    "SELECTED":     "SELECTED PUBLICATIONS",
+    "PUBLICATIONS": "PUBLICATIONS",
     "SKILLS":       "SKILLS",
-    "SCHOLARSHIPS": "SCHOLARSHIPS AND AWARDS",
-    "POSTERS":      "POSTERS AND TALKS",
-    "OTHER":        "OTHER EXPERIENCES",
-    "REFERENCE":    "REFERENCE CONTACTS",
+    "AWARDS":       "AWARDS & HONORS",
+    "POSTERS":      "POSTERS & TALKS",
+    "MENTORSHIP":   "MENTORSHIP & TEACHING",
 }
 
 SECTION_TITLE = {
-    "EDUCATION":               "Education",
-    "RESEARCH EXPERIENCE":     "Research Experience",
-    "SELECTED PUBLICATIONS":   "Selected Publications",
-    "SKILLS":                  "Skills",
-    "SCHOLARSHIPS AND AWARDS": "Scholarships and Awards",
-    "POSTERS AND TALKS":       "Posters and Talks",
-    "OTHER EXPERIENCES":       "Other Experiences",
-    "REFERENCE CONTACTS":      "Reference Contacts",
+    "EDUCATION":             "Education",
+    "RESEARCH EXPERIENCE":   "Research Experience",
+    "PUBLICATIONS":          "Publications",
+    "SKILLS":                "Skills",
+    "AWARDS & HONORS":       "Awards & Honors",
+    "POSTERS & TALKS":       "Posters & Talks",
+    "MENTORSHIP & TEACHING": "Mentorship & Teaching",
 }
 
 # Right-column content is only treated as a date if it matches this pattern
@@ -295,7 +292,7 @@ def render_publications(lines: list[dict]) -> str:
     if buf:
         pubs.append(" ".join(buf))
 
-    parts = ['    <ul class="cv-pub-list">\n']
+    parts = ['    <ol class="cv-pub-list">\n']
     for pub in pubs:
         h = fmt(pub, author=True, doi=True, journals=True)
         # Wrap status parentheticals in italic span
@@ -305,7 +302,7 @@ def render_publications(lines: list[dict]) -> str:
             h
         )
         parts.append(f'      <li>{h}</li>\n')
-    parts.append('    </ul>\n')
+    parts.append('    </ol>\n')
     return "".join(parts)
 
 
@@ -372,35 +369,33 @@ def render_list(lines: list[dict]) -> str:
 
 
 RENDERERS = {
-    "EDUCATION":               render_entries,
-    "RESEARCH EXPERIENCE":     render_entries,
-    "SELECTED PUBLICATIONS":   render_publications,
-    "SKILLS":                  render_skills,
-    "SCHOLARSHIPS AND AWARDS": render_list,
-    "POSTERS AND TALKS":       render_list,
-    "OTHER EXPERIENCES":       render_list,
-    "REFERENCE CONTACTS":      render_list,
+    "EDUCATION":             render_entries,
+    "RESEARCH EXPERIENCE":   render_entries,
+    "PUBLICATIONS":          render_publications,
+    "SKILLS":                render_skills,
+    "AWARDS & HONORS":       render_list,
+    "POSTERS & TALKS":       render_list,
+    "MENTORSHIP & TEACHING": render_list,
 }
 
 SECTION_ID = {
-    "EDUCATION":               "education",
-    "RESEARCH EXPERIENCE":     "research",
-    "SELECTED PUBLICATIONS":   "publications",
-    "SKILLS":                  "skills",
-    "SCHOLARSHIPS AND AWARDS": "awards",
-    "POSTERS AND TALKS":       "talks",
-    "OTHER EXPERIENCES":       "other",
-    "REFERENCE CONTACTS":      "references",
+    "EDUCATION":             "education",
+    "RESEARCH EXPERIENCE":   "research",
+    "PUBLICATIONS":          "publications",
+    "SKILLS":                "skills",
+    "AWARDS & HONORS":       "awards",
+    "POSTERS & TALKS":       "talks",
+    "MENTORSHIP & TEACHING": "mentorship",
 }
 
 NAV_LINKS = [
-    ("← Home",       "index.html"),
     ("Education",    "#education"),
     ("Research",     "#research"),
     ("Publications", "#publications"),
     ("Skills",       "#skills"),
     ("Awards",       "#awards"),
-    ("Talks",        "#talks"),
+    ("Presentations", "#talks"),
+    ("Mentorship",   "#mentorship"),
 ]
 
 # ── HTML template ────────────────────────────────────────────────────────────
@@ -494,7 +489,7 @@ def build_section(key: str, lines: list[dict], first: bool = False) -> str:
     title      = SECTION_TITLE[key]
     section_id = SECTION_ID.get(key, key.lower().replace(" ", "-"))
     sub        = ' <span class="section-sub">(*co-first authors)</span>' \
-                 if key == "SELECTED PUBLICATIONS" else ""
+                 if key == "PUBLICATIONS" else ""
     body       = RENDERERS[key](lines)
     nav        = _build_nav() + "\n<main>\n\n" if first else ""
     return f'{nav}  <section id="{section_id}">\n    <h2>{title}{sub}</h2>\n{body}  </section>\n\n'
