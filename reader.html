@@ -69,9 +69,33 @@
 
     #page-info { font-size: 13px; color: #888; white-space: nowrap; }
 
+    #zoom-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    #zoom-controls button {
+      background: none;
+      border: 1px solid #555;
+      color: #aaa;
+      font-size: 15px;
+      font-weight: 600;
+      width: 26px;
+      height: 26px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    #zoom-controls button:hover:not(:disabled) { color: #fff; border-color: #aaa; background: #444; }
+    #zoom-controls button:disabled { opacity: 0.3; cursor: default; }
+    #zoom-level { font-size: 12px; color: #888; width: 40px; text-align: center; }
+
     #main { display: flex; flex: 1; overflow: hidden; position: relative; }
 
-    /* TOC overlay backdrop (mobile only) */
     #toc-overlay {
       display: none;
       position: fixed;
@@ -91,11 +115,7 @@
       overflow: hidden;
       transition: width 0.25s ease;
     }
-
-    #toc-panel.collapsed {
-      width: 0;
-      border-right: none;
-    }
+    #toc-panel.collapsed { width: 0; border-right: none; }
 
     #toc-header {
       padding: 10px 14px;
@@ -165,7 +185,6 @@
       margin-top: 60px;
       text-align: center;
     }
-
     #status.file-error { line-height: 1.8; }
     #status.file-error a { color: #9cf; }
 
@@ -173,9 +192,9 @@
 
     @media (max-width: 700px) {
       #pdf-container { padding: 10px 8px; gap: 10px; }
+      #zoom-level { display: none; }
     }
 
-    /* Mobile: TOC overlays content */
     @media (max-width: 700px) {
       #toc-panel {
         position: absolute;
@@ -199,6 +218,11 @@
   </button>
   <span id="doc-title">Loading…</span>
   <span id="page-info"></span>
+  <div id="zoom-controls">
+    <button id="zoom-out" title="Zoom out" disabled>−</button>
+    <span id="zoom-level">150%</span>
+    <button id="zoom-in" title="Zoom in" disabled>+</button>
+  </div>
 </div>
 
 <div id="toc-overlay"></div>
@@ -235,10 +259,55 @@
   const tocPanel   = document.getElementById('toc-panel');
   const tocBtn     = document.getElementById('toc-btn');
   const tocOverlay = document.getElementById('toc-overlay');
+  const zoomInBtn  = document.getElementById('zoom-in');
+  const zoomOutBtn = document.getElementById('zoom-out');
+  const zoomLabel  = document.getElementById('zoom-level');
 
+  // ── Zoom state ──────────────────────────────────────────────────
+  const SCALE_STEP = 0.25;
+  const MIN_SCALE  = 0.5;
+  const MAX_SCALE  = 3.0;
+  let scale        = 1.5;
+  let pdfDoc       = null;
+  let pageWrappers = [];
+  let renderVersion = 0;
+
+  function updateZoomUI() {
+    zoomLabel.textContent  = Math.round(scale * 100) + '%';
+    zoomOutBtn.disabled    = scale <= MIN_SCALE;
+    zoomInBtn.disabled     = scale >= MAX_SCALE;
+  }
+
+  async function renderAllPages() {
+    const version = ++renderVersion;
+    for (let i = 0; i < pageWrappers.length; i++) {
+      if (version !== renderVersion) return;
+      const page     = await pdfDoc.getPage(i + 1);
+      const viewport = page.getViewport({ scale });
+      const canvas   = pageWrappers[i].querySelector('canvas');
+      canvas.width   = viewport.width;
+      canvas.height  = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    }
+  }
+
+  zoomInBtn.addEventListener('click', () => {
+    if (scale >= MAX_SCALE) return;
+    scale = Math.min(MAX_SCALE, Math.round((scale + SCALE_STEP) * 100) / 100);
+    updateZoomUI();
+    renderAllPages();
+  });
+
+  zoomOutBtn.addEventListener('click', () => {
+    if (scale <= MIN_SCALE) return;
+    scale = Math.max(MIN_SCALE, Math.round((scale - SCALE_STEP) * 100) / 100);
+    updateZoomUI();
+    renderAllPages();
+  });
+
+  // ── TOC toggle ───────────────────────────────────────────────────
   const isMobile = () => window.innerWidth <= 700;
 
-  // Auto-collapse on small screens
   if (isMobile()) tocPanel.classList.add('collapsed');
 
   function openToc() {
@@ -256,16 +325,13 @@
     else closeToc();
   });
 
-  // Close on overlay click (mobile)
   tocOverlay.addEventListener('click', closeToc);
 
-  // Re-check on resize
   window.addEventListener('resize', () => {
-    if (!isMobile()) {
-      tocOverlay.classList.remove('visible');
-    }
+    if (!isMobile()) tocOverlay.classList.remove('visible');
   });
 
+  // ── Load PDF ─────────────────────────────────────────────────────
   if (window.location.protocol === 'file:') {
     statusEl.classList.add('file-error');
     statusEl.innerHTML =
@@ -288,20 +354,19 @@
     }
 
     pdfjsLib.getDocument(fileUrl).promise.then(async (pdf) => {
+      pdfDoc = pdf;
       statusEl.remove();
       const numPages = pdf.numPages;
-      const scale = 1.5;
-      const pageWrappers = [];
 
       for (let i = 1; i <= numPages; i++) {
-        const page = await pdf.getPage(i);
+        const page     = await pdf.getPage(i);
         const viewport = page.getViewport({ scale });
 
         const wrapper = document.createElement('div');
         wrapper.className = 'page-wrapper';
         wrapper.id = 'page-' + i;
 
-        const canvas = document.createElement('canvas');
+        const canvas  = document.createElement('canvas');
         canvas.width  = viewport.width;
         canvas.height = viewport.height;
         wrapper.appendChild(canvas);
@@ -310,6 +375,9 @@
 
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
       }
+
+      // Enable zoom buttons after load
+      updateZoomUI();
 
       // Track current page
       const observer = new IntersectionObserver((entries) => {
@@ -325,15 +393,13 @@
 
       pageWrappers.forEach(w => observer.observe(w));
 
-      // Build TOC from PDF outline
+      // Build TOC
       const outline = await pdf.getOutline();
-
       if (!outline || outline.length === 0) {
         tocEmpty.textContent = 'No table of contents.';
       } else {
         tocEmpty.style.display = 'none';
         tocList.style.display  = 'block';
-
         const tocItems = [];
 
         async function buildToc(items, depth) {
@@ -346,7 +412,6 @@
             li.addEventListener('click', async () => {
               tocItems.forEach(el => el.classList.remove('active'));
               li.classList.add('active');
-
               if (item.dest) {
                 let dest = item.dest;
                 if (typeof dest === 'string') dest = await pdf.getDestination(dest);
@@ -356,17 +421,12 @@
                   if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
               }
-
-              // Auto-close TOC on mobile after navigation
               if (isMobile()) closeToc();
             });
 
             tocList.appendChild(li);
             tocItems.push(li);
-
-            if (item.items && item.items.length > 0) {
-              await buildToc(item.items, depth + 1);
-            }
+            if (item.items && item.items.length > 0) await buildToc(item.items, depth + 1);
           }
         }
 
