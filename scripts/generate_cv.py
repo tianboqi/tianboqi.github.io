@@ -274,7 +274,7 @@ def render_entries(lines: list[dict]) -> str:
 
 
 def render_publications(lines: list[dict]) -> str:
-    """Bullet list of publications; merge continuation lines per entry."""
+    """Numbered list of publications; entries start with 'N.' or '•'."""
     pubs: list[str] = []
     buf:  list[str] = []
 
@@ -282,10 +282,12 @@ def render_publications(lines: list[dict]) -> str:
         text = line["left"].strip()
         if not text:
             continue
-        if text.startswith("•"):
+        # New entry: numbered (e.g. "1.") or legacy bullet
+        if re.match(r'^\d+\.', text) or text.startswith("•"):
             if buf:
                 pubs.append(" ".join(buf))
-            buf = [text.lstrip("•").strip()]
+            text = re.sub(r'^\d+\.\s*', '', text).lstrip("•").strip()
+            buf = [text]
         else:
             buf.append(text)
 
@@ -294,10 +296,10 @@ def render_publications(lines: list[dict]) -> str:
 
     parts = ['    <ol class="cv-pub-list">\n']
     for pub in pubs:
-        h = fmt(pub, author=True, doi=True, journals=True)
+        h = fmt(pub, author=True, doi=True, journals=True, in_vivo=True)
         # Wrap status parentheticals in italic span
         h = re.sub(
-            r'\((BioRxiv|in prep\.?|under revision[^)]*)\)',
+            r'\((BioRxiv|in prep\.?|under revision[^)]*|Preview)\)',
             lambda m: f'<span class="pub-status">({m.group(1)})</span>',
             h
         )
