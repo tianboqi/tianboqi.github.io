@@ -31,7 +31,10 @@
   </div>
 </header>
 <nav class="topnav" id="cv-topnav">
-  <div class="topnav-inner">
+  <button class="nav-toggle" id="cv-nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="cv-topnav-inner">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+  <div class="topnav-inner" id="cv-topnav-inner">
       <a href="#education">Education</a>
       <a href="#research">Research</a>
       <a href="#publications">Publications</a>
@@ -171,6 +174,23 @@
     }, { rootMargin: '-20% 0px -70% 0px' });
     sections.forEach(s => observer.observe(s));
   }
+
+  // Collapsible menu on narrow viewports
+  const cvTopnav = document.getElementById('cv-topnav');
+  const cvNavToggle = document.getElementById('cv-nav-toggle');
+  const cvNavIcon = cvNavToggle.querySelector('i');
+  const closeCvMenu = () => {
+    cvTopnav.classList.remove('open');
+    cvNavToggle.setAttribute('aria-expanded', 'false');
+    cvNavIcon.classList.replace('fa-xmark', 'fa-bars');
+  };
+  cvNavToggle.addEventListener('click', () => {
+    const isOpen = cvTopnav.classList.toggle('open');
+    cvNavToggle.setAttribute('aria-expanded', String(isOpen));
+    cvNavIcon.classList.toggle('fa-bars', !isOpen);
+    cvNavIcon.classList.toggle('fa-xmark', isOpen);
+  });
+  navLinks.forEach(a => a.addEventListener('click', closeCvMenu));
 </script>
 
 </body>

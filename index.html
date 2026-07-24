@@ -43,7 +43,10 @@
 </header>
 
 <nav class="topnav" id="topnav">
-  <div class="topnav-inner">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="topnav-inner">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+  <div class="topnav-inner" id="topnav-inner">
     <a href="#about">About</a>
     <a href="#publications">Publications</a>
     <span class="topnav-divider"></span>
@@ -130,6 +133,23 @@
     });
   }, { rootMargin: '-30% 0px -60% 0px' });
   sections.forEach(s => observer.observe(s));
+
+  // Collapsible menu on narrow viewports
+  const topnav = document.getElementById('topnav');
+  const navToggle = document.getElementById('nav-toggle');
+  const navIcon = navToggle.querySelector('i');
+  const closeMenu = () => {
+    topnav.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+    navIcon.classList.replace('fa-xmark', 'fa-bars');
+  };
+  navToggle.addEventListener('click', () => {
+    const isOpen = topnav.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', String(isOpen));
+    navIcon.classList.toggle('fa-bars', !isOpen);
+    navIcon.classList.toggle('fa-xmark', isOpen);
+  });
+  navLinks.forEach(a => a.addEventListener('click', closeMenu));
 </script>
 
 </body>
