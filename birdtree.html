@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bird Phylogeny — Tianbo Qi</title>
+  <title>My Bird Tree — Tianbo Qi</title>
   <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +40,7 @@
       width: var(--sidebar-w);
       min-width: var(--sidebar-w);
       height: 100vh;
-      overflow-y: auto;
+      overflow-y: hidden;
       border-right: 1px solid var(--rule);
       display: flex;
       flex-direction: column;
@@ -137,6 +137,17 @@
     .hint-text { font-size: 0.7rem; color: #9ca3af; line-height: 1.5; }
     .hint-text a { color: var(--link); text-decoration: none; }
     .hint-text a:hover { color: var(--link-hover); text-decoration: underline; }
+    .hint-text.remarks {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--rule);
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .hint-text.remarks ul { padding-left: 14px; }
+    .hint-text.remarks li { margin-bottom: 6px; }
+    .hint-text.remarks li:last-child { margin-bottom: 0; }
 
     /* ── Canvas area ───────────────────────────────────────── */
     .canvas-wrap {
@@ -202,7 +213,7 @@
 <aside class="sidebar">
   <div>
     <div class="sidebar-title">
-      Bird Phylogeny
+      My Bird Tree
       <a href="misc.html">← Back to Miscellaneous</a>
     </div>
   </div>
@@ -270,6 +281,14 @@
   <div class="hint-text">
     Scroll to zoom · Drag to pan · Hover for details<br>
     Bands (inner→outer): <b>Order · Family · Genus · Species</b>
+  </div>
+
+  <div class="hint-text remarks">
+    <ul>
+      <li>Built from the Clements Checklist v2025 (Oct 2025) — drop a different version's CSV above to override it.</li>
+      <li>Only eBird life list exports are supported for now; 懂鸟 lists are not.</li>
+      <li>Ranked by classical taxonomic levels rather than laid out as a phylogenetic cladogram, since Clements' taxonomy is revised often and doesn't map cleanly onto any one published tree.</li>
+    </ul>
   </div>
 </aside>
 
