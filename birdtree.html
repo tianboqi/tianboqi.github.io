@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bird Phylogeny — Tianbo Qi</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #ffffff;
+      --ink:       #1a1a1a;
+      --ink-soft:  #3a3a3a;
+      --ink-faint: #505050;
+      --rule:      #e6e6e6;
+      --link:      #1a4db5;
+      --link-hover:#ed5b0c;
+      --surface:   #f6f6f6;
+      --sidebar-w: 272px;
+      --seen:      #22c55e;
+      --seen-dk:   #15803d;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 0.875rem;
+      color: var(--ink);
+      background: var(--bg);
+      display: flex;
+    }
+
+    /* ── Sidebar ───────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--rule);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      padding: 20px 18px 24px;
+      gap: 20px;
+    }
+
+    .sidebar-title {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+    .sidebar-title a {
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: var(--link);
+      text-decoration: none;
+      display: block;
+      margin-top: 3px;
+    }
+    .sidebar-title a:hover { color: var(--link-hover); }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-faint);
+      margin-bottom: 8px;
+    }
+
+    /* upload zones */
+    .upload-zone {
+      border: 1.5px dashed var(--rule);
+      border-radius: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+      text-align: center;
+    }
+    .upload-zone:hover        { border-color: var(--seen); background: #f0fdf4; }
+    .upload-zone.drag-over    { border-color: var(--seen); background: #f0fdf4; }
+    .upload-zone.loaded       { border-color: var(--seen-dk); background: #f0fdf4; }
+    .upload-zone.error        { border-color: #dc2626; background: #fef2f2; }
+    .upload-zone input        { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-zone .uz-icon     { font-size: 1.2rem; margin-bottom: 2px; }
+    .upload-zone .uz-hint     { font-size: 0.72rem; color: var(--ink-faint); line-height: 1.4; }
+    .upload-zone .uz-status   { font-size: 0.72rem; font-weight: 600; margin-top: 4px; color: var(--seen-dk); }
+    .upload-zone.error .uz-status { color: #dc2626; }
+
+    .download-link {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--link);
+      text-decoration: none;
+      margin-top: 6px;
+      text-align: center;
+    }
+    .download-link:hover { color: var(--link-hover); text-decoration: underline; }
+
+    .chk-row {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.72rem; color: var(--ink-faint);
+      margin-top: 8px; cursor: pointer; user-select: none;
+    }
+    .chk-row input[type=checkbox] { accent-color: var(--link); cursor: pointer; }
+
+    /* stats */
+    .stats-block {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .stat-row:last-child { margin-bottom: 0; }
+    .stat-label { font-size: 0.72rem; color: var(--ink-faint); }
+    .stat-value { font-size: 0.85rem; font-weight: 700; color: var(--ink); }
+    .stat-value.green { color: var(--seen-dk); }
+
+    .progress-bar-wrap { height: 4px; background: var(--rule); border-radius: 2px; margin-top: 8px; }
+    .progress-bar      { height: 4px; background: var(--seen); border-radius: 2px; transition: width 0.4s; }
+
+    /* legend */
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 0.72rem; color: var(--ink-soft); }
+    .legend-swatch { width: 18px; height: 8px; border-radius: 3px; flex-shrink: 0; }
+    .legend-dot    { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* hint text */
+    .hint-text { font-size: 0.7rem; color: #9ca3af; line-height: 1.5; }
+    .hint-text a { color: var(--link); text-decoration: none; }
+    .hint-text a:hover { color: var(--link-hover); text-decoration: underline; }
+
+    /* ── Canvas area ───────────────────────────────────────── */
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    canvas#tree-canvas {
+      display: block;
+      cursor: grab;
+      width: 100%;
+      height: 100%;
+    }
+    canvas#tree-canvas:active { cursor: grabbing; }
+
+    /* zoom controls */
+    .zoom-btns {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .zoom-btn {
+      width: 30px; height: 30px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      font-size: 15px;
+      color: var(--ink-soft);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, color 0.12s;
+    }
+    .zoom-btn:hover { background: var(--surface); color: var(--ink); }
+
+    /* ── Tooltip ──────────────────────────────────────────── */
+    #tooltip {
+      position: fixed;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 8px 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      max-width: 240px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      line-height: 1.5;
+    }
+    .tt-name { font-weight: 700; font-size: 0.82rem; color: var(--ink); }
+    .tt-sci  { font-style: italic; font-size: 0.75rem; color: var(--ink-faint); }
+    .tt-pct  { font-size: 0.75rem; color: var(--seen-dk); margin-top: 2px; }
+    .tt-tag  { font-size: 0.72rem; color: var(--link); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div>
+    <div class="sidebar-title">
+      Bird Phylogeny
+      <a href="misc.html">← Back to Miscellaneous</a>
+    </div>
+  </div>
+
+  <!-- Life list upload -->
+  <div>
+    <div class="section-label">eBird Life List</div>
+    <div class="upload-zone" id="zone-ll">
+      <input type="file" id="input-ll" accept=".csv">
+      <div class="uz-icon">📋</div>
+      <div class="uz-hint">Export from eBird → My eBird → Life List → Download</div>
+      <div class="uz-status" id="status-ll"></div>
+    </div>
+    <label class="chk-row">
+      <input type="checkbox" id="chk-exotic" checked>
+      Include exotic / naturalized species
+    </label>
+  </div>
+
+  <!-- Taxonomy -->
+  <div>
+    <div class="section-label">Taxonomy</div>
+    <div class="upload-zone" id="zone-tx">
+      <input type="file" id="input-tx" accept=".csv">
+      <div class="uz-icon">🌿</div>
+      <div class="uz-hint" id="hint-tx">Loading Clements 2025…</div>
+      <div class="uz-status" id="status-tx"></div>
+    </div>
+    <a class="download-link" href="https://www.birds.cornell.edu/clementschecklist/download/" target="_blank" rel="noopener">↗ Download Clements Checklist (Cornell Lab)</a>
+  </div>
+
+  <!-- Stats (hidden until taxonomy loaded) -->
+  <div id="stats-panel" style="display:none">
+    <div class="section-label">Your List</div>
+    <div class="stats-block">
+      <div class="stat-row">
+        <span class="stat-label">Species seen</span>
+        <span class="stat-value green" id="stat-seen">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Total in taxonomy</span>
+        <span class="stat-value" id="stat-total">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Coverage</span>
+        <span class="stat-value green" id="stat-pct">—</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="stat-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div>
+    <div class="section-label">Legend</div>
+    <div class="legend">
+      <div class="legend-row"><div class="legend-swatch" style="background:#15803d"></div>100% of group seen</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#86efac"></div>Partially seen</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#e2e8f0"></div>0% seen</div>
+      <div style="height:4px"></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#22c55e"></div>Species in your list</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#e2e8f0; border:1px solid #cbd5e1"></div>Not yet seen</div>
+    </div>
+  </div>
+
+  <div class="hint-text">
+    Scroll to zoom · Drag to pan · Hover for details<br>
+    Bands (inner→outer): <b>Order · Family · Genus · Species</b>
+  </div>
+</aside>
+
+<!-- ── Canvas ─────────────────────────────────────────────── -->
+<div class="canvas-wrap">
+  <canvas id="tree-canvas"></canvas>
+
+  <div class="zoom-btns">
+    <button class="zoom-btn" id="btn-zi" title="Zoom in">+</button>
+    <button class="zoom-btn" id="btn-zo" title="Zoom out">−</button>
+    <button class="zoom-btn" id="btn-zr" title="Reset view" style="font-size:12px">⟳</button>
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-sci"  id="tt-sci"></div>
+  <div class="tt-pct"  id="tt-pct"></div>
+  <div class="tt-tag"  id="tt-tag"></div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="files/clements_data.js"></script>
+<script>
+'use strict';
+
+// ── Tree layout constants ──────────────────────────────────────
+const TREE_SPAN   = 2 * Math.PI;        // full 360°
+const DRAW_OFFSET = -Math.PI / 2;       // first taxon at 12 o'clock
+
+// Radial position of each depth level as fraction of outerR
+// depth: 0=root(center)  1=orders  2=families  3=genera  4=species
+const NODE_R  = [0, 0.10, 0.40, 0.67, 0.91];
+const SPECIES_R = 0.96;   // outer edge of species ring
+
+// Angular gap between siblings at each depth (radians)
+const GAPS    = [0, 0.016, 0.006, 0.0025, 0.001];
+const MIN_ARC = 0.0003;
+
+// ── Global state ──────────────────────────────────────────────
+let precomp      = null;   // { root, nodesByDepth, totalSpecies }
+let seenSet      = new Set();
+let lifeListRows = null;   // raw rows kept so the exotic checkbox can re-parse
+let lifeListName = '';
+let xf        = { x: 0, y: 0, k: 1.0 };
+let hovNode   = null;
+let outerR    = 300;
+let W = 0, H = 0;
+
+const canvas  = document.getElementById('tree-canvas');
+const ctx     = canvas.getContext('2d');
+let rafId     = null;
+
+// ── Colors ────────────────────────────────────────────────────
+function arcColor(node, depth) {
+  const p = node.seenPct || 0;
+  if (depth === 4) return p > 0 ? '#22c55e' : '#e2e8f0';
+  if (p === 0)    return '#e2e8f0';
+  if (p >= 1.0)   return ['', '#14532d', '#15803d', '#166534', '#22c55e'][depth];
+  const t = Math.pow(p, 0.55);
+  const dark = depth === 1 ? '#14532d' : depth === 2 ? '#15803d' : '#16a34a';
+  return d3.interpolateRgb('#bbf7d0', dark)(t);
+}
+
+function hoverColor() { return '#f59e0b'; }
+
+function branchStroke(node) {
+  const p = node.seenPct || 0;
+  if (p >= 1) return 'rgba(21,128,61,0.90)';
+  if (p > 0)  return `rgba(21,128,61,${(0.45 + p * 0.40).toFixed(2)})`;
+  return 'rgba(80,100,120,0.50)';
+}
+
+// ── CSV parser ────────────────────────────────────────────────
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = text.split('\n');
+  if (!lines.length) return [];
+  const parseRow = line => {
+    const f = []; let cur = '', q = false;
+    for (let i = 0; i <= line.length; i++) {
+      const c = i < line.length ? line[i] : ',';
+      if (c === '"') { q = !q; continue; }
+      if (c === ',' && !q) { f.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    return f;
+  };
+  const headers = parseRow(lines[0]);
+  return lines.slice(1).filter(l => l.trim()).map(l => {
+    const cols = parseRow(l);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (cols[i] || '').trim(); });
+    return obj;
+  });
+}
+
+// ── Column auto-detection ─────────────────────────────────────
+function detectCols(r) {
+  const ks = Object.keys(r);
+  const exact = (...ps) => ks.find(k => ps.includes(k));
+  const like  = (...ps) => ks.find(k => ps.some(p => k.toLowerCase().includes(p)));
+  return {
+    cat:    exact('category','CATEGORY')                || like('categor'),
+    com:    exact('English name','PRIMARY_COM_NAME')    || like('english','primary_com','comname','common name'),
+    sci:    exact('scientific name','SCI_NAME')         || like('scientific','sci_name'),
+    order:  exact('order','ORDER1','ORDER')             || like('order'),
+    famSci: exact('FAMILY_SCI_NAME','family')           || like('family_sci','family'),
+    famCom: exact('FAMILY_COM_NAME')                    || like('family_com'),
+  };
+}
+
+// ── Build hierarchy data structure ────────────────────────────
+function buildHierarchy(rows) {
+  if (!rows.length) throw new Error('File is empty.');
+  const cols = detectCols(rows[0]);
+  if (!cols.sci)   throw new Error('Cannot find scientific name column.\nColumns: ' + Object.keys(rows[0]).slice(0,8).join(', '));
+  if (!cols.order) throw new Error('Cannot find order column.\nColumns: ' + Object.keys(rows[0]).slice(0,8).join(', '));
+
+  const root = { name: 'Aves', type: 'root', children: [] };
+  const oMap = new Map(), fMap = new Map(), gMap = new Map();
+  let count = 0;
+
+  for (const row of rows) {
+    if ((row[cols.cat] || '').toLowerCase() !== 'species') continue;
+    const sci    = row[cols.sci]?.trim();
+    const com    = row[cols.com]?.trim() || sci;
+    const order  = row[cols.order]?.trim();
+    const famSci = row[cols.famSci]?.trim() || 'Unknown';
+    const famCom = (cols.famCom && row[cols.famCom]?.trim()) || famSci;
+    if (!sci || !order) continue;
+    count++;
+    const genus = sci.split(' ')[0];
+
+    if (!oMap.has(order)) { const n={name:order,type:'order',children:[]}; oMap.set(order,n); root.children.push(n); }
+    const fk = order+'\0'+famSci;
+    if (!fMap.has(fk)) { const n={name:famSci,comName:famCom,type:'family',children:[]}; fMap.set(fk,n); oMap.get(order).children.push(n); }
+    const gk = fk+'\0'+genus;
+    if (!gMap.has(gk)) { const n={name:genus,type:'genus',children:[]}; gMap.set(gk,n); fMap.get(fk).children.push(n); }
+    gMap.get(gk).children.push({ name: sci, comName: com, type: 'species' });
+  }
+
+  if (!count) throw new Error('No species-level rows found. Check the "category" column.');
+  return { root, totalSpecies: count };
+}
+
+// ── Precompute layout (expensive — once per taxonomy) ─────────
+function precompute(hierarchyRoot) {
+  const h = d3.hierarchy(hierarchyRoot).sum(d => d.children ? 0 : 1);
+  // Use TREE_SPAN (not 2π) so angles are scaled to the partial circle
+  d3.partition().size([TREE_SPAN, 1])(h);
+
+  const nodesByDepth = new Map();
+  h.each(node => {
+    const d = node.depth;
+    if (!nodesByDepth.has(d)) nodesByDepth.set(d, []);
+    nodesByDepth.get(d).push(node);
+  });
+  // Sort by x0 for binary-search hit testing
+  for (const [, arr] of nodesByDepth) arr.sort((a, b) => a.x0 - b.x0);
+
+  precomp = { root: h, nodesByDepth, totalSpecies: (nodesByDepth.get(4) || []).length };
+}
+
+// ── Annotate tree with seen counts ────────────────────────────
+function annotate() {
+  if (!precomp) return;
+  precomp.root.eachAfter(node => {
+    if (!node.children) {
+      node.seenCount  = seenSet.has(node.data.name) ? 1 : 0;
+      node.totalCount = 1;
+    } else {
+      node.totalCount = d3.sum(node.children, c => c.totalCount);
+      node.seenCount  = d3.sum(node.children, c => c.seenCount);
+    }
+    node.seenPct = node.totalCount > 0 ? node.seenCount / node.totalCount : 0;
+  });
+}
+
+// ── Parse eBird life list ─────────────────────────────────────
+function parseLifeList(rows) {
+  const inclExotic = document.getElementById('chk-exotic').checked;
+  const s = new Set();
+  for (const row of rows) {
+    const cat = (row['Category'] || row['category'] || '').trim().toLowerCase();
+    const cnt = (row['Countable'] || row['countable'] || '').trim();
+    const sci = (row['Scientific Name'] || row['SCI_NAME'] || '').trim();
+    const isSpecies = cat === 'species' || cat === 'exotic';
+    const ok = isSpecies && (inclExotic || cnt === '1');
+    if (ok && sci) s.add(sci);
+  }
+  return s;
+}
+
+// ── Render ────────────────────────────────────────────────────
+function scheduleRender() {
+  if (rafId) return;
+  rafId = requestAnimationFrame(() => { rafId = null; render(); });
+}
+
+function render() {
+  const dpr = window.devicePixelRatio || 1;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!precomp) {
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 14px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Loading taxonomy…', W / 2, H / 2);
+    ctx.restore();
+    return;
+  }
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.translate(W / 2 + xf.x, H / 2 + xf.y);
+  ctx.scale(xf.k, xf.k);
+
+  drawFills(ctx);
+  drawHoverHighlight(ctx);
+  drawBranches(ctx);
+  drawLabels(ctx);
+
+  ctx.restore();
+}
+
+// ── Draw filled areas ─────────────────────────────────────────
+// Each depth level gets its own radial band, colored by that node's seenPct:
+//   Orders  — band [NODE_R[1], NODE_R[2]]
+//   Families — band [NODE_R[2], NODE_R[3]]
+//   Genera  — band [NODE_R[3], NODE_R[4]]
+//   Species — band [NODE_R[4], SPECIES_R]  (solid green / gray ticks)
+// All are flat annular sectors (no tapering wedge) so each band is clearly
+// associated with its taxonomic level.
+function drawFills(ctx) {
+  const BAND_OUT = [0, NODE_R[2], NODE_R[3], NODE_R[4], SPECIES_R];
+
+  for (let depth = 1; depth <= 3; depth++) {
+    const iR      = NODE_R[depth]    * outerR;
+    const oR      = BAND_OUT[depth]  * outerR;
+    const halfGap = GAPS[depth] / 2;
+
+    for (const node of precomp.nodesByDepth.get(depth) || []) {
+      const span = node.x1 - node.x0;
+      if (span < MIN_ARC) continue;
+      const gapped = Math.min(halfGap, span * 0.4);
+      const sA = node.x0 + gapped + DRAW_OFFSET;
+      const eA = node.x1 - gapped + DRAW_OFFSET;
+      if (eA <= sA) continue;
+
+      ctx.beginPath();
+      ctx.arc(0, 0, oR, sA, eA);
+      ctx.arc(0, 0, iR, eA, sA, true);
+      ctx.closePath();
+      ctx.fillStyle = arcColor(node, depth);
+      ctx.fill();
+    }
+  }
+
+}
+
+// ── Hover highlight ────────────────────────────────────────────
+// One smooth wedge covering the entire hovered subtree — drawn after
+// fills, before branches.  The inner tip sits at the PARENT's radius
+// (NODE_R[depth-1]), so the radial branch line connecting the node to
+// its parent is fully inside the highlighted shape.  All descendant
+// fills are automatically covered because the wedge extends to SPECIES_R.
+function drawHoverHighlight(ctx) {
+  if (!hovNode) return;
+  const d    = hovNode.depth;
+  const span = hovNode.x1 - hovNode.x0;
+  if (span < MIN_ARC) return;
+
+  const mid  = (hovNode.x0 + hovNode.x1) / 2 + DRAW_OFFSET;
+  // No gap on the highlight — we want full coverage of branch lines at edges
+  const sA   = hovNode.x0 + DRAW_OFFSET;
+  const eA   = hovNode.x1 + DRAW_OFFSET;
+  // NODE_R[0] = 0, so for orders this becomes a full pie slice from center
+  const tipR = NODE_R[d - 1] * outerR;
+  const oR   = SPECIES_R * outerR;
+
+  ctx.beginPath();
+  ctx.moveTo(tipR * Math.cos(mid), tipR * Math.sin(mid));
+  ctx.arc(0, 0, oR, sA, eA);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(245,158,11,0.60)';
+  ctx.fill();
+}
+
+// ── Draw branch connector lines (cladogram style) ─────────────
+// Right-angle connections: arc at parent radius + radial line to child.
+function drawBranches(ctx) {
+  ctx.lineCap  = 'round';
+  ctx.lineJoin = 'round';
+
+  // Root → each order: radial stub from center to NODE_R[1]
+  const r1 = NODE_R[1] * outerR;
+  ctx.lineWidth = 1.6;
+  for (const ord of precomp.nodesByDepth.get(1) || []) {
+    const span = ord.x1 - ord.x0;
+    if (span < MIN_ARC) continue;
+    const mid = (ord.x0 + ord.x1) / 2 + DRAW_OFFSET;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(r1 * Math.cos(mid), r1 * Math.sin(mid));
+    ctx.strokeStyle = branchStroke(ord);
+    ctx.stroke();
+  }
+
+  // Depths 1-3: arc connector at parent radius + radial lines to children
+  const LW = [0, 1.4, 0.90, 0.55];
+  for (let depth = 1; depth <= 3; depth++) {
+    ctx.lineWidth = LW[depth];
+    const pR = NODE_R[depth] * outerR;
+    const cR = NODE_R[depth + 1] * outerR;
+
+    for (const par of precomp.nodesByDepth.get(depth) || []) {
+      if (!par.children || par.children.length === 0) continue;
+      const span = par.x1 - par.x0;
+      if (span < MIN_ARC) continue;
+
+      const ch      = par.children;
+      const firstMid = (ch[0].x0 + ch[0].x1) / 2 + DRAW_OFFSET;
+      const lastMid  = (ch[ch.length - 1].x0 + ch[ch.length - 1].x1) / 2 + DRAW_OFFSET;
+
+      ctx.strokeStyle = branchStroke(par);
+
+      // Horizontal arc at parent radius connecting first → last child
+      if (ch.length > 1) {
+        ctx.beginPath();
+        ctx.arc(0, 0, pR, firstMid, lastMid);
+        ctx.stroke();
+      }
+
+      // Radial lines to children (genus→species handled separately as tick lines)
+      if (depth < 3) {
+        for (const child of ch) {
+          const cs = child.x1 - child.x0;
+          if (cs < MIN_ARC) continue;
+          if (cs * cR < 0.4) continue;
+          const childMid = (child.x0 + child.x1) / 2 + DRAW_OFFSET;
+          ctx.beginPath();
+          ctx.moveTo(pR * Math.cos(childMid), pR * Math.sin(childMid));
+          ctx.lineTo(cR * Math.cos(childMid), cR * Math.sin(childMid));
+          ctx.strokeStyle = branchStroke(child);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // Species tick lines: short radials from NODE_R[4] to SPECIES_R, always visible.
+  // Batched by colour so the entire ring is two stroke() calls.
+  {
+    const pR = NODE_R[4] * outerR;
+    const oR = SPECIES_R * outerR;
+    ctx.lineWidth = 1.2;
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(100,116,139,0.55)';
+    for (const sp of precomp.nodesByDepth.get(4) || []) {
+      if (sp.seenCount > 0) continue;
+      const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
+      ctx.lineTo(oR * Math.cos(mid), oR * Math.sin(mid));
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#22c55e';
+    for (const sp of precomp.nodesByDepth.get(4) || []) {
+      if (sp.seenCount === 0) continue;
+      const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
+      ctx.lineTo(oR * Math.cos(mid), oR * Math.sin(mid));
+    }
+    ctx.stroke();
+  }
+
+  // Green dots drawn last so they appear in front of tick lines
+  ctx.fillStyle = '#16a34a';
+  const dotR = SPECIES_R * outerR;
+  for (const sp of precomp.nodesByDepth.get(4) || []) {
+    if (sp.seenCount === 0) continue;
+    const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+    ctx.beginPath();
+    ctx.arc(dotR * Math.cos(mid), dotR * Math.sin(mid), 2.0, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+}
+
+// ── Draw labels ────────────────────────────────────────────────
+function normAngle(a) {
+  return ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+}
+function shouldFlip(angle) {
+  const n = normAngle(angle);
+  return n > Math.PI / 2 && n < 3 * Math.PI / 2;
+}
+
+function drawLabels(ctx) {
+  ctx.textBaseline = 'middle';
+
+  // Order labels — just outside the species ring
+  const lblR  = SPECIES_R * outerR + 10;
+  for (const node of precomp.nodesByDepth.get(1) || []) {
+    const span = node.x1 - node.x0;
+    if (span < 0.035) continue;
+    const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
+    const flip = shouldFlip(mid);
+    ctx.save();
+    ctx.translate(lblR * Math.cos(mid), lblR * Math.sin(mid));
+    ctx.rotate(mid + (flip ? Math.PI : 0));
+    ctx.textAlign = flip ? 'right' : 'left';
+    const fs = Math.max(5, Math.min(9, span * outerR * 0.5));
+    ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = node.seenPct > 0 ? '#14532d' : '#6b7280';
+    ctx.fillText(node.data.name, 0, 0);
+    ctx.restore();
+  }
+
+  // Family labels — inside family band, when zoomed in
+  if (xf.k > 2) {
+    const fR = (NODE_R[2] + NODE_R[3]) / 2 * outerR;
+    for (const node of precomp.nodesByDepth.get(2) || []) {
+      const span = node.x1 - node.x0;
+      if (span * fR * xf.k < 18) continue;
+      const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
+      const flip = shouldFlip(mid);
+      ctx.save();
+      ctx.translate(fR * Math.cos(mid), fR * Math.sin(mid));
+      ctx.rotate(mid + (flip ? Math.PI : 0));
+      ctx.textAlign = 'center';
+      ctx.font = '500 7px Inter, system-ui, sans-serif';
+      ctx.fillStyle = node.seenPct > 0 ? '#166534' : '#94a3b8';
+      ctx.fillText(node.data.comName || node.data.name, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  // Species labels — outside species ring, deep zoom
+  if (xf.k > 5) {
+    const spR = SPECIES_R * outerR + 5;
+    for (const node of precomp.nodesByDepth.get(4) || []) {
+      const span = node.x1 - node.x0;
+      if (span * spR * xf.k < 10) continue;
+      const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
+      const flip = shouldFlip(mid);
+      ctx.save();
+      ctx.translate(spR * Math.cos(mid), spR * Math.sin(mid));
+      ctx.rotate(mid + (flip ? Math.PI : 0));
+      ctx.textAlign = flip ? 'right' : 'left';
+      ctx.font = '400 5px Inter, system-ui, sans-serif';
+      ctx.fillStyle = node.seenCount > 0 ? '#15803d' : '#9ca3af';
+      ctx.fillText(node.data.comName, 0, 0);
+      ctx.restore();
+    }
+  }
+}
+
+// ── Polar hit testing ──────────────────────────────────────────
+function binarySearch(nodes, theta) {
+  let lo = 0, hi = nodes.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if      (nodes[mid].x1 <= theta) lo = mid + 1;
+    else if (nodes[mid].x0 >  theta) hi = mid - 1;
+    else return nodes[mid];
+  }
+  return null;
+}
+
+function findNodeAt(mx, my) {
+  if (!precomp) return null;
+  const wx = (mx - W / 2 - xf.x) / xf.k;
+  const wy = (my - H / 2 - xf.y) / xf.k;
+  const r  = Math.hypot(wx, wy);
+
+  // Convert canvas angle back to partition space
+  let theta = Math.atan2(wy, wx) - DRAW_OFFSET;
+  theta = ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  if (theta > TREE_SPAN) return null; // inside the gap
+
+  // Find which depth band contains r
+  for (let depth = 1; depth <= 3; depth++) {
+    const iR = NODE_R[depth] * outerR;
+    const oR = NODE_R[depth + 1] * outerR;
+    if (r >= iR && r <= oR) {
+      return binarySearch(precomp.nodesByDepth.get(depth) || [], theta);
+    }
+  }
+  const tickInner = NODE_R[4] * outerR;
+  const tickOuter = SPECIES_R * outerR;
+  const nodes4    = precomp.nodesByDepth.get(4) || [];
+
+  // Dot check (highest priority): covers the full 2px dot [tickOuter-2, tickOuter+3].
+  // A dot covers ~24 species partitions, so scan ±30 neighbours by Euclidean distance
+  // rather than relying on angle-based binary search.
+  if (r >= tickOuter - 2 && r <= tickOuter + 3) {
+    let lo = 0, hi = nodes4.length - 1, idx = 0;
+    while (lo <= hi) {
+      const m = (lo + hi) >> 1;
+      if      (nodes4[m].x1 <= theta) { lo = m + 1; idx = lo; }
+      else if (nodes4[m].x0  > theta)   hi = m - 1;
+      else                             { idx = m; break; }
+    }
+    let best = null, bestDist = 3.0;
+    const lo2 = Math.max(0, idx - 30), hi2 = Math.min(nodes4.length - 1, idx + 30);
+    for (let i = lo2; i <= hi2; i++) {
+      const sp = nodes4[i];
+      if (sp.seenCount === 0) continue;
+      const spMid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      const d = Math.hypot(wx - tickOuter * Math.cos(spMid),
+                           wy - tickOuter * Math.sin(spMid));
+      if (d < bestDist) { bestDist = d; best = sp; }
+    }
+    if (best) return best;  // on a green dot — return seen species
+    // Not on any dot; fall through to tick-zone handling below
+  }
+
+  // Tick zone [NODE_R[4], SPECIES_R]: binary search by angle — any species
+  if (r >= tickInner && r <= tickOuter) {
+    return binarySearch(nodes4, theta);
+  }
+  return null;
+}
+
+// ── Tooltip ────────────────────────────────────────────────────
+const ttEl   = document.getElementById('tooltip');
+const ttName = document.getElementById('tt-name');
+const ttSci  = document.getElementById('tt-sci');
+const ttPct  = document.getElementById('tt-pct');
+const ttTag  = document.getElementById('tt-tag');
+
+function showTooltip(node, ex, ey) {
+  const d = node.data;
+  if (d.type === 'species') {
+    ttName.textContent = d.comName;
+    ttSci.textContent  = d.name;
+    ttPct.textContent  = '';
+    ttTag.textContent  = node.seenCount > 0 ? '✓ In your life list' : 'Not yet seen';
+    ttTag.style.color  = node.seenCount > 0 ? '#15803d' : '#6b7280';
+  } else {
+    const label = { order:'Order', family:'Family', genus:'Genus' }[d.type] || '';
+    ttName.textContent = label + ': ' + (d.comName && d.comName !== d.name ? d.comName : d.name);
+    ttSci.textContent  = (d.comName && d.comName !== d.name) ? d.name : '';
+    const pct = (node.seenPct * 100).toFixed(1);
+    ttPct.textContent  = `${node.seenCount.toLocaleString()} / ${node.totalCount.toLocaleString()} species seen (${pct}%)`;
+    ttTag.textContent  = '';
+  }
+  posTooltip(ex, ey);
+  ttEl.style.display = 'block';
+}
+
+function posTooltip(ex, ey) {
+  const tw = ttEl.offsetWidth  || 180;
+  const th = ttEl.offsetHeight || 70;
+  let lx = ex + 14, ly = ey + 12;
+  if (lx + tw > window.innerWidth)  lx = ex - tw - 14;
+  if (ly + th > window.innerHeight) ly = ey - th - 12;
+  ttEl.style.left = lx + 'px';
+  ttEl.style.top  = ly + 'px';
+}
+
+function hideTooltip() { ttEl.style.display = 'none'; }
+
+// ── Mouse / wheel / touch events ──────────────────────────────
+let drag = null;
+
+canvas.addEventListener('mousedown', e => {
+  drag = { sx: e.clientX, sy: e.clientY, ox: xf.x, oy: xf.y };
+  canvas.style.cursor = 'grabbing';
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (drag) {
+    xf.x = drag.ox + (e.clientX - drag.sx);
+    xf.y = drag.oy + (e.clientY - drag.sy);
+    hideTooltip();
+    scheduleRender();
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const node = findNodeAt(e.clientX - rect.left, e.clientY - rect.top);
+  if (node !== hovNode) { hovNode = node; scheduleRender(); }
+  if (node) showTooltip(node, e.clientX, e.clientY);
+  else hideTooltip();
+});
+
+canvas.addEventListener('mouseup',    () => { drag = null; canvas.style.cursor = 'grab'; });
+canvas.addEventListener('mouseleave', () => {
+  drag = null; canvas.style.cursor = 'grab';
+  hovNode = null; hideTooltip(); scheduleRender();
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const newK = Math.max(0.08, Math.min(50, xf.k * factor));
+  const sc   = newK / xf.k;
+  xf.x = mx - W/2 + (xf.x - (mx - W/2)) * sc;
+  xf.y = my - H/2 + (xf.y - (my - H/2)) * sc;
+  xf.k = newK;
+  scheduleRender();
+}, { passive: false });
+
+let pinch = null;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    pinch = { dist: Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                               e.touches[0].clientY - e.touches[1].clientY), k: xf.k };
+  } else if (e.touches.length === 1) {
+    drag = { sx: e.touches[0].clientX, sy: e.touches[0].clientY, ox: xf.x, oy: xf.y };
+  }
+}, { passive: true });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 2 && pinch) {
+    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                         e.touches[0].clientY - e.touches[1].clientY);
+    xf.k = Math.max(0.08, Math.min(50, pinch.k * (d / pinch.dist)));
+    scheduleRender();
+  } else if (e.touches.length === 1 && drag) {
+    xf.x = drag.ox + (e.touches[0].clientX - drag.sx);
+    xf.y = drag.oy + (e.touches[0].clientY - drag.sy);
+    scheduleRender();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { drag = null; pinch = null; });
+
+// ── Zoom buttons ───────────────────────────────────────────────
+document.getElementById('btn-zi').onclick = () => { xf.k = Math.min(50, xf.k * 1.4); scheduleRender(); };
+document.getElementById('btn-zo').onclick = () => { xf.k = Math.max(0.08, xf.k / 1.4); scheduleRender(); };
+document.getElementById('btn-zr').onclick = () => { xf = { x: 0, y: 0, k: 1 }; scheduleRender(); };
+
+// ── Resize ─────────────────────────────────────────────────────
+function resize() {
+  const sidebar = document.querySelector('.sidebar');
+  W = window.innerWidth - sidebar.offsetWidth;
+  H = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  outerR = Math.min(W, H) / 2 - 90;
+  scheduleRender();
+}
+window.addEventListener('resize', resize);
+
+// ── File upload helpers ────────────────────────────────────────
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = e => resolve(e.target.result);
+    r.onerror = () => reject(new Error('Could not read ' + file.name));
+    r.readAsText(file, 'UTF-8');
+  });
+}
+
+function setupZone(zoneId, inputId, onFile) {
+  const zone  = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+
+  input.addEventListener('change', async () => {
+    const f = input.files[0]; if (!f) return;
+    try { onFile(parseCSV(await readFile(f)), f.name); }
+    catch(e) { zoneError(zoneId, e.message); }
+  });
+
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', async e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    try { onFile(parseCSV(await readFile(f)), f.name); }
+    catch(e) { zoneError(zoneId, e.message); }
+  });
+}
+
+function zoneLoaded(zoneId, statusId, msg) {
+  const z = document.getElementById(zoneId);
+  z.classList.remove('drag-over','error');
+  z.classList.add('loaded');
+  document.getElementById(statusId).textContent = msg;
+}
+
+function zoneError(zoneId, msg) {
+  const z = document.getElementById(zoneId);
+  z.classList.remove('loaded');
+  z.classList.add('error');
+  const sid = zoneId === 'zone-tx' ? 'status-tx' : 'status-ll';
+  document.getElementById(sid).textContent = '⚠ ' + msg.split('\n')[0];
+}
+
+// ── Stats update ───────────────────────────────────────────────
+function updateStats() {
+  if (!precomp) return;
+  const total = precomp.totalSpecies;
+  const seen  = seenSet.size > 0 ? precomp.root.seenCount : 0;
+  const pct   = total > 0 ? (seen / total * 100).toFixed(1) : '0.0';
+  document.getElementById('stat-seen').textContent  = seen.toLocaleString();
+  document.getElementById('stat-total').textContent = total.toLocaleString();
+  document.getElementById('stat-pct').textContent   = pct + '%';
+  document.getElementById('stat-bar').style.width   = pct + '%';
+  document.getElementById('stats-panel').style.display = '';
+}
+
+// ── Process taxonomy ───────────────────────────────────────────
+function processTaxonomy(rows, label) {
+  const { root, totalSpecies } = buildHierarchy(rows);
+  precompute(root);
+  annotate();
+  updateStats();
+  scheduleRender();
+  zoneLoaded('zone-tx', 'status-tx', `${label} · ${totalSpecies.toLocaleString()} species`);
+}
+
+// ── Process life list ──────────────────────────────────────────
+function processLifeList(rows, fname) {
+  lifeListRows = rows;
+  lifeListName = fname;
+  seenSet = parseLifeList(rows);
+  if (seenSet.size === 0) throw new Error('No countable species found in file.');
+  annotate();
+  updateStats();
+  scheduleRender();
+  zoneLoaded('zone-ll', 'status-ll', `${seenSet.size.toLocaleString()} species from ${fname}`);
+}
+
+// ── Upload zones ───────────────────────────────────────────────
+setupZone('zone-tx', 'input-tx', (rows, fname) => {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('hint-tx').textContent = `Custom upload · ${today} · Drop another to replace`;
+  processTaxonomy(rows, fname);
+});
+
+setupZone('zone-ll', 'input-ll', (rows, fname) => processLifeList(rows, fname));
+
+document.getElementById('chk-exotic').addEventListener('change', () => {
+  if (!lifeListRows) return;
+  seenSet = parseLifeList(lifeListRows);
+  annotate();
+  updateStats();
+  scheduleRender();
+  zoneLoaded('zone-ll', 'status-ll', `${seenSet.size.toLocaleString()} species from ${lifeListName}`);
+});
+
+// ── Auto-load Clements from files/clements_data.js ────────────
+// The CSV is embedded as window.CLEMENTS_CSV_TEXT by a <script src> tag
+// (see scripts/generate_clements_data.py) rather than fetched over the
+// network. A <script> load works the same whether the page is opened via
+// file://, a local server, or GitHub Pages — unlike fetch(), which
+// browsers block for local file:// URLs.
+(function autoLoadTaxonomy() {
+  const hintEl = document.getElementById('hint-tx');
+  const today  = new Date().toISOString().slice(0, 10);
+
+  if (typeof window.CLEMENTS_CSV_TEXT === 'string') {
+    const rows = parseCSV(window.CLEMENTS_CSV_TEXT);
+    hintEl.textContent = `Clements Oct 2025 · auto-loaded ${today} · Drop file to override`;
+    processTaxonomy(rows, 'Clements Oct 2025');
+    return;
+  }
+
+  hintEl.textContent = 'Drop Clements CSV here, or run scripts/generate_clements_data.py';
+})();
+
+// ── Init ───────────────────────────────────────────────────────
+resize();
+scheduleRender();
+</script>
+</body>
+</html>
