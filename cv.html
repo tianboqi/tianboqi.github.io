@@ -31,10 +31,7 @@
   </div>
 </header>
 <nav class="topnav" id="cv-topnav">
-  <button class="nav-toggle" id="cv-nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="cv-topnav-inner">
-    <i class="fa-solid fa-bars"></i>
-  </button>
-  <div class="topnav-inner" id="cv-topnav-inner">
+  <div class="topnav-inner">
       <a href="#education">Education</a>
       <a href="#research">Research</a>
       <a href="#publications">Publications</a>
@@ -124,7 +121,8 @@
     <h2>Awards & Honors</h2>
     <ul class="cv-list">
       <li>2021 Helen L. Dorris Scholar, Scripps Research</li>
-      <li>2018 Scholarship of Undergraduate Overseas Research Training Program, 2018 Scholarship of Overall Excellence, 2017 Scholarship of Academic Excellence, Tsinghua University</li>
+      <li>2018 Scholarship of Overall Excellence, Tsinghua University</li>
+      <li>2017 Scholarship of Academic Excellence, Tsinghua University</li>
       <li>2014 Silver Medal in Chinese National Biology Olympiad</li>
     </ul>
   </section>
@@ -174,23 +172,6 @@
     }, { rootMargin: '-20% 0px -70% 0px' });
     sections.forEach(s => observer.observe(s));
   }
-
-  // Collapsible menu on narrow viewports
-  const cvTopnav = document.getElementById('cv-topnav');
-  const cvNavToggle = document.getElementById('cv-nav-toggle');
-  const cvNavIcon = cvNavToggle.querySelector('i');
-  const closeCvMenu = () => {
-    cvTopnav.classList.remove('open');
-    cvNavToggle.setAttribute('aria-expanded', 'false');
-    cvNavIcon.classList.replace('fa-xmark', 'fa-bars');
-  };
-  cvNavToggle.addEventListener('click', () => {
-    const isOpen = cvTopnav.classList.toggle('open');
-    cvNavToggle.setAttribute('aria-expanded', String(isOpen));
-    cvNavIcon.classList.toggle('fa-bars', !isOpen);
-    cvNavIcon.classList.toggle('fa-xmark', isOpen);
-  });
-  navLinks.forEach(a => a.addEventListener('click', closeCvMenu));
 </script>
 
 </body>
