@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Borrowed Chords — Tianbo Qi</title>
+  <meta name="description" content="An interactive reference of borrowed and non-diatonic chords in a major key: which chord qualities each chromatic root supports, how common each is, where it comes from, and how it sounds in context.">
+  <meta name="author" content="Tianbo Qi">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      --max-w: 1240px;
+      --dia-bg:    #e9eefb;
+      --dia-br:    #bfcdee;
+      --common-bg: #f6dcc5;
+      --common-br: #e7b98d;
+      --ok-bg:     #fdefe2;
+      --ok-br:     #f2d4b8;
+      --rare-bg:   #ffffff;
+      --rare-br:   #dcdcdc;
+    }
+
+    .lead { color: var(--ink-soft); }
+
+    /* Neither Inter nor Lora carries ♭ and ♯, so they fall back to a symbol
+       font that sets them on a full em square. Pull the side bearings back in
+       so the sign sits against the letter it belongs to. */
+    .acc { font-size: 0.86em; margin-left: -0.1em; margin-right: -0.08em; }
+    /* The chord symbols in the boxes are short and already well spaced;
+       tightening there crowds the letter, so leave them alone. */
+    .cell .acc, .cell-empty .acc { font-size: 1em; margin: 0; }
+
+    /* ── Toolbar ────────────────────────────────────────── */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      margin: 0 0 22px;
+      border: 1px solid var(--rule);
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: saturate(180%) blur(8px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .tb-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 24px;
+    }
+    .tb-row + .tb-row { border-top: 1px solid var(--rule); padding-top: 10px; }
+
+    .tb-group {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .tb-group.grow { margin-left: auto; }
+
+    .tb-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      white-space: nowrap;
+    }
+
+    .sel-wrap { position: relative; display: inline-flex; }
+    .sel-wrap::after {
+      content: '';
+      position: absolute; right: 11px; top: 50%;
+      width: 6px; height: 6px;
+      border-right: 1.5px solid var(--ink-faint);
+      border-bottom: 1.5px solid var(--ink-faint);
+      transform: translateY(-70%) rotate(45deg);
+      pointer-events: none;
+    }
+    .toolbar select {
+      appearance: none; -webkit-appearance: none;
+      font-family: inherit; font-size: 0.85rem; line-height: 1.3;
+      padding: 5px 30px 5px 11px;
+      border: 1px solid var(--rule-bold);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      transition: border-color 0.12s ease;
+    }
+    .toolbar select:hover { border-color: var(--link); }
+    .toolbar select:focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+
+    .seg {
+      display: inline-flex;
+      padding: 2px;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 7px;
+    }
+    .seg button {
+      font-family: inherit; font-size: 0.82rem;
+      padding: 4px 13px;
+      border: 0; border-radius: 5px;
+      background: transparent;
+      color: var(--ink-faint);
+      cursor: pointer;
+      transition: color 0.12s ease;
+    }
+    .seg button:hover { color: var(--ink); }
+    .seg button.on {
+      background: #fff;
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.13);
+    }
+
+    .tb-check {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 0.82rem; color: var(--ink-soft);
+      cursor: pointer; white-space: nowrap;
+    }
+    .tb-check input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .switch {
+      flex: none; position: relative;
+      width: 30px; height: 17px;
+      border-radius: 999px;
+      background: #d6d6d6;
+      transition: background 0.15s ease;
+    }
+    .switch::after {
+      content: '';
+      position: absolute; top: 2px; left: 2px;
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.28);
+      transition: transform 0.15s ease;
+    }
+    .tb-check input:checked + .switch { background: var(--link); }
+    .tb-check input:checked + .switch::after { transform: translateX(13px); }
+    .tb-check input:focus-visible + .switch { outline: 2px solid var(--link); outline-offset: 2px; }
+
+    .toolbar input[type=range] {
+      appearance: none; -webkit-appearance: none;
+      width: 84px; height: 3px;
+      border-radius: 2px;
+      background: var(--rule-bold);
+      cursor: pointer;
+    }
+    .toolbar input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--link); border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toolbar input[type=range]::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--link); border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .tb-val {
+      font-size: 0.74rem; color: var(--ink-faint);
+      font-variant-numeric: tabular-nums; min-width: 22px;
+    }
+
+    .btn {
+      font-family: inherit; font-size: 0.82rem;
+      padding: 5px 13px;
+      border: 1px solid var(--rule-bold); border-radius: 6px;
+      background: #fff; color: var(--ink-soft);
+      cursor: pointer;
+      transition: border-color 0.12s ease, color 0.12s ease;
+    }
+    .btn:hover { border-color: var(--link-hover); color: var(--link-hover); }
+
+    .status {
+      font-size: 0.78rem; color: var(--ink-faint);
+      white-space: nowrap; font-style: italic;
+    }
+    .status.busy { color: var(--link-hover); font-style: normal; }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .work { display: grid; grid-template-columns: minmax(0,1fr) 336px; gap: 24px; align-items: start; }
+    .grid-scroll { overflow-x: auto; }
+
+    /* Fixed layout so the boxes keep their size when columns gain or lose
+       content — switching "Rare" on must not reflow the table. */
+    table.chords {
+      border-collapse: separate; border-spacing: 4px;
+      width: 100%; table-layout: fixed; min-width: 640px;
+    }
+    table.chords th.deg-h, table.chords td.deg { width: 96px; }
+    table.chords th {
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--ink-faint);
+      padding: 0 0 6px; text-align: center;
+    }
+    table.chords th.deg-h { text-align: left; }
+    table.chords th small {
+      display: block; margin-top: 1px;
+      font-weight: 400; font-size: 0.68rem;
+      letter-spacing: 0; text-transform: none; color: #9a9a9a;
+    }
+
+    td.deg {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 0.95rem; white-space: nowrap;
+      padding-right: 10px; line-height: 1.25;
+    }
+    /* Scoped to its own class: a bare `td.deg span` would also catch the
+       .acc wrappers and break "♭II" across two lines. */
+    td.deg .deg-note {
+      display: block;
+      font-family: 'Inter', sans-serif; font-size: 0.72rem; color: var(--ink-faint);
+    }
+
+    /* Filled and empty boxes share one box model so a row keeps its geometry
+       no matter which cells are showing. */
+    .cell, .cell-empty {
+      width: 100%; min-height: 48px;
+      font-family: inherit;
+      padding: 7px 5px;
+      border-radius: 7px;
+      text-align: center; line-height: 1.2;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .cell {
+      border: 1px solid var(--rare-br);
+      background: var(--rare-bg);
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+    }
+    .cell:hover { transform: translateY(-1px); box-shadow: 0 3px 9px rgba(0,0,0,0.11); }
+    .cell-empty { border: 1px dashed #efefef; background: #fbfbfb; }
+
+    .cell .sym, .cell-empty .sym { display: block; font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+    .cell .tag, .cell-empty .tag {
+      display: block; font-size: 0.67rem; color: var(--ink-faint); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cell-empty .sym { color: #d2d2d2; font-weight: 400; }
+
+    .cell.r-diatonic { background: var(--dia-bg); border-color: var(--dia-br); }
+    .cell.r-common   { background: var(--common-bg); border-color: var(--common-br); }
+    .cell.r-ok       { background: var(--ok-bg); border-color: var(--ok-br); }
+    .cell.r-rare     { background: var(--rare-bg); border-color: var(--rare-br); border-style: dashed; }
+    .cell.r-rare .sym { color: var(--ink-faint); font-weight: 500; }
+
+    .cell.sel  { outline: 2.5px solid var(--link-hover); outline-offset: 1px; }
+    .cell.dim  { opacity: 0.22; }
+    .cell.hit  { outline: 2.5px solid var(--link); outline-offset: 1px; }
+
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 6px 18px;
+      margin-top: 16px; font-size: 0.76rem; color: var(--ink-faint);
+    }
+    .legend i {
+      display: inline-block; width: 13px; height: 13px;
+      border-radius: 3px; border: 1px solid;
+      vertical-align: -2px; margin-right: 6px;
+    }
+    .lg-dia    { background: var(--dia-bg); border-color: var(--dia-br); }
+    .lg-common { background: var(--common-bg); border-color: var(--common-br); }
+    .lg-ok     { background: var(--ok-bg); border-color: var(--ok-br); }
+    .lg-rare   { background: var(--rare-bg); border-color: var(--rare-br); border-style: dashed; }
+    .form-note { font-size: 0.76rem; color: var(--ink-faint); margin: 9px 0 0; }
+
+    /* ── Detail panel ───────────────────────────────────── */
+    .detail {
+      position: sticky; top: 82px;
+      border: 1px solid var(--rule); border-radius: 10px;
+      background: var(--surface);
+      padding: 18px 18px 20px;
+      font-size: 0.86rem;
+    }
+    .detail .placeholder { color: var(--ink-faint); }
+    .d-sym { font-family: 'Lora', Georgia, serif; font-size: 1.5rem; font-weight: 600; line-height: 1.1; }
+    .d-rn  { font-size: 0.88rem; color: var(--ink-faint); margin-top: 3px; }
+    .d-badges { margin-top: 11px; display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip {
+      font-size: 0.7rem; padding: 2px 9px; border-radius: 999px;
+      background: #fff; border: 1px solid var(--rule-bold); color: var(--ink-soft);
+    }
+    .chip.rarity-diatonic { background: var(--dia-bg); border-color: var(--dia-br); }
+    .chip.rarity-common   { background: var(--common-bg); border-color: var(--common-br); }
+    .chip.rarity-ok       { background: var(--ok-bg); border-color: var(--ok-br); }
+    .chip.src { cursor: pointer; }
+    .chip.src:hover { border-color: var(--link); color: var(--link); }
+    .d-notes { font-size: 0.75rem; color: var(--ink-faint); margin: 10px 0 0; }
+    .d-text { margin: 12px 0 0; line-height: 1.62; color: var(--ink-soft); }
+    .d-text em { color: var(--ink); font-style: normal; font-weight: 600; }
+
+    .prog { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; }
+    .prog-title {
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--ink-faint); margin-bottom: 9px;
+    }
+    .prog-row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px; }
+    .play-btn {
+      flex: none; width: 27px; height: 27px; border-radius: 50%;
+      border: 1px solid var(--rule-bold); background: #fff; color: var(--link);
+      cursor: pointer; line-height: 1; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    .play-btn:hover { border-color: var(--link); background: var(--link); color: #fff; }
+    .play-btn.playing { background: var(--link-hover); border-color: var(--link-hover); color: #fff; }
+    /* A right-pointing triangle carries its mass left of center, so nudge it right */
+    .play-btn svg { display: block; width: 9px; height: 11px; fill: currentColor; transform: translateX(1px); }
+    .prog-body { min-width: 0; }
+    .prog-name { font-size: 0.79rem; color: var(--ink); font-weight: 600; }
+    .cmp { font-weight: 400; font-style: italic; font-size: 0.72rem; color: var(--ink-faint); }
+    .prog-chords { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .pc {
+      font-size: 0.72rem; padding: 1px 7px; border-radius: 4px;
+      background: #fff; border: 1px solid var(--rule);
+      color: var(--ink-faint); white-space: nowrap;
+    }
+    .pc.now { background: var(--link-hover); border-color: var(--link-hover); color: #fff; }
+    .pc b { font-weight: 600; color: var(--ink); }
+    .pc.now b { color: #fff; }
+    .prog-note { font-size: 0.73rem; color: var(--ink-faint); margin-top: 4px; line-height: 1.5; }
+
+    /* ── Source index ───────────────────────────────────── */
+    .srcs { display: grid; grid-template-columns: repeat(auto-fill, minmax(262px, 1fr)); gap: 12px; }
+    .src-card {
+      text-align: left; font-family: inherit; font-size: 0.82rem;
+      border: 1px solid var(--rule); border-radius: 9px; background: #fff;
+      padding: 13px 15px; cursor: pointer; line-height: 1.55;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .src-card:hover { border-color: var(--link); box-shadow: 0 3px 10px rgba(0,0,0,0.06); }
+    .src-card.on { border-color: var(--link); background: #f4f7fe; box-shadow: inset 0 0 0 1px var(--link); }
+    .src-card h3 {
+      margin: 0 0 5px; font-size: 0.92rem;
+      font-family: 'Lora', Georgia, serif; font-weight: 600;
+    }
+    .src-card p { margin: 0; color: var(--ink-faint); font-size: 0.78rem; }
+
+    @media (max-width: 980px) {
+      .work { grid-template-columns: minmax(0,1fr); }
+      .detail { position: static; }
+      .tb-group.grow { margin-left: 0; width: 100%; }
+    }
+    @media (max-width: 640px) {
+      .toolbar { border-radius: 8px; padding: 10px 12px; gap: 9px 16px; }
+      .cell, .cell-empty { min-height: 38px; }
+      .cell .sym, .cell-empty .sym { font-size: 0.86rem; }
+      .cell .tag, .cell-empty .tag { display: none; }
+      table.chords { min-width: 420px; }
+      table.chords th.deg-h, table.chords td.deg { width: 62px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="banner">
+  <div class="banner-inner">
+    <div class="banner-text">
+      <h1 class="banner-name">Borrowed Chords</h1>
+      <p class="banner-sub"><a href="misc.html">← Miscellaneous</a></p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <p class="lead">
+    A map of the chords available in a major key, diatonic and borrowed alike: which qualities each of the twelve
+    chromatic roots supports, how common each one is, where it comes from — modal mixture, secondary dominants,
+    passing diminished chords, tritone substitution — and what it actually sounds like against the tonic.
+    Click any cell to see its sources and hear it; every example is synthesized in the browser.
+    </p>
+  </section>
+
+  <section>
+    <h2>Chord availability table</h2>
+
+    <div class="toolbar" id="toolbar">
+      <div class="tb-row">
+        <div class="tb-group">
+          <span class="tb-label">Key</span>
+          <span class="sel-wrap"><select id="keySel"></select></span>
+        </div>
+        <div class="tb-group">
+          <span class="tb-label">Chords</span>
+          <div class="seg" id="formSeg">
+            <button type="button" data-form="seventh" class="on">Sevenths</button>
+            <button type="button" data-form="triad">Triads</button>
+          </div>
+        </div>
+        <div class="tb-group">
+          <span class="tb-label">Show</span>
+          <label class="tb-check"><input type="checkbox" id="showDim" checked><span class="switch"></span>Diminished</label>
+          <label class="tb-check"><input type="checkbox" id="showRare"><span class="switch"></span>Rare</label>
+        </div>
+      </div>
+      <div class="tb-row">
+        <div class="tb-group">
+          <span class="tb-label">Sound</span>
+          <span class="sel-wrap"><select id="instSel">
+            <option value="acoustic_grand_piano">Piano</option>
+            <option value="string_ensemble_1">Strings</option>
+            <option value="synth">Synth (offline)</option>
+          </select></span>
+        </div>
+        <div class="tb-group">
+          <span class="tb-label">Tempo</span>
+          <input type="range" id="tempo" min="46" max="132" value="76">
+          <span class="tb-val" id="tempoVal">76</span>
+        </div>
+        <div class="tb-group">
+          <span class="tb-label">Volume</span>
+          <input type="range" id="vol" min="0" max="100" value="75">
+        </div>
+        <div class="tb-group">
+          <button class="btn" id="stopBtn" type="button">Stop</button>
+        </div>
+        <div class="tb-group grow"><span class="status" id="status">Click a chord to hear it</span></div>
+      </div>
+    </div>
+
+    <div class="work">
+      <div>
+        <div class="grid-scroll"><table class="chords" id="grid"></table></div>
+        <div class="legend">
+          <span><i class="lg-dia"></i>In the key</span>
+          <span><i class="lg-common"></i>Common</span>
+          <span><i class="lg-ok"></i>Usable</span>
+          <span><i class="lg-rare"></i>Rare</span>
+          <span>Blank — not used as a chord in its own right</span>
+        </div>
+        <p class="form-note" id="formNote"></p>
+      </div>
+
+      <aside class="detail" id="detail">
+        <p class="placeholder">Pick a chord to see where it comes from, how common it is, and the progressions it lives in.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section>
+    <h2>Where they come from</h2>
+    <p class="lead">Click a card to highlight every chord produced by that mechanism.</p>
+    <div class="srcs" id="srcCards"></div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>
+      Sampled instruments from the <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">FluidR3_GM</a>
+      soundfont (Frank Wen, MIT), loaded through <a href="https://github.com/danigb/soundfont-player" target="_blank" rel="noopener">soundfont-player</a> (MIT);
+      the page falls back to a built-in Web Audio synth when they are unavailable.
+    </p>
+    <p style="margin-top:6px">&copy; 2026 Tianbo Qi. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   1. Note spelling
+   ════════════════════════════════════════════════════════════ */
+
+const LETTERS   = ['C','D','E','F','G','A','B'];
+const LETTER_PC = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+
+const TONICS = [
+  { name:'C',  letter:0, acc:0  }, { name:'D♭', letter:1, acc:-1 },
+  { name:'D',  letter:1, acc:0  }, { name:'E♭', letter:2, acc:-1 },
+  { name:'E',  letter:2, acc:0  }, { name:'F',  letter:3, acc:0  },
+  { name:'F♯', letter:3, acc:1  }, { name:'G',  letter:4, acc:0  },
+  { name:'A♭', letter:5, acc:-1 }, { name:'A',  letter:5, acc:0  },
+  { name:'B♭', letter:6, acc:-1 }, { name:'B',  letter:6, acc:0  }
+];
+
+const SHARP_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const FLAT_NAMES  = ['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+
+// Default spelling of each scale degree, plus the enharmonic alternative
+const DEGREES = [
+  { roman:'I',    steps:0, alt:null                     },
+  { roman:'♭II',  steps:1, alt:{ roman:'♯I',  steps:0 } },
+  { roman:'II',   steps:1, alt:null                     },
+  { roman:'♭III', steps:2, alt:{ roman:'♯II', steps:1 } },
+  { roman:'III',  steps:2, alt:null                     },
+  { roman:'IV',   steps:3, alt:null                     },
+  { roman:'♯IV',  steps:3, alt:{ roman:'♭V',  steps:4 } },
+  { roman:'V',    steps:4, alt:null                     },
+  { roman:'♭VI',  steps:5, alt:{ roman:'♯V',  steps:4 } },
+  { roman:'VI',   steps:5, alt:null                     },
+  { roman:'♭VII', steps:6, alt:{ roman:'♯VI', steps:5 } },
+  { roman:'VII',  steps:6, alt:null                     }
+];
+
+function tonicPc(t) { return ((LETTER_PC[LETTERS[t.letter]] + t.acc) % 12 + 12) % 12; }
+
+// Spell by letter step; fall back to a plain enharmonic name rather than
+// print a double sharp or double flat.
+function spellNote(t, steps, semis) {
+  const letter   = LETTERS[(t.letter + steps) % 7];
+  const targetPc = (tonicPc(t) + semis) % 12;
+  let acc = (targetPc - LETTER_PC[letter] + 12) % 12;
+  if (acc > 6) acc -= 12;
+  if (Math.abs(acc) > 1) return (t.acc < 0 ? FLAT_NAMES : SHARP_NAMES)[targetPc];
+  return letter + (acc > 0 ? '♯' : acc < 0 ? '♭' : '');
+}
+
+/* ── Chord qualities ────────────────────────────────────── */
+const QUAL = {
+  maj7 : { sym:'maj7', rn:'maj7', iv:[0,4,7,11], minorish:false },
+  m7   : { sym:'m7',   rn:'7',    iv:[0,3,7,10], minorish:true  },
+  dom7 : { sym:'7',    rn:'7',    iv:[0,4,7,10], minorish:false },
+  m7b5 : { sym:'ø7',   rn:'ø7',   iv:[0,3,6,10], minorish:true  },
+  dim7 : { sym:'°7',   rn:'°7',   iv:[0,3,6,9],  minorish:true  },
+  maj  : { sym:'',     rn:'',     iv:[0,4,7],    minorish:false },
+  min  : { sym:'m',    rn:'',     iv:[0,3,7],    minorish:true  },
+  dim  : { sym:'°',    rn:'°',    iv:[0,3,6],    minorish:true  }
+};
+
+const SEVENTH_COLS = ['maj7','m7','dom7','m7b5','dim7'];
+const TRIAD_COLS   = ['maj','min','dim'];
+
+const COL_HEAD = {
+  maj7:['Major','maj7'], m7:['Minor','m7'], dom7:['Dominant','7'],
+  m7b5:['Half-dim.','m7♭5'], dim7:['Diminished','°7'],
+  maj:['Major',''], min:['Minor','m'], dim:['Diminished','°']
+};
+
+const RANK      = { diatonic:4, common:3, ok:2, rare:1, none:0 };
+const RARITY_EN = { diatonic:'In the key', common:'Common', ok:'Usable', rare:'Rare', none:'—' };
+
+/* ════════════════════════════════════════════════════════════
+   2. Sources
+   ════════════════════════════════════════════════════════════ */
+
+const SOURCES = [
+  { id:'mixture', name:'Modal mixture',
+    desc:'Chords lifted straight out of the parallel minor — iv, ♭III, ♭VI, ♭VII, iiø7, minor i. By far the most common source of color in a major key.' },
+  { id:'modal', name:'Other modal borrowings',
+    desc:'The ♯4 of Lydian (II, ♯ivø7), the ♭7 of Mixolydian (♭VII, minor v), the ♭2 of Phrygian (♭II).' },
+  { id:'secdom', name:'Secondary dominants',
+    desc:'Treat any diatonic chord as a temporary tonic and put a dominant a fifth above it. The most general way out of the key.' },
+  { id:'secdim', name:'Passing diminished',
+    desc:'♯i°, ♯ii°, ♯iv°, ♯v° and vii°: a semitone bridge between two diatonic degrees, equivalent to the matching secondary dominant ♭9 without its root.' },
+  { id:'tritone', name:'Tritone substitution',
+    desc:'Any dominant seventh can be swapped for the one a tritone away — they share the same third and seventh — turning a falling fifth into a falling semitone.' },
+  { id:'relii', name:'The ii of a secondary ii–V',
+    desc:'Put a secondary dominant’s own ii in front of it and you get a temporary ii–V. Most of the otherwise unexplainable minor sevenths come from here.' },
+  { id:'backdoor', name:'Backdoor dominant',
+    desc:'iv7 – ♭VII7 – Imaj7: the ii–V of the parallel minor, reaching the tonic from a whole tone below instead of through V.' },
+  { id:'mediant', name:'Chromatic mediants',
+    desc:'Major chords a third away from the tonic that share a note or two with it: ♭III, ♭VI, III, VI. The color changes abruptly without the connection breaking.' },
+  { id:'blues', name:'Blues dominants',
+    desc:'Every degree turned into a dominant seventh (I7, IV7, ♭III7, ♭VII7) with no obligation to resolve; the sound carries itself.' }
+];
+const SRC_NAME = { dia:'Diatonic', chromatic:'Chromatic voice leading' };
+SOURCES.forEach(s => SRC_NAME[s.id] = s.name);
+
+/* ════════════════════════════════════════════════════════════
+   3. Seventh-chord view
+      r = rarity   tag = grid caption   s = sources   t = prose
+      sp:'alt' = use the enharmonic spelling
+      p = examples: { n:name, c:[[degree, quality]], note:why it is here }
+   ════════════════════════════════════════════════════════════ */
+
+const C = (d, q) => [d, q];
+
+const SEVENTH = [
+/* ───── 0  I ───────────────────────────────────────────── */
+{
+  maj7:{ r:'diatonic', tag:'Tonic', s:['dia'],
+    t:'The tonic. Every color on this page is measured against it.',
+    p:[{ n:'Reference', c:[C(0,'maj7'),C(5,'maj7'),C(7,'dom7'),C(0,'maj7')] }] },
+  m7:{ r:'common', tag:'Aeolian i', s:['mixture'],
+    t:'The tonic chord taken from the parallel minor. <em>I → Im</em> is the most direct light-to-dark move available, and it opens the door to ♭VI and ♭VII.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(0,'m7'),C(0,'maj7')] },
+       { n:'Into the flat side and back', c:[C(0,'maj7'),C(0,'m7'),C(8,'maj7'),C(10,'dom7'),C(0,'maj7')] },
+       { n:'As the ii of ♭VII', c:[C(0,'m7'),C(5,'dom7'),C(10,'maj7')],
+         note:'Im7 – IV7 – ♭VIImaj7 is a complete temporary ii–V, which is the other reason minor i turns up.' }] },
+  dom7:{ r:'common', tag:'V7/IV', s:['secdom','blues'],
+    t:'Add a minor seventh and the tonic becomes the dominant of IV. In common-practice writing it has to resolve there; in blues I7 is simply the tonic and resolves nowhere.',
+    p:[{ n:'Resolving to IV', c:[C(0,'maj7'),C(0,'dom7'),C(5,'maj7'),C(5,'m7'),C(0,'maj7')] },
+       { n:'Blues, first eight bars', c:[C(0,'dom7'),C(5,'dom7'),C(0,'dom7'),C(7,'dom7'),C(5,'dom7'),C(0,'dom7')],
+         note:'Here I7 never resolves — it is the home chord.' }] },
+  m7b5:{ r:'none' },
+  dim7:{ r:'none' }
+},
+/* ───── 1  ♭II / ♯I ────────────────────────────────────── */
+{
+  maj7:{ r:'common', tag:'Phrygian ♭II', s:['modal','mixture'],
+    t:'The ♭2 of Phrygian, built into a major seventh. Jazz drops it straight onto the tonic as a gentler substitute for the dominant; classical writing uses the triad in first inversion before V, where it is called the <em>Neapolitan sixth</em>.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(1,'maj7'),C(0,'maj7')] },
+       { n:'Classical approach to V', c:[C(5,'m7'),C(1,'maj7'),C(7,'dom7'),C(0,'maj7')],
+         note:'Normally voiced as ♭II⁶ with IV still in the bass.' },
+       { n:'Jazz cadence', c:[C(2,'m7'),C(1,'maj7'),C(0,'maj7')] }] },
+  m7:{ r:'rare', tag:'Chromatic passing', s:['chromatic'],
+    t:'Hardly ever a chord in its own right. It appears inside a chain of minor sevenths sliding down by semitone, where the voices move in parallel and no function is implied.',
+    p:[{ n:'Descending chain', c:[C(2,'m7'),C(1,'m7'),C(0,'maj7')] }] },
+  dom7:{ r:'common', tag:'subV7/I', s:['tritone'],
+    t:'<em>Tritone substitution.</em> ♭II7 and V7 contain the same tritone — the third of one is the seventh of the other — so either resolves to I, with the root falling a semitone instead of a fifth.',
+    p:[{ n:'A · the original', c:[C(2,'m7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'B · substituted', c:[C(2,'m7'),C(1,'dom7'),C(0,'maj7')],
+         note:'Same two guide tones, new root.' },
+       { n:'With its own ii', c:[C(8,'m7'),C(1,'dom7'),C(0,'maj7')] }] },
+  m7b5:{ r:'none' },
+  dim7:{ r:'common', tag:'Passing I – ii', s:['secdim'], sp:'alt',
+    t:'<em>♯i°7</em> fills the step between I and ii. It is V7♭9/ii with the root removed, so it behaves exactly like a secondary dominant while the bass simply walks up by semitone.',
+    p:[{ n:'Passing into ii', c:[C(0,'maj7'),C(1,'dim7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'The same thing with a root', c:[C(0,'maj7'),C(9,'dom7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')],
+         note:'VI7 and ♯i°7 differ by one note.' }] }
+},
+/* ───── 2  II ──────────────────────────────────────────── */
+{
+  maj7:{ r:'rare', tag:'Rare', s:['chromatic'],
+    t:'The II <em>triad</em> is common — it is V/V, and also the II of Lydian. A major seventh on top is another matter: it raises the tonic to ♯1, a note in neither the key nor Lydian, whose II carries a minor seventh instead. The result is bright but has no route home, and usually means the music is moving to the key of V.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(2,'maj7'),C(0,'maj7')] }] },
+  m7:{ r:'diatonic', tag:'ii', s:['dia'],
+    t:'The diatonic ii, the starting point of functional harmony.',
+    p:[{ n:'ii – V – I', c:[C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
+  dom7:{ r:'common', tag:'V7/V', s:['secdom','blues'],
+    t:'The most-used secondary dominant. Its ♯4 is the leading tone of V, which is why it is the easiest non-diatonic note for an ear to accept.',
+    p:[{ n:'Resolving to V', c:[C(0,'maj7'),C(2,'dom7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'Arriving from vi', c:[C(0,'maj7'),C(9,'m7'),C(2,'dom7'),C(7,'dom7'),C(0,'maj7')] }] },
+  m7b5:{ r:'common', tag:'Aeolian iiø7', s:['mixture'],
+    t:'The ii chord borrowed from the parallel minor. <em>iiø7 – V7♭9 – I</em> gives a major-key cadence the weight of a minor one without changing the destination.',
+    p:[{ n:'A · diatonic ii', c:[C(2,'m7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'B · borrowed iiø7', c:[C(2,'m7b5'),C(7,'dom7'),C(0,'maj7')] }] },
+  dim7:{ r:'rare', tag:'Rare', s:['secdim'],
+    t:'A diminished seventh on II is unusual; the semitone bridges around here are ♯i°7 and ♯ii°7 instead.' }
+},
+/* ───── 3  ♭III / ♯II ──────────────────────────────────── */
+{
+  maj7:{ r:'common', tag:'Aeolian ♭III', s:['mixture','mediant'],
+    t:'III of the parallel minor, and a chromatic mediant: it shares a note with the tonic (E♭–G–B♭ against C–E–G), which is why the jump lands softly.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(3,'maj7'),C(0,'maj7')] },
+       { n:'The full borrowed set', c:[C(0,'maj7'),C(3,'maj7'),C(8,'maj7'),C(10,'dom7'),C(0,'maj7')] }] },
+  m7:{ r:'rare', tag:'Chromatic descent', s:['chromatic'],
+    t:'A passing chord in the stepwise descent iii7 – ♭iii7 – ii7, produced by the voices sliding down together rather than by any function.',
+    p:[{ n:'iii – ♭iii – ii', c:[C(4,'m7'),C(3,'m7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
+  dom7:{ r:'ok', tag:'subV7/ii', s:['tritone','blues'],
+    t:'The tritone substitute for VI7, falling a semitone into ii. Blues playing also uses ♭III7 as a chord in its own right.',
+    p:[{ n:'A · the original', c:[C(4,'m7'),C(9,'dom7'),C(2,'m7')] },
+       { n:'B · substituted', c:[C(4,'m7'),C(3,'dom7'),C(2,'m7')] }] },
+  m7b5:{ r:'none' },
+  dim7:{ r:'common', tag:'Passing ii – iii', s:['secdim'], sp:'alt',
+    t:'<em>♯ii°7</em> connects ii to iii, and is V7♭9/iii without its root. It has a second life as a common-tone chord that shares three notes with I and resolves straight back to it.',
+    p:[{ n:'Passing into iii', c:[C(2,'m7'),C(3,'dim7'),C(4,'m7'),C(9,'dom7'),C(2,'m7')] },
+       { n:'Common-tone resolution', c:[C(0,'maj7'),C(3,'dim7'),C(0,'maj7')],
+         note:'No motion is implied here — it only makes the tonic shimmer.' }] }
+},
+/* ───── 4  III ─────────────────────────────────────────── */
+{
+  maj7:{ r:'ok', tag:'Chromatic mediant', s:['mediant'],
+    t:'As a plain triad this is V/vi — see the triad view. The major-seventh version gives up that function and becomes a chromatic mediant sharing E with the tonic.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(4,'maj7'),C(0,'maj7')] },
+       { n:'Mediant shift', c:[C(0,'maj7'),C(4,'maj7'),C(9,'m7'),C(5,'maj7'),C(0,'maj7')] }] },
+  m7:{ r:'diatonic', tag:'iii', s:['dia'],
+    t:'The diatonic iii, close enough to the tonic (it shares E–G–B) to stand in for it.',
+    p:[{ n:'Circle of fifths', c:[C(0,'maj7'),C(4,'m7'),C(9,'m7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
+  dom7:{ r:'common', tag:'V7/vi', s:['secdom'],
+    t:'The dominant of vi. After V7/V this is the secondary dominant you meet most often, and it introduces the ♯5 of the key as vi’s leading tone.',
+    p:[{ n:'Resolving to vi', c:[C(0,'maj7'),C(4,'dom7'),C(9,'m7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'With its own ii', c:[C(11,'m7b5'),C(4,'dom7'),C(9,'m7')] }] },
+  m7b5:{ r:'common', tag:'ii of V7/ii', s:['relii'],
+    t:'Turns up as the ii of VI7: <em>iiiø7 – VI7 – ii7</em>. Half-diminished rather than minor because the chord being tonicized, ii, is itself minor.',
+    p:[{ n:'Secondary ii–V into ii', c:[C(4,'m7b5'),C(9,'dom7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
+  dim7:{ r:'none' }
+},
+/* ───── 5  IV ──────────────────────────────────────────── */
+{
+  maj7:{ r:'diatonic', tag:'Subdominant', s:['dia'],
+    t:'The diatonic subdominant, the most natural single step away from the tonic.',
+    p:[{ n:'Plagal motion', c:[C(0,'maj7'),C(5,'maj7'),C(0,'maj7')] }] },
+  m7:{ r:'common', tag:'Aeolian iv', s:['mixture','backdoor'],
+    t:'<em>Minor iv</em>, the borrowed chord listeners accept most readily: its ♭6 sits a semitone above the fifth of the tonic and falls onto it. It is also the front half of the backdoor cadence.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(5,'m7'),C(0,'maj7')] },
+       { n:'After major IV', c:[C(0,'maj7'),C(5,'maj7'),C(5,'m7'),C(0,'maj7')],
+         note:'Worth hearing because the major and minor versions arrive back to back: only the third moves, and that one semitone is the whole effect.' },
+       { n:'Backdoor cadence', c:[C(5,'m7'),C(10,'dom7'),C(0,'maj7')] }] },
+  dom7:{ r:'common', tag:'Blues · V7/♭VII', s:['blues','secdom'],
+    t:'In blues IV7 resolves nowhere. In functional writing it is the dominant of ♭VII and pushes the music further toward the flat side.',
+    p:[{ n:'Blues', c:[C(0,'dom7'),C(5,'dom7'),C(0,'dom7')] },
+       { n:'As V7/♭VII', c:[C(0,'maj7'),C(5,'dom7'),C(10,'maj7'),C(0,'maj7')] }] },
+  m7b5:{ r:'rare', tag:'Rare', s:['mixture'],
+    t:'Rare in a major key. It belongs to minor-key writing, or to a line where iv is darkened one step further.' },
+  dim7:{ r:'none' }
+},
+/* ───── 6  ♯IV / ♭V ────────────────────────────────────── */
+{
+  maj7:{ r:'rare', tag:'Rare', s:['modal'],
+    t:'Shares almost nothing with the home key. In practice it signals an outright modulation rather than a borrowed chord.' },
+  m7:{ r:'ok', tag:'ii of V7/iii', s:['relii'],
+    t:'Appears as the ii of VII7: <em>♯ivm7 – VII7 – iii7</em>.',
+    p:[{ n:'Secondary ii–V into iii', c:[C(6,'m7'),C(11,'dom7'),C(4,'m7')] }] },
+  dom7:{ r:'ok', tag:'subV7/IV', s:['tritone'],
+    t:'The tritone substitute for I7, dropping a semitone onto IV. Inserted into a blues it turns the leap from I to IV into a semitone approach.',
+    p:[{ n:'A · the original', c:[C(0,'maj7'),C(0,'dom7'),C(5,'maj7')] },
+       { n:'B · substituted', c:[C(0,'maj7'),C(6,'dom7'),C(5,'maj7')] }] },
+  m7b5:{ r:'common', tag:'Lydian ♯iv', s:['modal','relii'],
+    t:'The Lydian ♯4 chord, and the ii of VII7. Placed after IVmaj7 it makes the bass climb IV – ♯IV – V while the upper voices hold.',
+    p:[{ n:'Climbing to V', c:[C(5,'maj7'),C(6,'m7b5'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'As a secondary ii', c:[C(6,'m7b5'),C(11,'dom7'),C(4,'m7')] }] },
+  dim7:{ r:'common', tag:'Passing IV – V', s:['secdim'],
+    t:'The classic passing diminished chord: the bass rises IV – ♯IV – V while everything above it barely moves.',
+    p:[{ n:'Passing into V', c:[C(5,'maj7'),C(6,'dim7'),C(7,'dom7'),C(0,'maj7')] }] }
+},
+/* ───── 7  V ───────────────────────────────────────────── */
+{
+  maj7:{ r:'ok', tag:'Lydian V', s:['modal'],
+    t:'The triad is diatonic, but the major seventh on top (F♯ in C) is not in the key — it is the ♯4 that makes Lydian, and this chord is exactly the V of Lydian. The dominant function evaporates and what remains is that brightness.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(7,'maj7'),C(0,'maj7')] },
+       { n:'Modal context', c:[C(0,'maj7'),C(7,'maj7'),C(9,'m7'),C(5,'maj7')] }] },
+  m7:{ r:'common', tag:'Mixolydian v', s:['mixture','relii'],
+    t:'Minor v removes the leading tone, so the dominant function goes with it. Its usual job is to act as the ii of IV — <em>v7 – I7 – IV</em> — moving the music toward the subdominant.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(7,'m7'),C(0,'maj7')] },
+       { n:'Secondary ii–V into IV', c:[C(0,'maj7'),C(7,'m7'),C(0,'dom7'),C(5,'maj7')] }] },
+  dom7:{ r:'diatonic', tag:'Dominant', s:['dia'],
+    t:'The diatonic dominant seventh, the engine of functional harmony.',
+    p:[{ n:'Perfect cadence', c:[C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
+  m7b5:{ r:'none' },
+  dim7:{ r:'none' }
+},
+/* ───── 8  ♭VI / ♯V ────────────────────────────────────── */
+{
+  maj7:{ r:'common', tag:'Aeolian ♭VI', s:['mixture','mediant'],
+    t:'VI of the parallel minor, sharing the tonic note itself. <em>♭VI – ♭VII – I</em> is the standard lift-off cadence of pop and film scoring.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(8,'maj7'),C(0,'maj7')] },
+       { n:'♭VI – ♭VII – I', c:[C(8,'maj7'),C(10,'dom7'),C(0,'maj7')] }] },
+  m7:{ r:'ok', tag:'ii of subV7/I', s:['relii','tritone'],
+    t:'The ii belonging to ♭II7: <em>♭vim7 – ♭II7 – Imaj7</em>. The whole ii–V moves up a semitone together, which softens the cadence.',
+    p:[{ n:'Substituted ii–V', c:[C(8,'m7'),C(1,'dom7'),C(0,'maj7')] }] },
+  dom7:{ r:'common', tag:'subV7/V', s:['tritone'],
+    t:'The tritone substitute for II7, falling onto V. Classical harmony writes the same four notes as the German augmented sixth, spelling the seventh as an augmented sixth so that it can resolve outwards.',
+    p:[{ n:'A · the original', c:[C(0,'maj7'),C(2,'dom7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'B · substituted', c:[C(0,'maj7'),C(8,'dom7'),C(7,'dom7'),C(0,'maj7')] }] },
+  m7b5:{ r:'none' },
+  dim7:{ r:'common', tag:'Passing V – vi', s:['secdim'], sp:'alt',
+    t:'<em>♯v°7</em> bridges V and vi, with the bass stepping up by semitone. It is V7♭9/vi without its root.',
+    p:[{ n:'Passing into vi', c:[C(7,'dom7'),C(8,'dim7'),C(9,'m7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] }
+},
+/* ───── 9  VI ──────────────────────────────────────────── */
+{
+  maj7:{ r:'ok', tag:'Chromatic mediant', s:['mediant'],
+    t:'As a triad this is V/ii — see the triad view. With a major seventh it drops that function and becomes a chromatic mediant sharing A with the tonic, a favorite sudden brightening in pop.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(9,'maj7'),C(0,'maj7')] },
+       { n:'Mediant shift', c:[C(0,'maj7'),C(9,'maj7'),C(5,'maj7'),C(0,'maj7')] }] },
+  m7:{ r:'diatonic', tag:'vi', s:['dia'],
+    t:'The diatonic vi, tonic of the relative minor.',
+    p:[{ n:'Pop turnaround', c:[C(0,'maj7'),C(9,'m7'),C(5,'maj7'),C(7,'dom7'),C(0,'maj7')] }] },
+  dom7:{ r:'common', tag:'V7/ii', s:['secdom'],
+    t:'The dominant of ii, made by turning the diatonic vi major and adding a seventh. <em>I – VI7 – ii – V – I</em> has been standard since Tin Pan Alley.',
+    p:[{ n:'A · diatonic vi', c:[C(0,'maj7'),C(9,'m7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'B · secondary dominant', c:[C(0,'maj7'),C(9,'dom7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
+  m7b5:{ r:'rare', tag:'Rare', s:['mixture','chromatic'],
+    t:'Occasionally used to darken vi one step at a time inside a descending line; almost never on its own.' },
+  dim7:{ r:'none' }
+},
+/* ───── 10  ♭VII ───────────────────────────────────────── */
+{
+  maj7:{ r:'common', tag:'Mixolydian ♭VII', s:['mixture','modal'],
+    t:'The VII of Mixolydian: the parallel minor puts a minor seventh here instead, so the major-seventh version is the modal one. <em>I – ♭VII – IV – I</em> is the defining rock progression, and ♭VII – I works as a cadence on its own terms.',
+    p:[{ n:'The color on its own', c:[C(0,'maj7'),C(10,'maj7'),C(0,'maj7')] },
+       { n:'Rock progression', c:[C(0,'maj7'),C(10,'maj7'),C(5,'maj7'),C(0,'maj7')] }] },
+  m7:{ r:'rare', tag:'Rare', s:['relii'],
+    t:'Rare. It turns up as the ii of ♭III7, itself a substitute chord: ♭viim7 – ♭III7 – ii7.',
+    p:[{ n:'Substituted ii–V', c:[C(10,'m7'),C(3,'dom7'),C(2,'m7')] }] },
+  dom7:{ r:'common', tag:'Backdoor · subV7/vi', s:['backdoor','mixture','blues'],
+    t:'The <em>backdoor dominant</em>. Instead of approaching the tonic from V it comes from a whole tone below: its third and seventh resolve to the root and the major third of I. It doubles as the tritone substitute for III7.',
+    p:[{ n:'A · front door', c:[C(2,'m7'),C(7,'dom7'),C(0,'maj7')] },
+       { n:'B · backdoor', c:[C(5,'m7'),C(10,'dom7'),C(0,'maj7')] },
+       { n:'As subV7/vi', c:[C(10,'dom7'),C(9,'m7')] }] },
+  m7b5:{ r:'none' },
+  dim7:{ r:'none' }
+},
+/* ───── 11  VII ────────────────────────────────────────── */
+{
+  maj7:{ r:'rare', tag:'Rare', s:['mediant'],
+    t:'Almost no common tones with the key. Used as a bare juxtaposition, or as the arrival point of a modulation.' },
+  m7:{ r:'ok', tag:'ii of V7/vi', s:['relii'],
+    t:'The ii of III7. Minor seventh when vi is being treated as a major-key tonic; when it stays minor, viiø7 is the usual choice.',
+    p:[{ n:'Secondary ii–V into vi', c:[C(11,'m7'),C(4,'dom7'),C(9,'m7')] }] },
+  dom7:{ r:'common', tag:'V7/iii', s:['secdom'],
+    t:'The dominant of iii. Because iii is a weak destination, VII7 usually appears inside a chain of falling fifths rather than on its own.',
+    p:[{ n:'Chain of fifths', c:[C(11,'dom7'),C(4,'m7'),C(9,'dom7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
+  m7b5:{ r:'diatonic', tag:'viiø7', s:['dia','relii'],
+    t:'The only half-diminished chord in the major scale. It can stand in for V7, and often serves as the ii of III7.',
+    p:[{ n:'Standing in for V7', c:[C(11,'m7b5'),C(0,'maj7')] },
+       { n:'As a secondary ii', c:[C(11,'m7b5'),C(4,'dom7'),C(9,'m7')] }] },
+  dim7:{ r:'common', tag:'Harmonic minor vii°', s:['mixture','secdim'],
+    t:'Borrowed from the parallel harmonic minor, and identical to V7♭9 without its root. Every voice moves by step when it resolves to I.',
+    p:[{ n:'Resolving to I', c:[C(11,'dim7'),C(0,'maj7')] },
+       { n:'Approached from IV', c:[C(5,'maj7'),C(11,'dim7'),C(0,'maj7')] }] }
+}
+];
+</script>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   4. Triad view
+      A dominant triad is simply a major triad, so there is no
+      dominant column here: secondary dominants live under Major.
+   ════════════════════════════════════════════════════════════ */
+
+const TRIAD = [
+/* ───── 0  I ───────────────────────────────────────────── */
+{
+  maj:{ r:'diatonic', tag:'Tonic', s:['dia'],
+    t:'The tonic. Every color on this page is measured against it.',
+    p:[{ n:'Reference', c:[C(0,'maj'),C(5,'maj'),C(7,'maj'),C(0,'maj')] }] },
+  min:{ r:'common', tag:'Aeolian i', s:['mixture'],
+    t:'The tonic taken from the parallel minor. <em>I → i</em> is the most direct light-to-dark move available, and it opens the door to ♭VI and ♭VII.',
+    p:[{ n:'The color on its own', c:[C(0,'maj'),C(0,'min'),C(0,'maj')] },
+       { n:'Into the flat side and back', c:[C(0,'maj'),C(0,'min'),C(8,'maj'),C(10,'maj'),C(0,'maj')] }] },
+  dim:{ r:'none' }
+},
+/* ───── 1  ♭II / ♯I ────────────────────────────────────── */
+{
+  maj:{ r:'common', tag:'Phrygian ♭II', s:['modal','mixture'],
+    t:'The ♭2 of Phrygian. Normally written in first inversion — ♭II⁶, with IV still in the bass — so that it approaches V smoothly; classical harmony calls that the <em>Neapolitan sixth</em>.',
+    p:[{ n:'The color on its own', c:[C(0,'maj'),C(1,'maj'),C(0,'maj')] },
+       { n:'Approach to V', c:[C(5,'min'),C(1,'maj'),C(7,'maj'),C(0,'maj')] }] },
+  min:{ r:'rare', tag:'Rare', s:['chromatic'],
+    t:'Effectively unused. The Neapolitan is a major triad; the minor version has no standard route into a major key.' },
+  dim:{ r:'ok', tag:'Passing I – ii', s:['secdim'], sp:'alt',
+    t:'<em>♯i°</em> fills the step between I and ii, with the bass walking up by semitone. As a seventh chord it is far more common — see the seventh view.',
+    p:[{ n:'Passing into ii', c:[C(0,'maj'),C(1,'dim'),C(2,'min'),C(7,'maj'),C(0,'maj')] }] }
+},
+/* ───── 2  II ──────────────────────────────────────────── */
+{
+  maj:{ r:'common', tag:'V/V · Lydian II', s:['secdom','modal'],
+    t:'The dominant of the dominant, and the most-used secondary dominant of all. Its ♯4 is the leading tone of V, which is why it is the easiest non-diatonic note for an ear to accept — it is also the note that defines Lydian, so the same triad reads as Lydian II when nothing resolves to V.',
+    p:[{ n:'Resolving to V', c:[C(0,'maj'),C(2,'maj'),C(7,'maj'),C(0,'maj')] },
+       { n:'Arriving from vi', c:[C(0,'maj'),C(9,'min'),C(2,'maj'),C(7,'maj'),C(0,'maj')] }] },
+  min:{ r:'diatonic', tag:'ii', s:['dia'],
+    t:'The diatonic ii, the standard approach to the dominant.',
+    p:[{ n:'ii – V – I', c:[C(2,'min'),C(7,'maj'),C(0,'maj')] }] },
+  dim:{ r:'ok', tag:'Aeolian ii°', s:['mixture'],
+    t:'The ii of the parallel minor. Substituted for the diatonic ii it gives a major-key cadence the weight of a minor one.',
+    p:[{ n:'A · diatonic ii', c:[C(0,'maj'),C(2,'min'),C(7,'maj'),C(0,'maj')] },
+       { n:'B · borrowed ii°', c:[C(0,'maj'),C(2,'dim'),C(7,'maj'),C(0,'maj')] }] }
+},
+/* ───── 3  ♭III / ♯II ──────────────────────────────────── */
+{
+  maj:{ r:'common', tag:'Aeolian ♭III', s:['mixture','mediant'],
+    t:'III of the parallel minor, and a chromatic mediant: it shares a note with the tonic (E♭–G–B♭ against C–E–G), which is why the jump lands softly.',
+    p:[{ n:'The color on its own', c:[C(0,'maj'),C(3,'maj'),C(0,'maj')] },
+       { n:'The full borrowed set', c:[C(0,'maj'),C(3,'maj'),C(8,'maj'),C(10,'maj'),C(0,'maj')] }] },
+  min:{ r:'rare', tag:'Rare', s:['chromatic'],
+    t:'Rare. It appears between iii and ii in a chromatic descent, as a product of voice leading rather than a chord with a function.' },
+  dim:{ r:'ok', tag:'Passing ii – iii', s:['secdim'], sp:'alt',
+    t:'<em>♯ii°</em> connects ii to iii. The seventh-chord form is the one usually written — see the seventh view.',
+    p:[{ n:'Passing into iii', c:[C(2,'min'),C(3,'dim'),C(4,'min')] }] }
+},
+/* ───── 4  III ─────────────────────────────────────────── */
+{
+  maj:{ r:'common', tag:'V/vi', s:['secdom','mediant'],
+    t:'The dominant of vi, and after V/V the secondary dominant you meet most often. It raises the fifth degree of the key to act as vi’s leading tone.',
+    p:[{ n:'Resolving to vi', c:[C(0,'maj'),C(4,'maj'),C(9,'min'),C(5,'maj'),C(0,'maj')] },
+       { n:'As a bare mediant', c:[C(0,'maj'),C(4,'maj'),C(0,'maj')],
+         note:'Without the resolution to vi it is heard as a chromatic mediant instead — the same chord doing a different job.' }] },
+  min:{ r:'diatonic', tag:'iii', s:['dia'],
+    t:'The diatonic iii, close enough to the tonic to stand in for it.',
+    p:[{ n:'Circle of fifths', c:[C(0,'maj'),C(4,'min'),C(9,'min'),C(2,'min'),C(7,'maj'),C(0,'maj')] }] },
+  dim:{ r:'none' }
+},
+/* ───── 5  IV ──────────────────────────────────────────── */
+{
+  maj:{ r:'diatonic', tag:'Subdominant', s:['dia'],
+    t:'The diatonic subdominant, the most natural single step away from the tonic.',
+    p:[{ n:'Plagal motion', c:[C(0,'maj'),C(5,'maj'),C(0,'maj')] }] },
+  min:{ r:'common', tag:'Aeolian iv', s:['mixture'],
+    t:'<em>Minor iv</em>, the borrowed chord listeners accept most readily: its ♭6 sits a semitone above the fifth of the tonic and falls onto it.',
+    p:[{ n:'The color on its own', c:[C(0,'maj'),C(5,'min'),C(0,'maj')] },
+       { n:'After major IV', c:[C(0,'maj'),C(5,'maj'),C(5,'min'),C(0,'maj')],
+         note:'Worth hearing because the two versions arrive back to back: only the third moves, and that single semitone is the whole effect.' },
+       { n:'Plagal cadence, minor', c:[C(8,'maj'),C(5,'min'),C(0,'maj')] }] },
+  dim:{ r:'none' }
+},
+/* ───── 6  ♯IV / ♭V ────────────────────────────────────── */
+{
+  maj:{ r:'rare', tag:'Rare', s:['modal'],
+    t:'Shares almost nothing with the home key. In practice it signals an outright modulation rather than a borrowed chord.' },
+  min:{ r:'rare', tag:'Rare', s:['relii'],
+    t:'Rare as a plain triad. This root is normally occupied by ♯ivø7 or ♯iv°7 instead — see the seventh view.' },
+  dim:{ r:'common', tag:'Passing IV – V', s:['secdim'],
+    t:'The classic passing diminished chord: the bass rises IV – ♯IV – V while everything above it barely moves.',
+    p:[{ n:'Passing into V', c:[C(5,'maj'),C(6,'dim'),C(7,'maj'),C(0,'maj')] }] }
+},
+/* ───── 7  V ───────────────────────────────────────────── */
+{
+  maj:{ r:'diatonic', tag:'Dominant', s:['dia'],
+    t:'The diatonic dominant, the engine of functional harmony.',
+    p:[{ n:'Perfect cadence', c:[C(2,'min'),C(7,'maj'),C(0,'maj')] }] },
+  min:{ r:'common', tag:'Mixolydian v', s:['mixture','modal'],
+    t:'Minor v removes the leading tone, and the dominant function goes with it. What is left is the ♭7 of Mixolydian, which is why the chord points toward the subdominant rather than the tonic.',
+    p:[{ n:'The color on its own', c:[C(0,'maj'),C(7,'min'),C(0,'maj')] },
+       { n:'Toward the subdominant', c:[C(0,'maj'),C(7,'min'),C(5,'maj'),C(0,'maj')] }] },
+  dim:{ r:'none' }
+},
+/* ───── 8  ♭VI / ♯V ────────────────────────────────────── */
+{
+  maj:{ r:'common', tag:'Aeolian ♭VI', s:['mixture','mediant'],
+    t:'VI of the parallel minor, sharing the tonic note itself. <em>♭VI – ♭VII – I</em> is the standard lift-off cadence of pop and film scoring.',
+    p:[{ n:'The color on its own', c:[C(0,'maj'),C(8,'maj'),C(0,'maj')] },
+       { n:'♭VI – ♭VII – I', c:[C(8,'maj'),C(10,'maj'),C(0,'maj')] }] },
+  min:{ r:'rare', tag:'Rare', s:['chromatic'],
+    t:'Rare. Found as a passing darkening of ♭VI, or on the way into a key on the flat side.' },
+  dim:{ r:'ok', tag:'Passing V – vi', s:['secdim'], sp:'alt',
+    t:'<em>♯v°</em> bridges V and vi, with the bass stepping up by semitone.',
+    p:[{ n:'Passing into vi', c:[C(7,'maj'),C(8,'dim'),C(9,'min'),C(5,'maj'),C(0,'maj')] }] }
+},
+/* ───── 9  VI ──────────────────────────────────────────── */
+{
+  maj:{ r:'common', tag:'V/ii', s:['secdom','mediant'],
+    t:'The dominant of ii, made by turning the diatonic vi major. <em>I – VI – ii – V – I</em> has been standard since Tin Pan Alley.',
+    p:[{ n:'A · diatonic vi', c:[C(0,'maj'),C(9,'min'),C(2,'min'),C(7,'maj'),C(0,'maj')] },
+       { n:'B · secondary dominant', c:[C(0,'maj'),C(9,'maj'),C(2,'min'),C(7,'maj'),C(0,'maj')] }] },
+  min:{ r:'diatonic', tag:'vi', s:['dia'],
+    t:'The diatonic vi, tonic of the relative minor.',
+    p:[{ n:'Pop turnaround', c:[C(0,'maj'),C(9,'min'),C(5,'maj'),C(7,'maj'),C(0,'maj')] }] },
+  dim:{ r:'none' }
+},
+/* ───── 10  ♭VII ───────────────────────────────────────── */
+{
+  maj:{ r:'common', tag:'Mixolydian ♭VII', s:['mixture','modal'],
+    t:'VII of the parallel minor, or the ♭7 of Mixolydian. <em>I – ♭VII – IV – I</em> is the defining rock progression, and ♭VII – I works as a cadence on its own terms.',
+    p:[{ n:'The color on its own', c:[C(0,'maj'),C(10,'maj'),C(0,'maj')] },
+       { n:'Rock progression', c:[C(0,'maj'),C(10,'maj'),C(5,'maj'),C(0,'maj')] }] },
+  min:{ r:'rare', tag:'Rare', s:['chromatic'],
+    t:'Rare. ♭VII is borrowed as a major triad; the minor form has no standard route into a major key.' },
+  dim:{ r:'none' }
+},
+/* ───── 11  VII ────────────────────────────────────────── */
+{
+  maj:{ r:'ok', tag:'V/iii', s:['secdom'],
+    t:'The dominant of iii. Because iii is a weak destination it is the least used of the secondary dominants, and usually appears inside a chain of falling fifths.',
+    p:[{ n:'Chain of fifths', c:[C(11,'maj'),C(4,'min'),C(9,'maj'),C(2,'min'),C(7,'maj'),C(0,'maj')] }] },
+  min:{ r:'rare', tag:'Rare', s:['relii'],
+    t:'Rare as a triad: the diatonic chord on this degree is diminished, and a minor triad here points toward a modulation.' },
+  dim:{ r:'diatonic', tag:'vii°', s:['dia'],
+    t:'The only diminished triad in the major scale. It carries the leading tone and can stand in for V, usually in first inversion so that the bass still rises by step.',
+    p:[{ n:'Resolving to I', c:[C(11,'dim'),C(0,'maj')] },
+       { n:'Approached from IV', c:[C(5,'maj'),C(11,'dim'),C(0,'maj')] }] }
+}
+];
+</script>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   5. State
+   ════════════════════════════════════════════════════════════ */
+
+const state = {
+  keyIdx  : 0,
+  form    : 'seventh',
+  showDim : true,
+  showRare: false,
+  tempo   : 76,
+  vol     : 75,
+  inst    : 'acoustic_grand_piano',
+  sel     : null,   // { d, q }
+  hl      : null    // highlighted source id
+};
+
+const $ = id => document.getElementById(id);
+
+// Wrap ♭ and ♯ so CSS can tighten them, leaving markup inside < > alone
+function fmt(html) {
+  return html.replace(/<[^>]*>|[^<]+/g, seg => seg.charAt(0) === '<' ? seg
+    : seg.replace(/[♭♯]/g, m => '<span class="acc">' + m + '</span>'));
+}
+
+const DATA = () => state.form === 'triad' ? TRIAD : SEVENTH;
+const ALL_COLS = () => state.form === 'triad' ? TRIAD_COLS : SEVENTH_COLS;
+const DIM_COLS = { maj7:0, m7:0, dom7:0, m7b5:1, dim7:1, maj:0, min:0, dim:1 };
+
+// Keep the selection pointing at the same idea when the view changes
+const TO_TRIAD   = { maj7:'maj', dom7:'maj', m7:'min', m7b5:'dim', dim7:'dim' };
+const TO_SEVENTH = { maj:'maj7', min:'m7', dim:'dim7' };
+
+/* ════════════════════════════════════════════════════════════
+   6. Spelling and chord construction
+   ════════════════════════════════════════════════════════════ */
+
+function cellOf(d, q) { return (DATA()[d] && DATA()[d][q]) || { r:'none' }; }
+
+function spellingOf(d, q) {
+  const deg = DEGREES[d], cell = DATA()[d] && DATA()[d][q];
+  const alt = cell && cell.sp === 'alt' && deg.alt;
+  return alt ? { steps: deg.alt.steps, roman: deg.alt.roman } : { steps: deg.steps, roman: deg.roman };
+}
+
+const lower = s => s.replace(/[A-Z]+/g, m => m.toLowerCase());
+
+function rootName(d, q) { return spellNote(TONICS[state.keyIdx], spellingOf(d, q).steps, d); }
+function chordSym(d, q) { return rootName(d, q) + QUAL[q].sym; }
+
+function romanOf(d, q) {
+  const base = spellingOf(d, q).roman;
+  return (QUAL[q].minorish ? lower(base) : base) + QUAL[q].rn;
+}
+
+function chordTones(d, q) {
+  const root = (tonicPc(TONICS[state.keyIdx]) + d) % 12;
+  return { root: root, pcs: QUAL[q].iv.map(i => (root + i) % 12) };
+}
+
+// Chords stack in thirds, so each tone is two letter steps above the last;
+// spelling them that way keeps Fm7 as F–A♭–C–E♭ rather than F–G♯–C–D♯.
+function toneNames(d, q) {
+  const t = TONICS[state.keyIdx], steps = spellingOf(d, q).steps;
+  return QUAL[q].iv.map((iv, k) => spellNote(t, steps + 2 * k, d + iv)).join(' – ');
+}
+
+/* ════════════════════════════════════════════════════════════
+   7. Voice leading
+   ════════════════════════════════════════════════════════════ */
+
+function permutations(a) {
+  if (a.length <= 1) return [a];
+  const out = [];
+  a.forEach((x, i) => permutations(a.slice(0, i).concat(a.slice(i + 1)))
+    .forEach(p => out.push([x].concat(p))));
+  return out;
+}
+
+function nearest(pc, target) {
+  let d = ((pc - target) % 12 + 12) % 12;
+  if (d > 6) d -= 12;
+  return target + d;
+}
+
+function adaptBase(prev, n) {
+  const def = [60, 64, 67, 71, 74];
+  if (!prev) return def.slice(0, n);
+  const out = prev.slice(0, n);
+  while (out.length < n) out.push(out[out.length - 1] + 4);
+  return out;
+}
+
+// Pick the arrangement closest to where the previous chord left the voices
+function voice(pcs, base) {
+  const n = pcs.length;
+  let best = null;
+  permutations(pcs).forEach(perm => {
+    const v = perm.map((pc, i) => nearest(pc, base[i]));
+    if (new Set(v).size !== n) return;
+    let cost = 0;
+    for (let i = 0; i < n; i++) cost += Math.abs(v[i] - base[i]);
+    const s = v.slice().sort((a, b) => a - b);
+    if (s[0] < 55) cost += 14;
+    if (s[n - 1] > 82) cost += 14;
+    cost += (s[n - 1] - s[0]) * 0.3;
+    if (!best || cost < best.c) best = { c: cost, v: s };
+  });
+  return best ? best.v : pcs.map((pc, i) => nearest(pc, base[i])).sort((a, b) => a - b);
+}
+
+function bassFor(root, prev) {
+  let b = nearest(root, prev == null ? 43 : prev);
+  while (b < 38) b += 12;
+  while (b > 52) b -= 12;
+  return b;
+}
+
+/* ════════════════════════════════════════════════════════════
+   8. Audio
+   ════════════════════════════════════════════════════════════ */
+
+const SF_BASE = 'https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/';
+const INST_LABEL = { acoustic_grand_piano:'piano', string_ensemble_1:'strings' };
+
+// How each instrument speaks. `overlap` carries a chord a little way into the
+// next so the line never breaks, and `release` is kept short so the old
+// harmony clears before the new one settles; only the final chord uses
+// `releaseEnd` to fade out. `last` is how long that final chord is held.
+const STYLE = {
+  acoustic_grand_piano: { attack:0.004, decay:0.15, sustain:0.85, release:0.30, releaseEnd:0.60, overlap:0.06, last:1.8 },
+  string_ensemble_1:    { attack:0.10,  decay:0.25, sustain:0.95, release:0.18, releaseEnd:0.90, overlap:0.06, last:1.5 },
+  synth:                { attack:0.012, decay:0.35, sustain:0.55, release:0.30, releaseEnd:0.60, overlap:0.06, last:1.8 }
+};
+
+const Snd = {
+  ac:null, master:null, inst:null, loaded:{}, failed:false, sampleLen:3.1,
+  players:[], synths:[], timers:[],
+
+  ensure() {
+    if (!this.ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ac = new AC();
+      this.master = this.ac.createGain();
+      this.master.connect(this.ac.destination);
+      this.applyVol();
+    }
+    if (this.ac.state === 'suspended') this.ac.resume();
+    return this.ac;
+  },
+
+  applyVol() { if (this.master) this.master.gain.value = (state.vol / 100) * 0.9; },
+
+  style() { return (this.inst && STYLE[state.inst]) || STYLE.synth; },
+
+  async ready() {
+    this.ensure();
+    const name = state.inst;
+    if (name === 'synth' || this.failed || !window.Soundfont) { this.inst = null; return; }
+    if (this.loaded[name]) { this.inst = this.loaded[name]; return; }
+    setStatus('Loading the ' + INST_LABEL[name] + ' (2.6 MB, first time only)…', true);
+    try {
+      const inst = await Soundfont.instrument(this.ac, name, {
+        format:'mp3', soundfont:'FluidR3_GM', destination:this.master,
+        nameToUrl:(n, sf, f) => SF_BASE + sf + '/' + n + '-' + f + '.js'
+      });
+      this.loaded[name] = inst;
+      this.inst = inst;
+      // The samples are a fixed length and do not loop, so a note asked to
+      // last longer than one simply runs out of audio part way through.
+      const buf = inst.buffers && inst.buffers[Object.keys(inst.buffers)[0]];
+      this.sampleLen = buf ? buf.duration : 3.1;
+      setStatus('Sound ready');
+    } catch (e) {
+      this.failed = true;
+      this.inst = null;
+      setStatus('Samples unavailable — using the built-in synth');
+    }
+  },
+
+  note(midi, when, dur, gain, rel) {
+    const st = this.style();
+    const release = rel == null ? st.release : rel;
+    if (this.inst) {
+      // Keep the note inside the sample so it fades out instead of cutting off
+      const room = Math.max(0.3, this.sampleLen - 0.05 - release);
+      try {
+        this.players.push(this.inst.play(midi, when, {
+          duration: Math.min(dur, room), gain: gain,
+          attack:st.attack, decay:st.decay, sustain:st.sustain, release:release
+        }));
+        return;
+      } catch (e) { /* fall through to the synth */ }
+    }
+    this.synth(midi, when, dur, gain, st, release);
+  },
+
+  synth(midi, when, dur, gain, st, release) {
+    st = st || STYLE.synth;
+    const rel = release == null ? st.release : release;
+    const ac = this.ac;
+    const f = 440 * Math.pow(2, (midi - 69) / 12);
+    const g = ac.createGain();
+    const lp = ac.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 2400; lp.Q.value = 0.4;
+    lp.connect(g); g.connect(this.master);
+    [[1,0.55,'sine'],[2,0.2,'sine'],[3,0.08,'triangle'],[4,0.04,'triangle']]
+      .forEach(([mul, amp, type]) => {
+        const o = ac.createOscillator(), og = ac.createGain();
+        o.type = type; o.frequency.value = f * mul; og.gain.value = amp;
+        o.connect(og); og.connect(lp);
+        o.start(when); o.stop(when + dur + rel + 0.2);
+        this.synths.push({ o:o, g:g });
+      });
+    const peak = Math.max(gain, 0.001);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(peak, when + st.attack);
+    g.gain.exponentialRampToValueAtTime(Math.max(peak * st.sustain, 0.001), when + st.attack + st.decay);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur + rel);
+  },
+
+  stop() {
+    this.timers.forEach(clearTimeout);
+    this.timers = [];
+    this.players.forEach(p => { try { p.stop(); } catch (e) {} });
+    this.players = [];
+    if (this.inst) { try { this.inst.stop(); } catch (e) {} }
+    if (this.ac) {
+      const t = this.ac.currentTime;
+      this.synths.forEach(s => {
+        try { s.g.gain.cancelScheduledValues(t); s.g.gain.setTargetAtTime(0.0001, t, 0.03); s.o.stop(t + 0.3); }
+        catch (e) {}
+      });
+    }
+    this.synths = [];
+    clearPlayingUI();
+  }
+};
+
+/* ════════════════════════════════════════════════════════════
+   9. Playback
+   ════════════════════════════════════════════════════════════ */
+
+let playToken = 0;
+
+function scheduleChords(chords, onStep, onEnd) {
+  const st = Snd.style();
+  const step = (60 / state.tempo) * 2;
+  const t0 = Snd.ac.currentTime + 0.14;
+  const n = chords.length;
+  // A chord carries over by `overlap + release`. Held to a fraction of the
+  // beat, that reads as legato; left fixed, it swamps the next chord at fast
+  // tempos, so both are capped relative to the step.
+  const overlap = Math.min(st.overlap, step * 0.05);
+  const release = Math.min(st.release, step * 0.20);
+  let prev = null, prevBass = null;
+
+  chords.forEach((ch, i) => {
+    const { root, pcs } = chordTones(ch[0], ch[1]);
+    const up = voice(pcs, adaptBase(prev, pcs.length));
+    const bass = bassFor(root, prevBass);
+    prev = up; prevBass = bass;
+
+    const last = i === n - 1;
+    const dur = last ? st.last * step : step + overlap;
+    const rel = last ? st.releaseEnd : release;
+    const t = t0 + i * step;
+    Snd.note(bass, t, dur, 0.5, rel);              // every voice attacks together
+    up.forEach(m => Snd.note(m, t, dur, 0.44, rel));
+  });
+
+  if (onStep) chords.forEach((ch, i) =>
+    Snd.timers.push(setTimeout(() => onStep(i), 140 + i * step * 1000)));
+  if (onEnd)
+    Snd.timers.push(setTimeout(onEnd, 140 + ((n - 1) + st.last) * step * 1000 + st.releaseEnd * 1000));
+}
+
+async function playProgression(chords, btn, chipWrap) {
+  Snd.stop();
+  const token = ++playToken;
+  await Snd.ready();
+  if (token !== playToken) return;
+  if (btn) btn.classList.add('playing');
+  const chips = chipWrap ? Array.from(chipWrap.children) : [];
+  scheduleChords(chords,
+    i => chips.forEach((c, k) => c.classList.toggle('now', k === i)),
+    () => { if (btn) btn.classList.remove('playing'); chips.forEach(c => c.classList.remove('now')); });
+}
+
+async function playChord(d, q, btn) {
+  Snd.stop();
+  const token = ++playToken;
+  await Snd.ready();
+  if (token !== playToken) return;
+  if (btn) btn.classList.add('playing');
+  const { root, pcs } = chordTones(d, q);
+  const v = voice(pcs, adaptBase(null, pcs.length));
+  const t = Snd.ac.currentTime + 0.1;
+  const st = Snd.style(), dur = 2.0;
+  Snd.note(bassFor(root, null), t, dur, 0.5, st.releaseEnd);
+  v.forEach(m => Snd.note(m, t, dur, 0.44, st.releaseEnd));
+  if (btn) Snd.timers.push(setTimeout(() => btn.classList.remove('playing'),
+                                      (dur + st.releaseEnd) * 1000));
+}
+
+function clearPlayingUI() {
+  document.querySelectorAll('.play-btn.playing').forEach(b => b.classList.remove('playing'));
+  document.querySelectorAll('.pc.now').forEach(c => c.classList.remove('now'));
+}
+
+function setStatus(msg, busy) {
+  const el = $('status');
+  el.textContent = msg;
+  el.classList.toggle('busy', !!busy);
+}
+
+/* ════════════════════════════════════════════════════════════
+   10. Rendering
+   ════════════════════════════════════════════════════════════ */
+
+function visibleCols() {
+  return ALL_COLS().filter(q => state.showDim || !DIM_COLS[q]);
+}
+
+function isShown(cell) {
+  if (cell.r === 'none') return false;
+  if (cell.r === 'rare' && !state.showRare) return false;
+  return true;
+}
+
+function renderGrid() {
+  const cols = visibleCols();
+  const t = TONICS[state.keyIdx];
+  let html = '<tr><th class="deg-h">Degree</th>';
+  cols.forEach(c => {
+    const h = COL_HEAD[c];
+    html += '<th>' + h[0] + (h[1] ? '<small>' + h[1] + '</small>' : '<small>&nbsp;</small>') + '</th>';
+  });
+  html += '</tr>';
+
+  for (let d = 0; d < 12; d++) {
+    html += '<tr><td class="deg">' + DEGREES[d].roman +
+            '<span class="deg-note">' + spellNote(t, DEGREES[d].steps, d) + '</span></td>';
+    cols.forEach(q => {
+      const cell = cellOf(d, q);
+      if (!isShown(cell)) {
+        const why = cell.r === 'rare' ? 'Rare — switch on “Rare” to show it' : 'Not used as a chord in its own right';
+        html += '<td><div class="cell-empty" title="' + why + '">' +
+                '<span class="sym">·</span><span class="tag">&nbsp;</span></div></td>';
+        return;
+      }
+      const sel = state.sel && state.sel.d === d && state.sel.q === q;
+      const hit = state.hl && (cell.s || []).indexOf(state.hl) >= 0;
+      const cls = ['cell', 'r-' + cell.r];
+      if (sel) cls.push('sel');
+      if (state.hl) cls.push(hit ? 'hit' : 'dim');
+      html += '<td><button type="button" class="' + cls.join(' ') +
+              '" data-d="' + d + '" data-q="' + q + '">' +
+              '<span class="sym">' + chordSym(d, q) + '</span>' +
+              '<span class="tag">' + (cell.tag || '') + '</span></button></td>';
+    });
+    html += '</tr>';
+  }
+  $('grid').innerHTML = fmt(html);
+
+  $('formNote').textContent = state.form === 'triad'
+    ? 'Triad view — plain three-note chords only. A dominant triad is simply a major triad, so the secondary dominants (V/V, V/vi, V/ii) appear in the Major column.'
+    : 'Seventh-chord view. Half-diminished is written ø7, diminished seventh °7.';
+}
+
+function renderDetail() {
+  const box = $('detail');
+  if (!state.sel) {
+    box.innerHTML = '<p class="placeholder">Pick a chord to see where it comes from, how common it is, and the progressions it lives in.</p>';
+    return;
+  }
+  const d = state.sel.d, q = state.sel.q, cell = cellOf(d, q);
+
+  let h = '<div class="d-sym">' + chordSym(d, q) + '</div>';
+  h += '<div class="d-rn">' + romanOf(d, q) + ' in ' + TONICS[state.keyIdx].name + ' major</div>';
+  h += '<div class="d-badges"><span class="chip rarity-' + cell.r + '">' + RARITY_EN[cell.r] + '</span>';
+  (cell.s || []).forEach(s => {
+    h += (s === 'dia' || s === 'chromatic')
+      ? '<span class="chip">' + SRC_NAME[s] + '</span>'
+      : '<span class="chip src" data-src="' + s + '">' + SRC_NAME[s] + '</span>';
+  });
+  h += '</div>';
+  h += '<p class="d-notes">Notes: ' + toneNames(d, q) + '</p>';
+  h += '<p class="d-text">' + (cell.t || '') + '</p>';
+
+  h += '<div class="prog"><div class="prog-title">Listen</div>';
+  h += '<div class="prog-row"><button class="play-btn" data-single="1"><svg viewBox="0 0 9 11" aria-hidden="true"><path d="M0 0 L9 5.5 L0 11 Z"/></svg></button>' +
+       '<div class="prog-body"><div class="prog-name">The chord alone</div></div></div>';
+  (cell.p || []).forEach((pg, pi) => {
+    h += '<div class="prog-row"><button class="play-btn" data-prog="' + pi + '"><svg viewBox="0 0 9 11" aria-hidden="true"><path d="M0 0 L9 5.5 L0 11 Z"/></svg></button><div class="prog-body">' +
+         '<div class="prog-name">' + pg.n +
+         (pg.c.some(ch => ch[0] === d && ch[1] === q) ? '' : ' <span class="cmp">— for comparison; this chord is absent</span>') +
+         '</div><div class="prog-chords" data-chips="' + pi + '">';
+    pg.c.forEach(ch => {
+      h += '<span class="pc"><b>' + romanOf(ch[0], ch[1]) + '</b> ' + chordSym(ch[0], ch[1]) + '</span>';
+    });
+    h += '</div>' + (pg.note ? '<div class="prog-note">' + pg.note + '</div>' : '') + '</div></div>';
+  });
+  h += '</div>';
+  box.innerHTML = fmt(h);
+
+  box.querySelectorAll('.chip.src').forEach(c =>
+    c.addEventListener('click', () => toggleSource(c.dataset.src)));
+  box.querySelector('[data-single]').addEventListener('click', e => playChord(d, q, e.currentTarget));
+  box.querySelectorAll('[data-prog]').forEach(b => b.addEventListener('click', e => {
+    const pi = +e.currentTarget.dataset.prog;
+    playProgression(cell.p[pi].c, e.currentTarget, box.querySelector('[data-chips="' + pi + '"]'));
+  }));
+}
+
+function renderSources() {
+  $('srcCards').innerHTML = fmt(SOURCES.map(s =>
+    '<button type="button" class="src-card' + (state.hl === s.id ? ' on' : '') + '" data-src="' + s.id + '">' +
+    '<h3>' + s.name + '</h3><p>' + s.desc + '</p></button>').join(''));
+  $('srcCards').querySelectorAll('.src-card').forEach(c =>
+    c.addEventListener('click', () => toggleSource(c.dataset.src)));
+}
+
+function toggleSource(id) {
+  state.hl = state.hl === id ? null : id;
+  renderGrid();
+  renderSources();
+  if (!state.hl) { setStatus('Highlight cleared'); return; }
+  let shown = 0, hidden = 0;
+  DATA().forEach(row => ALL_COLS().forEach(q => {
+    const c = row[q];
+    if (!c || (c.s || []).indexOf(state.hl) < 0) return;
+    isShown(c) && (!DIM_COLS[q] || state.showDim) ? shown++ : hidden++;
+  }));
+  setStatus(SRC_NAME[state.hl] + ' — ' + shown + ' chord' + (shown === 1 ? '' : 's') +
+            (hidden ? ', ' + hidden + ' hidden' : ''));
+}
+
+function selectCell(d, q) {
+  state.sel = { d:d, q:q };
+  renderGrid();
+  renderDetail();
+  playChord(d, q);
+  if (window.matchMedia('(max-width: 980px)').matches) {
+    $('detail').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   11. Events
+   ════════════════════════════════════════════════════════════ */
+
+function validateSelection() {
+  if (!state.sel) return;
+  if (!state.showDim && DIM_COLS[state.sel.q]) { state.sel = null; return; }
+  if (!isShown(cellOf(state.sel.d, state.sel.q))) state.sel = null;
+}
+
+function refresh() {
+  validateSelection();
+  renderGrid();
+  renderDetail();
+}
+
+$('keySel').innerHTML = TONICS.map((t, i) =>
+  '<option value="' + i + '">' + t.name + ' major</option>').join('');
+
+$('keySel').addEventListener('change', e => { state.keyIdx = +e.target.value; refresh(); });
+
+$('instSel').addEventListener('change', e => {
+  state.inst = e.target.value;
+  Snd.inst = null;
+  Snd.stop();
+  setStatus(state.inst === 'synth' ? 'Using the built-in synth'
+          : Snd.loaded[state.inst] ? 'Sound ready'
+          : 'Loads on the next play');
+});
+
+$('formSeg').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || b.dataset.form === state.form) return;
+  const map = b.dataset.form === 'triad' ? TO_TRIAD : TO_SEVENTH;
+  state.form = b.dataset.form;
+  if (state.sel) state.sel = { d: state.sel.d, q: map[state.sel.q] };
+  Array.from($('formSeg').children).forEach(x => x.classList.toggle('on', x === b));
+  Snd.stop();
+  refresh();
+});
+
+$('showDim').addEventListener('change', e => { state.showDim = e.target.checked; refresh(); });
+$('showRare').addEventListener('change', e => { state.showRare = e.target.checked; refresh(); });
+$('tempo').addEventListener('input', e => { state.tempo = +e.target.value; $('tempoVal').textContent = e.target.value; });
+$('vol').addEventListener('input', e => { state.vol = +e.target.value; Snd.applyVol(); });
+$('stopBtn').addEventListener('click', () => { playToken++; Snd.stop(); setStatus('Stopped'); });
+
+$('grid').addEventListener('click', e => {
+  const b = e.target.closest('.cell');
+  if (b) selectCell(+b.dataset.d, b.dataset.q);
+});
+
+renderGrid();
+renderSources();
+</script>
+
+</body>
+</html>
