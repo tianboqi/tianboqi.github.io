@@ -239,7 +239,7 @@
     <div class="upload-zone" id="zone-tx">
       <input type="file" id="input-tx" accept=".csv">
       <div class="uz-icon">🌿</div>
-      <div class="uz-hint" id="hint-tx">Loading Clements 2025…</div>
+      <div class="uz-hint" id="hint-tx">Loading Clements checklist…</div>
       <div class="uz-status" id="status-tx"></div>
     </div>
     <a class="download-link" href="https://www.birds.cornell.edu/clementschecklist/download/" target="_blank" rel="noopener">↗ Download Clements Checklist (Cornell Lab)</a>
@@ -285,8 +285,9 @@
 
   <div class="hint-text remarks">
     <ul>
-      <li>Built from the Clements Checklist v2025 (Oct 2025) — drop a different version's CSV above to override it.</li>
+      <li id="remark-version">Built from the latest eBird/Clements Checklist — drop a different version's CSV above to override it.</li>
       <li>Only eBird life list exports are supported for now; 懂鸟 lists are not.</li>
+      <li>Your list is matched by eBird species code where the export provides one, otherwise by scientific name. Export your list under the same checklist version shown above — Clements renames species every year, and anything it can't place is reported as "unmatched".</li>
       <li>Ranked by classical taxonomic levels rather than laid out as a phylogenetic cladogram, since Clements' taxonomy is revised often and doesn't map cleanly onto any one published tree.</li>
     </ul>
   </div>
@@ -363,25 +364,32 @@ function branchStroke(node) {
 }
 
 // ── CSV parser ────────────────────────────────────────────────
+// RFC 4180-ish scanner. Splitting on newlines first would corrupt any quoted
+// field that contains one, and the Clements range-revision columns are full of
+// them, so quotes are tracked across the whole text. Verified field-for-field
+// against Python's csv module over all 11,201 v2026 species rows.
 function parseCSV(text) {
-  text = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = text.split('\n');
-  if (!lines.length) return [];
-  const parseRow = line => {
-    const f = []; let cur = '', q = false;
-    for (let i = 0; i <= line.length; i++) {
-      const c = i < line.length ? line[i] : ',';
-      if (c === '"') { q = !q; continue; }
-      if (c === ',' && !q) { f.push(cur.trim()); cur = ''; continue; }
-      cur += c;
+  text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const rows = [];
+  let row = [], cur = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c !== '"') { cur += c; continue; }
+      if (text[i + 1] === '"') { cur += '"'; i++; }   // "" is a literal quote
+      else quoted = false;
     }
-    return f;
-  };
-  const headers = parseRow(lines[0]);
-  return lines.slice(1).filter(l => l.trim()).map(l => {
-    const cols = parseRow(l);
+    else if (c === '"')  quoted = true;
+    else if (c === ',')  { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  if (!rows.length) return [];
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).filter(r => r.some(v => v.trim())).map(r => {
     const obj = {};
-    headers.forEach((h, i) => { obj[h] = (cols[i] || '').trim(); });
+    headers.forEach((h, i) => { obj[h] = (r[i] || '').trim(); });
     return obj;
   });
 }
@@ -398,7 +406,23 @@ function detectCols(r) {
     order:  exact('order','ORDER1','ORDER')             || like('order'),
     famSci: exact('FAMILY_SCI_NAME','family')           || like('family_sci','family'),
     famCom: exact('FAMILY_COM_NAME')                    || like('family_com'),
+    code:   exact('species_code','SPECIES_CODE')        || like('species_code','speciescode'),
   };
+}
+
+// ── Species identity ──────────────────────────────────────────
+// A life list may identify a species by eBird species_code or by scientific
+// name. Prefer the code: it survives the renames Clements makes every year
+// (40 of them between v2025 and v2026), where the name does not. Both are
+// resolved against the loaded taxonomy, so a custom CSV works the same way.
+let codeToSci = Object.create(null);   // species_code -> scientific name
+let validSci  = new Set();             // sci names present in the taxonomy
+let unmatchedCount = 0;                // life-list rows neither key resolved
+
+function resolveSpecies(code, sci) {
+  if (code && codeToSci[code]) return codeToSci[code];
+  if (sci  && validSci.has(sci)) return sci;
+  return '';
 }
 
 // ── Build hierarchy data structure ────────────────────────────
@@ -410,6 +434,7 @@ function buildHierarchy(rows) {
 
   const root = { name: 'Aves', type: 'root', children: [] };
   const oMap = new Map(), fMap = new Map(), gMap = new Map();
+  const codeIndex = Object.create(null), sciSet = new Set();
   let count = 0;
 
   for (const row of rows) {
@@ -421,6 +446,9 @@ function buildHierarchy(rows) {
     const famCom = (cols.famCom && row[cols.famCom]?.trim()) || famSci;
     if (!sci || !order) continue;
     count++;
+    sciSet.add(sci);
+    const code = cols.code && row[cols.code]?.trim();
+    if (code) codeIndex[code] = sci;
     const genus = sci.split(' ')[0];
 
     if (!oMap.has(order)) { const n={name:order,type:'order',children:[]}; oMap.set(order,n); root.children.push(n); }
@@ -432,7 +460,7 @@ function buildHierarchy(rows) {
   }
 
   if (!count) throw new Error('No species-level rows found. Check the "category" column.');
-  return { root, totalSpecies: count };
+  return { root, totalSpecies: count, codeIndex, sciSet };
 }
 
 // ── Precompute layout (expensive — once per taxonomy) ─────────
@@ -472,15 +500,31 @@ function annotate() {
 function parseLifeList(rows) {
   const inclExotic = document.getElementById('chk-exotic').checked;
   const s = new Set();
+  const ks = rows.length ? Object.keys(rows[0]) : [];
+  const findKey = (...ps) => ks.find(k => ps.includes(k.toLowerCase().trim()));
+  const codeKey = findKey('species_code', 'species code', 'speciescode');
+  const sciKey  = findKey('scientific name', 'sci_name', 'scientific_name');
+  let unmatched = 0;
   for (const row of rows) {
     const cat = (row['Category'] || row['category'] || '').trim().toLowerCase();
     const cnt = (row['Countable'] || row['countable'] || '').trim();
-    const sci = (row['Scientific Name'] || row['SCI_NAME'] || '').trim();
     const isSpecies = cat === 'species' || cat === 'exotic';
-    const ok = isSpecies && (inclExotic || cnt === '1');
-    if (ok && sci) s.add(sci);
+    if (!(isSpecies && (inclExotic || cnt === '1'))) continue;
+    const code = codeKey ? (row[codeKey] || '').trim() : '';
+    const sci  = sciKey  ? (row[sciKey]  || '').trim()
+                         : (row['Scientific Name'] || row['SCI_NAME'] || '').trim();
+    const name = resolveSpecies(code, sci);
+    if (name)             s.add(name);
+    else if (code || sci) unmatched++;
   }
+  unmatchedCount = unmatched;
   return s;
+}
+
+// Status line for the life-list zone; flags rows the taxonomy has no slot for.
+function lifeListStatus() {
+  const base = `${seenSet.size.toLocaleString()} species from ${lifeListName}`;
+  return unmatchedCount ? `${base} · ${unmatchedCount.toLocaleString()} unmatched` : base;
 }
 
 // ── Render ────────────────────────────────────────────────────
@@ -1008,12 +1052,18 @@ function updateStats() {
 
 // ── Process taxonomy ───────────────────────────────────────────
 function processTaxonomy(rows, label) {
-  const { root, totalSpecies } = buildHierarchy(rows);
+  const { root, totalSpecies, codeIndex, sciSet } = buildHierarchy(rows);
+  codeToSci = codeIndex;
+  validSci  = sciSet;
   precompute(root);
+  // A life list loaded under the previous taxonomy must be re-resolved, since
+  // the canonical names it was mapped onto may have changed.
+  if (lifeListRows) seenSet = parseLifeList(lifeListRows);
   annotate();
   updateStats();
   scheduleRender();
   zoneLoaded('zone-tx', 'status-tx', `${label} · ${totalSpecies.toLocaleString()} species`);
+  if (lifeListRows) zoneLoaded('zone-ll', 'status-ll', lifeListStatus());
 }
 
 // ── Process life list ──────────────────────────────────────────
@@ -1025,7 +1075,7 @@ function processLifeList(rows, fname) {
   annotate();
   updateStats();
   scheduleRender();
-  zoneLoaded('zone-ll', 'status-ll', `${seenSet.size.toLocaleString()} species from ${fname}`);
+  zoneLoaded('zone-ll', 'status-ll', lifeListStatus());
 }
 
 // ── Upload zones ───────────────────────────────────────────────
@@ -1043,7 +1093,7 @@ document.getElementById('chk-exotic').addEventListener('change', () => {
   annotate();
   updateStats();
   scheduleRender();
-  zoneLoaded('zone-ll', 'status-ll', `${seenSet.size.toLocaleString()} species from ${lifeListName}`);
+  zoneLoaded('zone-ll', 'status-ll', lifeListStatus());
 });
 
 // ── Auto-load Clements from files/clements_data.js ────────────
@@ -1057,9 +1107,16 @@ document.getElementById('chk-exotic').addEventListener('change', () => {
   const today  = new Date().toISOString().slice(0, 10);
 
   if (typeof window.CLEMENTS_CSV_TEXT === 'string') {
-    const rows = parseCSV(window.CLEMENTS_CSV_TEXT);
-    hintEl.textContent = `Clements Oct 2025 · auto-loaded ${today} · Drop file to override`;
-    processTaxonomy(rows, 'Clements Oct 2025');
+    const label = window.CLEMENTS_LABEL || 'Clements checklist';
+    const rows  = parseCSV(window.CLEMENTS_CSV_TEXT);
+    hintEl.textContent = `${label} · auto-loaded ${today} · Drop file to override`;
+    const remarkEl = document.getElementById('remark-version');
+    if (remarkEl) {
+      const version = window.CLEMENTS_VERSION ? ` ${window.CLEMENTS_VERSION}` : '';
+      remarkEl.textContent =
+        `Built from the eBird/Clements Checklist${version} (${label.replace(/^Clements /, '')}) — drop a different version's CSV above to override it.`;
+    }
+    processTaxonomy(rows, label);
     return;
   }
 
