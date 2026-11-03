@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Borrowed Chords — Tianbo Qi</title>
+  <title>Chord Availability Summary — Tianbo Qi</title>
   <meta name="description" content="An interactive reference of borrowed and non-diatonic chords in a major key: which chord qualities each chromatic root supports, how common each is, where it comes from, and how it sounds in context.">
   <meta name="author" content="Tianbo Qi">
   <meta name="robots" content="index, follow">
@@ -213,10 +213,27 @@
       letter-spacing: 0; text-transform: none; color: #9a9a9a;
     }
 
+    /* The degree column doubles as a keyboard: diatonic degrees are the white
+       keys, chromatic ones the shorter gray keys that sit between them. The
+       key is drawn as a pseudo-element so it can bridge the row spacing. */
     td.deg {
+      position: relative; z-index: 0;
       font-family: 'Lora', Georgia, serif;
       font-size: 0.95rem; white-space: nowrap;
-      padding-right: 10px; line-height: 1.25;
+      padding: 0 10px 0 11px; line-height: 1.25;
+    }
+    td.deg::before {
+      content: '';
+      position: absolute; z-index: -1;
+      left: 0; right: 8px; top: -2px; bottom: -2px;
+      background: #fff;
+      border: 1px solid var(--rule); border-left: 0;
+      border-radius: 0 4px 4px 0;
+    }
+    td.deg.chromatic::before {
+      right: 38%;
+      background: #e3e3e3;
+      border-color: #d2d2d2;
     }
     /* Scoped to its own class: a bare `td.deg span` would also catch the
        .acc wrappers and break "♭II" across two lines. */
@@ -369,7 +386,7 @@
 <header class="banner">
   <div class="banner-inner">
     <div class="banner-text">
-      <h1 class="banner-name">Borrowed Chords</h1>
+      <h1 class="banner-name">Chord Availability Summary</h1>
       <p class="banner-sub"><a href="misc.html">← Miscellaneous</a></p>
     </div>
   </div>
@@ -493,6 +510,8 @@ const SHARP_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯',
 const FLAT_NAMES  = ['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
 
 // Default spelling of each scale degree, plus the enharmonic alternative
+const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11];   // the white keys
+
 const DEGREES = [
   { roman:'I',    steps:0, alt:null                     },
   { roman:'♭II',  steps:1, alt:{ roman:'♯I',  steps:0 } },
@@ -1302,7 +1321,7 @@ function renderGrid() {
   html += '</tr>';
 
   for (let d = 0; d < 12; d++) {
-    html += '<tr><td class="deg">' + DEGREES[d].roman +
+    html += '<tr><td class="deg' + (MAJOR_SCALE.indexOf(d) < 0 ? ' chromatic' : '') + '">' + DEGREES[d].roman +
             '<span class="deg-note">' + spellNote(t, DEGREES[d].steps, d) + '</span></td>';
     cols.forEach(q => {
       const cell = cellOf(d, q);
