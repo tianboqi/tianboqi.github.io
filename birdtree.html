@@ -357,10 +357,21 @@ const LAYOUT_TAXONOMIC = {
 // cladeOut sits just inside the family ring: if the backbone stopped far
 // short of it, every family would trail the same long spoke out to the ring,
 // dwarfing the branches above it.
+// family[0] is where genera attach, so [parent clade radius .. family[0]] is
+// both the family's final branch AND its hoverable band — the two cannot be
+// tuned apart. 0.70 trades a little branch evenness (final branch is ~4.4x a
+// backbone step, against 2.2x at 0.65) for a family band of 33-42px instead
+// of 12-21px, while leaving genus a roomy 63px.
 const LAYOUT_PHYLO = {
   cladeOut: 0.63,
-  order: [0.63, 0.65], family: [0.65, 0.85], genus: [0.85, 0.93], species: [0.85, 0.93],
+  order: [0.63, 0.70], family: [0.70, 0.85], genus: [0.85, 0.93], species: [0.85, 0.93],
 };
+// Per-family genus radius (phylogenetic layout only). Species still attach on
+// one ring, so the outer ring stays a perfect circle; only the family/genus
+// boundary flexes, between GENUS_IN_MIN and GENUS_IN_MAX.
+const FAM_BAND      = 0.14;
+const GENUS_IN_MIN  = 0.66;
+const GENUS_IN_MAX  = 0.79;
 let LY = LAYOUT_TAXONOMIC;
 
 // Siblings are separated by the outline itself: it follows the first and
@@ -554,6 +565,37 @@ function graftPhylogeny(phylo, famIndex) {
   return root;
 }
 
+// ── Angular weighting ─────────────────────────────────────────
+// A species would otherwise get 1/11201 of the circle, which makes a
+// one-species family about a sixth of a pixel wide — invisible and
+// impossible to hover without zooming most of the way in. Any family
+// narrower than FAMILY_MIN_SLOTS species-widths is widened to that, and the
+// extra width is shared evenly among its own species. Everything else shrinks
+// proportionally (about 9% in total), so the rings stay perfect circles and
+// only the angular share moves. Area is therefore proportional to species
+// count only above the floor; the tooltip still reports true counts.
+const FAMILY_MIN_SLOTS = 20;
+
+function rollUp(h) {
+  h.eachAfter(n => {
+    if (n.children && n.children.length) {
+      n.value = n.children.reduce((sum, c) => sum + c.value, 0);
+    }
+  });
+}
+
+function assignWeights(h) {
+  h.eachAfter(n => { if (!n.children || !n.children.length) n.value = 1; });
+  rollUp(h);
+  h.each(n => {
+    if (n.data.type !== 'family') return;
+    const k = FAMILY_MIN_SLOTS / n.value;
+    if (k <= 1) return;
+    n.each(d => { if (!d.children || !d.children.length) d.value *= k; });
+  });
+  rollUp(h);
+}
+
 // ── Precompute layout (expensive — once per taxonomy) ─────────
 // Angles come from d3.partition (leaf-count weighted) and work for any tree
 // shape. Radii are assigned by RANK, not by depth, because in phylogeny mode
@@ -561,7 +603,8 @@ function graftPhylogeny(phylo, famIndex) {
 function precompute(hierarchyRoot, phyloMode) {
   LY = phyloMode ? LAYOUT_PHYLO : LAYOUT_TAXONOMIC;
 
-  const h = d3.hierarchy(hierarchyRoot).sum(d => d.children ? 0 : 1);
+  const h = d3.hierarchy(hierarchyRoot);
+  assignWeights(h);
   d3.partition().size([TREE_SPAN, 1])(h);
 
   const nodesByRank = new Map();
@@ -608,6 +651,7 @@ function precompute(hierarchyRoot, phyloMode) {
   // band, so every branch line runs unbroken from the backbone to the
   // species ticks — one continuous tree rather than two stacked pictures.
 
+
   // Order bands. In taxonomic mode the orders are real nodes; in phylogeny
   // mode they are synthesised from runs of families sharing an order.
   let orderBands;
@@ -647,6 +691,19 @@ function precompute(hierarchyRoot, phyloMode) {
   // the clade whose span matches it.
   for (const rank of BAND_RANKS.concat('species')) {
     for (const n of nodesByRank.get(rank) || []) n.baseR = n.parent ? n.parent.r : 0;
+  }
+
+  // A family's band IS its final branch: [parent clade radius .. where its
+  // genera attach]. With one global genus radius a deep family — every
+  // passerine — ends up with a sliver while a shallow one gets a slab. Each
+  // family therefore picks its own genus radius, aiming for FAM_BAND of
+  // depth and clamped so the genus ring always keeps something to hover.
+  // Species still attach on one ring, so the outer edge stays a true circle.
+  if (phyloMode) {
+    for (const f of nodesByRank.get('family') || []) {
+      f.r = Math.min(GENUS_IN_MAX, Math.max(GENUS_IN_MIN, f.baseR + FAM_BAND));
+    }
+    for (const g of nodesByRank.get('genus') || []) g.baseR = g.parent.r;
   }
   const eps = 1e-9;
   for (const b of orderBands) {
@@ -919,10 +976,9 @@ function drawBranches(ctx) {
                  ['genus', 'species', LW_SPECIES]];
   for (const [pRank, cRank, lw] of CHAIN) {
     ctx.lineWidth = lw;
-    const pR = LY[pRank][0] * outerR;
-    const cR = LY[cRank][0] * outerR;
 
     for (const par of precomp.nodesByRank.get(pRank) || []) {
+      const pR = par.r * outerR;
       if (!par.children || !par.children.length) continue;
       const span = par.x1 - par.x0;
       if (span < MIN_ARC) continue;
@@ -940,6 +996,7 @@ function drawBranches(ctx) {
       if (cRank === 'species') continue;   // drawn as ticks below
       for (const child of ch) {
         const cs = child.x1 - child.x0;
+        const cR = child.r * outerR;
         if (cs < MIN_ARC || cs * cR < 0.4) continue;
         const childMid = nodeMid(child);
         ctx.beginPath();
@@ -1025,7 +1082,7 @@ function drawLabels(ctx) {
     for (const node of precomp.nodesByRank.get('family') || []) {
       // Middle of this family's own visible region, which runs from where it
       // leaves its parent to where its genera take over.
-      const fR = ((node.baseR || 0) + LY.family[0]) / 2 * outerR;
+      const fR = ((node.baseR || 0) + node.r) / 2 * outerR;
       const span = node.x1 - node.x0;
       if (span * fR * xf.k < 18) continue;
       const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
@@ -1091,7 +1148,7 @@ function findNodeAt(mx, my) {
   if (r < LY.genus[0] * outerR) {
     const fam = binarySearch(precomp.nodesByRank.get('family') || [], theta);
     if (!fam) return null;
-    if (r >= LY.family[0] * outerR) {
+    if (r >= fam.r * outerR) {
       return binarySearch(precomp.nodesByRank.get('genus') || [], theta) || fam;
     }
     if (r >= (fam.baseR || 0) * outerR) return fam;
