@@ -165,11 +165,25 @@
     }
     canvas#tree-canvas:active { cursor: grabbing; }
 
-    /* zoom controls */
-    .zoom-btns {
+    /* bottom-right cluster: usage hint beside the zoom controls */
+    .canvas-controls {
       position: absolute;
       bottom: 16px;
       right: 16px;
+      display: flex;
+      align-items: center;    /* centre the hint against the button stack */
+      gap: 10px;
+    }
+    .canvas-hint {
+      font-size: 0.7rem;
+      color: #a49e96;
+      line-height: 1.7;
+      text-align: right;
+      white-space: nowrap;
+      user-select: none;
+      pointer-events: none;   /* never swallow a drag meant for the canvas */
+    }
+    .zoom-btns {
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -271,24 +285,18 @@
     <div class="legend">
       <div class="legend-row"><div class="legend-swatch" style="background:#15803d"></div>100% of group seen</div>
       <div class="legend-row"><div class="legend-swatch" style="background:#86efac"></div>Partially seen</div>
-      <div class="legend-row"><div class="legend-swatch" style="background:#e2e8f0"></div>0% seen</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#fff;border:1px solid #cdc9c0"></div>Nothing seen — branch left unfilled</div>
       <div style="height:4px"></div>
-      <div class="legend-row"><div class="legend-dot" style="background:#22c55e"></div>Species in your list</div>
-      <div class="legend-row"><div class="legend-dot" style="background:#e2e8f0; border:1px solid #cbd5e1"></div>Not yet seen</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#15803d"></div>Species in your list</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#cdc9c0"></div>Not yet seen</div>
     </div>
-  </div>
-
-  <div class="hint-text">
-    Scroll to zoom · Drag to pan · Hover for details<br>
-    Bands (inner→outer): <b>Order · Family · Genus · Species</b>
   </div>
 
   <div class="hint-text remarks">
     <ul>
-      <li id="remark-version">Built from the latest eBird/Clements Checklist — drop a different version's CSV above to override it.</li>
+      <li id="remark-version">Built from the latest eBird/Clements Checklist — drop a different version's CSV above to override it. If your eBird list was exported under a different version, some species will be "unmatched".</li>
       <li>Only eBird life list exports are supported for now; 懂鸟 lists are not.</li>
-      <li>Your list is matched by eBird species code where the export provides one, otherwise by scientific name. Export your list under the same checklist version shown above — Clements renames species every year, and anything it can't place is reported as "unmatched".</li>
-      <li>Ranked by classical taxonomic levels rather than laid out as a phylogenetic cladogram, since Clements' taxonomy is revised often and doesn't map cleanly onto any one published tree.</li>
+      <li id="remark-layout">Laid out by Linnaean rank.</li>
     </ul>
   </div>
 </aside>
@@ -297,10 +305,13 @@
 <div class="canvas-wrap">
   <canvas id="tree-canvas"></canvas>
 
-  <div class="zoom-btns">
-    <button class="zoom-btn" id="btn-zi" title="Zoom in">+</button>
-    <button class="zoom-btn" id="btn-zo" title="Zoom out">−</button>
-    <button class="zoom-btn" id="btn-zr" title="Reset view" style="font-size:12px">⟳</button>
+  <div class="canvas-controls">
+    <div class="canvas-hint">Scroll to zoom<br>Drag to pan<br>Hover for details</div>
+    <div class="zoom-btns">
+      <button class="zoom-btn" id="btn-zi" title="Zoom in">+</button>
+      <button class="zoom-btn" id="btn-zo" title="Zoom out">−</button>
+      <button class="zoom-btn" id="btn-zr" title="Reset view" style="font-size:12px">⟳</button>
+    </div>
   </div>
 </div>
 
@@ -313,24 +324,62 @@
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="files/clements_data.js"></script>
+<script src="files/bird_phylogeny.js"></script>
 <script>
 'use strict';
 
 // ── Tree layout constants ──────────────────────────────────────
-const TREE_SPAN   = 2 * Math.PI;        // full 360°
-const DRAW_OFFSET = -Math.PI / 2;       // first taxon at 12 o'clock
+// The circle closes to within a hairline: just enough of a seam to show
+// where the taxa begin and end. The trunk does not live in that seam — it
+// rises from the centre to the middle of the root's two branches.
+const TREE_GAP    = 0.02;                       // radians of open circle (~1.1°)
+const TREE_SPAN   = 2 * Math.PI - TREE_GAP;
+const SEAM_ANGLE  = Math.PI / 2;                // canvas +y is down: 6 o'clock
+const DRAW_OFFSET = SEAM_ANGLE + TREE_GAP / 2;  // first taxon just past the seam
+const STEM_R      = 0.05;                       // where the trunk ends and the tree begins
 
-// Radial position of each depth level as fraction of outerR
-// depth: 0=root(center)  1=orders  2=families  3=genera  4=species
-const NODE_R  = [0, 0.10, 0.40, 0.67, 0.91];
-const SPECIES_R = 0.96;   // outer edge of species ring
+// Radial bands as a fraction of outerR, per rank. Two layouts:
+//   TAXONOMIC — the flat Linnaean nesting (order ▸ family ▸ genus ▸ species).
+//   PHYLO     — the literature cladogram occupies [0, cladeOut]; families are
+//               its aligned tips, and the order band is kept just inside the
+//               family ring for orientation (every multi-family Clements order
+//               is monophyletic in the tree, so the band never straddles a clade).
+// [0] is where a rank's CHILDREN attach — so it is also the outer edge of
+// that rank's own silhouette, since children paint over their parent.
+// [0] is the radius at which a rank's CHILDREN attach. Each rank's own area
+// therefore runs from where it leaves its parent out to [0]. The species fan
+// is the last stretch of the tree, ending on the dot at species[1]; it is
+// kept short because 11k sub-pixel tips merge into a solid band otherwise.
+const LAYOUT_TAXONOMIC = {
+  cladeOut: 0.34,
+  order: [0.34, 0.64], family: [0.64, 0.86], genus: [0.86, 0.93], species: [0.86, 0.93],
+};
+// cladeOut sits just inside the family ring: if the backbone stopped far
+// short of it, every family would trail the same long spoke out to the ring,
+// dwarfing the branches above it.
+const LAYOUT_PHYLO = {
+  cladeOut: 0.63,
+  order: [0.63, 0.65], family: [0.65, 0.85], genus: [0.85, 0.93], species: [0.85, 0.93],
+};
+let LY = LAYOUT_TAXONOMIC;
 
-// Angular gap between siblings at each depth (radians)
-const GAPS    = [0, 0.016, 0.006, 0.0025, 0.001];
+// Siblings are separated by the outline itself: it follows the first and
+// last child's branch, not the group's full angular span, so gaps fall out
+// of the geometry rather than being inset by hand.
 const MIN_ARC = 0.0003;
+const BAND_RANKS = ['order', 'family', 'genus'];
+
+// One line thickness per level — the cladogram down to family, the genus
+// branches, the species fan — so no line reads as more important than its
+// neighbour just because of where it sits in the tree.
+const LW_CLADE   = 1.0;
+const LW_GENUS   = 0.8;
+const LW_SPECIES = 0.72;
+const SPECIES_DOT_R = 2.0;   // shared by the seen-species dot and the hover marker
 
 // ── Global state ──────────────────────────────────────────────
-let precomp      = null;   // { root, nodesByDepth, totalSpecies }
+let precomp      = null;   // { root, nodesByRank, orderBands, totalSpecies }
+let phyloMode    = false;  // true when the literature cladogram is in use
 let seenSet      = new Set();
 let lifeListRows = null;   // raw rows kept so the exotic checkbox can re-parse
 let lifeListName = '';
@@ -344,23 +393,24 @@ const ctx     = canvas.getContext('2d');
 let rafId     = null;
 
 // ── Colors ────────────────────────────────────────────────────
-function arcColor(node, depth) {
+// Coverage colour. Nothing is drawn at 0%, so there is no "unseen" tint:
+// the branch lines carry the structure where no species have been seen.
+function arcColor(node, rank) {
   const p = node.seenPct || 0;
-  if (depth === 4) return p > 0 ? '#22c55e' : '#e2e8f0';
-  if (p === 0)    return '#e2e8f0';
-  if (p >= 1.0)   return ['', '#14532d', '#15803d', '#166534', '#22c55e'][depth];
-  const t = Math.pow(p, 0.55);
-  const dark = depth === 1 ? '#14532d' : depth === 2 ? '#15803d' : '#16a34a';
-  return d3.interpolateRgb('#bbf7d0', dark)(t);
+  if (p >= 1.0) return { order: '#14532d', family: '#15803d', genus: '#166534' }[rank];
+  const dark = rank === 'order' ? '#14532d' : rank === 'family' ? '#15803d' : '#16a34a';
+  return d3.interpolateRgb('#cdf0da', dark)(Math.pow(p, 0.55));
 }
 
 function hoverColor() { return '#f59e0b'; }
 
+// Fully opaque. Semi-transparent strokes compound where branches cross,
+// printing darker knots at every intersection; these never do.
 function branchStroke(node) {
   const p = node.seenPct || 0;
-  if (p >= 1) return 'rgba(21,128,61,0.90)';
-  if (p > 0)  return `rgba(21,128,61,${(0.45 + p * 0.40).toFixed(2)})`;
-  return 'rgba(80,100,120,0.50)';
+  if (p >= 1) return '#15803d';
+  if (p > 0)  return d3.interpolateRgb('#a9c9b7', '#15803d')(Math.pow(p, 0.55));
+  return '#cdc9c0';   // nothing seen: a warm neutral, not a green-grey
 }
 
 // ── CSV parser ────────────────────────────────────────────────
@@ -442,8 +492,14 @@ function buildHierarchy(rows) {
     const sci    = row[cols.sci]?.trim();
     const com    = row[cols.com]?.trim() || sci;
     const order  = row[cols.order]?.trim();
-    const famSci = row[cols.famSci]?.trim() || 'Unknown';
-    const famCom = (cols.famCom && row[cols.famCom]?.trim()) || famSci;
+    // Clements packs both names into one column, e.g.
+    // "Accipitridae (Hawks, Eagles, and Kites)". Split it when there is no
+    // separate common-name column, so the node name is the bare family.
+    let famSci = row[cols.famSci]?.trim() || 'Unknown';
+    let famCom = (cols.famCom && row[cols.famCom]?.trim()) || '';
+    const famSplit = /^(\S+)\s+\((.+)\)$/.exec(famSci);
+    if (famSplit && !famCom) { famSci = famSplit[1]; famCom = famSplit[2]; }
+    if (!famCom) famCom = famSci;
     if (!sci || !order) continue;
     count++;
     sciSet.add(sci);
@@ -453,32 +509,156 @@ function buildHierarchy(rows) {
 
     if (!oMap.has(order)) { const n={name:order,type:'order',children:[]}; oMap.set(order,n); root.children.push(n); }
     const fk = order+'\0'+famSci;
-    if (!fMap.has(fk)) { const n={name:famSci,comName:famCom,type:'family',children:[]}; fMap.set(fk,n); oMap.get(order).children.push(n); }
+    if (!fMap.has(fk)) { const n={name:famSci,comName:famCom,type:'family',order,children:[]}; fMap.set(fk,n); oMap.get(order).children.push(n); }
     const gk = fk+'\0'+genus;
     if (!gMap.has(gk)) { const n={name:genus,type:'genus',children:[]}; gMap.set(gk,n); fMap.get(fk).children.push(n); }
     gMap.get(gk).children.push({ name: sci, comName: com, type: 'species' });
   }
 
   if (!count) throw new Error('No species-level rows found. Check the "category" column.');
-  return { root, totalSpecies: count, codeIndex, sciSet };
+  // famSci -> family data node, for grafting onto the phylogeny
+  const famIndex = new Map();
+  for (const n of fMap.values()) famIndex.set(n.name, n);
+  return { root, totalSpecies: count, codeIndex, sciSet, famIndex };
+}
+
+// ── Graft the checklist onto the literature phylogeny ─────────
+// Returns a root whose internal nodes are clades and whose family tips carry
+// the checklist's genus/species subtrees — or null if the two disagree about
+// which families exist, in which case the caller falls back to the flat
+// Linnaean layout. See files/bird_phylogeny.json and
+// scripts/generate_phylogeny.py for the tree and its sources.
+function graftPhylogeny(phylo, famIndex) {
+  if (!phylo || !phylo.tree) return null;
+  const used = new Set();
+  let missing = 0;
+
+  const build = node => {
+    if (node.rank === 'family') {
+      const fam = famIndex.get(node.name);
+      if (!fam) { missing++; return null; }
+      used.add(node.name);
+      return fam;
+    }
+    const kids = (node.children || []).map(build).filter(Boolean);
+    if (!kids.length) return null;
+    if (kids.length === 1) return kids[0];          // collapse a clade of one
+    return { name: node.name || '', type: 'clade', children: kids };
+  };
+
+  const root = build(phylo.tree);
+  // Every checklist family must be placed, and every tip must exist.
+  if (!root || missing || used.size !== famIndex.size) return null;
+  root.type = 'root';
+  root.name = phylo.tree.name || 'Aves';
+  return root;
 }
 
 // ── Precompute layout (expensive — once per taxonomy) ─────────
-function precompute(hierarchyRoot) {
+// Angles come from d3.partition (leaf-count weighted) and work for any tree
+// shape. Radii are assigned by RANK, not by depth, because in phylogeny mode
+// families sit at depths 2..28 and must still land on one ring.
+function precompute(hierarchyRoot, phyloMode) {
+  LY = phyloMode ? LAYOUT_PHYLO : LAYOUT_TAXONOMIC;
+
   const h = d3.hierarchy(hierarchyRoot).sum(d => d.children ? 0 : 1);
-  // Use TREE_SPAN (not 2π) so angles are scaled to the partial circle
   d3.partition().size([TREE_SPAN, 1])(h);
 
-  const nodesByDepth = new Map();
+  const nodesByRank = new Map();
   h.each(node => {
-    const d = node.depth;
-    if (!nodesByDepth.has(d)) nodesByDepth.set(d, []);
-    nodesByDepth.get(d).push(node);
+    const rank = node.data.type === 'root' ? 'clade' : node.data.type;
+    node.rank = rank;
+    if (!nodesByRank.has(rank)) nodesByRank.set(rank, []);
+    nodesByRank.get(rank).push(node);
   });
-  // Sort by x0 for binary-search hit testing
-  for (const [, arr] of nodesByDepth) arr.sort((a, b) => a.x0 - b.x0);
+  for (const [, arr] of nodesByRank) arr.sort((a, b) => a.x0 - b.x0);
 
-  precomp = { root: h, nodesByDepth, totalSpecies: (nodesByDepth.get(4) || []).length };
+  // Backbone radii. Spacing a node by absolute depth bunches short lineages
+  // near the centre and leaves them one enormous branch out to the family
+  // ring. Instead each node sits a proportional distance along ITS OWN path:
+  // depth / (depth + height), where height is the number of steps left to its
+  // deepest family. Families all land on LY.cladeOut either way, but every
+  // lineage is now spread evenly over the radius it has.
+  const fams = nodesByRank.get('family') || [];
+  h.eachAfter(n => {
+    if (n.rank === 'family') { n.bbHeight = 0; return; }
+    if (n.rank !== 'clade') return;
+    let hi = 0;
+    for (const c of n.children) if (c.bbHeight !== undefined) hi = Math.max(hi, c.bbHeight + 1);
+    n.bbHeight = hi;
+  });
+  // Proportional placement alone is not enough: a polytomy holding both a
+  // one-step lineage and the 28-step passerines still sits near the centre,
+  // leaving its shallow child one huge spoke. A mild power eases the whole
+  // scale outward, trading some spacing among the deepest clades (which the
+  // chart is zoomable for) against far shorter shallow branches. 0.45 was
+  // picked by measuring both: it roughly minimises longest-branch / median-step.
+  const BB_EASE = 0.45;
+  for (const node of nodesByRank.get('clade') || []) {
+    const total = node.depth + node.bbHeight;
+    const t = total > 0 ? Math.pow(node.depth / total, BB_EASE) : 0;
+    node.r = STEM_R + (LY.cladeOut - STEM_R) * t;   // root at the top of the trunk
+  }
+  for (const rank of BAND_RANKS) {
+    for (const n of nodesByRank.get(rank) || []) n.r = LY[rank][0];
+  }
+  // A species is a tip: its branch ends on its dot.
+  for (const n of nodesByRank.get('species') || []) n.r = LY.species[1];
+  // Families attach at the inner edge of their own ring, not at the order
+  // band, so every branch line runs unbroken from the backbone to the
+  // species ticks — one continuous tree rather than two stacked pictures.
+
+  // Order bands. In taxonomic mode the orders are real nodes; in phylogeny
+  // mode they are synthesised from runs of families sharing an order.
+  let orderBands;
+  if (nodesByRank.has('order')) {
+    orderBands = nodesByRank.get('order');
+    for (const b of orderBands) b.families = b.children || [];
+  } else {
+    orderBands = [];
+    let cur = null;
+    for (const f of fams) {
+      const name = f.data.order || '';
+      if (!cur || cur.data.name !== name) {
+        cur = { rank: 'order', data: { name, type: 'order' },
+                x0: f.x0, x1: f.x1, families: [f] };
+        orderBands.push(cur);
+      } else {
+        cur.x1 = f.x1;
+        cur.families.push(f);
+      }
+    }
+  }
+
+  // Angular position of each node. A leaf keeps its own slot; an internal
+  // node sits halfway between its outermost children, so every branch point
+  // lands between the branches it joins. Using the midpoint of a node's
+  // species span instead would drag the junction onto whichever child holds
+  // the most species — Neognathae has 99% of them, which put the root's fork
+  // practically on top of it.
+  h.eachAfter(n => {
+    n.mid = (n.children && n.children.length)
+      ? (n.children[0].mid + n.children[n.children.length - 1].mid) / 2
+      : (n.x0 + n.x1) / 2;
+  });
+
+  // Where each highlightable branch leaves its parent — the tip of its
+  // hover shape. Orders are monophyletic, so a synthesised band's branch is
+  // the clade whose span matches it.
+  for (const rank of BAND_RANKS.concat('species')) {
+    for (const n of nodesByRank.get(rank) || []) n.baseR = n.parent ? n.parent.r : 0;
+  }
+  const eps = 1e-9;
+  for (const b of orderBands) {
+    if (b.depth !== undefined) { b.baseR = b.parent ? b.parent.r : 0; b.walk = b; continue; }
+    let n = b.families[0];
+    while (n.parent && (n.x0 > b.x0 + eps || n.x1 < b.x1 - eps)) n = n.parent;
+    b.baseR = n.parent ? n.parent.r : 0;
+    b.walk  = n;      // the hierarchy node whose subtree this band covers
+  }
+
+  precomp = { root: h, nodesByRank, orderBands,
+              totalSpecies: (nodesByRank.get('species') || []).length };
 }
 
 // ── Annotate tree with seen counts ────────────────────────────
@@ -494,6 +674,13 @@ function annotate() {
     }
     node.seenPct = node.totalCount > 0 ? node.seenCount / node.totalCount : 0;
   });
+  // Synthesised order bands are outside the hierarchy, so roll them up here.
+  for (const b of precomp.orderBands) {
+    if (b.depth !== undefined) continue;          // a real node; already done
+    b.totalCount = d3.sum(b.families, f => f.totalCount);
+    b.seenCount  = d3.sum(b.families, f => f.seenCount);
+    b.seenPct    = b.totalCount > 0 ? b.seenCount / b.totalCount : 0;
+  }
 }
 
 // ── Parse eBird life list ─────────────────────────────────────
@@ -557,146 +744,223 @@ function render() {
   drawFills(ctx);
   drawHoverHighlight(ctx);
   drawBranches(ctx);
+  drawHoverTip(ctx);
   drawLabels(ctx);
 
   ctx.restore();
 }
 
+// ── Group outline ─────────────────────────────────────────────
+// The area of a group is the region its own tree lines enclose: out along
+// its leftmost branch to the species dots, across the tips, and back along
+// its rightmost branch. Every line the group contains lies inside that
+// outline, together with the space between them.
+function nodeMid(n) { return n.mid + DRAW_OFFSET; }
+
+// One edge of the outline, as [radiusFraction, angle] steps from the base
+// outward. Alternating radial and angular moves trace the connector lines
+// exactly, so the outline hugs the drawn tree rather than approximating it.
+function outlineEdge(node, baseR, takeLast, pad) {
+  const d = takeLast ? pad : -pad;
+  const pts = [[baseR, nodeMid(node) + d], [node.r, nodeMid(node) + d]];
+  let n = node;
+  while (n.children && n.children.length) {
+    const c = takeLast ? n.children[n.children.length - 1] : n.children[0];
+    pts.push([n.r, nodeMid(c) + d]);
+    pts.push([c.r, nodeMid(c) + d]);
+    n = c;
+  }
+  return pts;
+}
+
+function emitEdge(ctx, pts, outward) {
+  const seq = outward ? pts : pts.slice().reverse();
+  for (let i = 1; i < seq.length; i++) {
+    const a = seq[i - 1], b = seq[i];
+    if (b[0] !== a[0]) {
+      ctx.lineTo(b[0] * outerR * Math.cos(b[1]), b[0] * outerR * Math.sin(b[1]));
+    } else if (b[1] !== a[1]) {
+      ctx.arc(0, 0, b[0] * outerR, a[1], b[1], b[1] < a[1]);
+    }
+  }
+}
+
+function groupPath(ctx, node) {
+  const w    = node.walk || node;
+  const base = node.baseR || 0;
+  // Widen by about a pixel so a group whose branch is a single line still
+  // encloses something. Inflating the path beats stroking it: one fill means
+  // a translucent colour cannot darken where fill and stroke would overlap.
+  const pad  = 1.1 / Math.max(outerR * LY.species[1], 1);
+  const L = outlineEdge(w, base, false, pad);
+  const R = outlineEdge(w, base, true, pad);
+  const lTip = L[L.length - 1], rTip = R[R.length - 1];
+
+  ctx.beginPath();
+  ctx.moveTo(L[0][0] * outerR * Math.cos(L[0][1]), L[0][0] * outerR * Math.sin(L[0][1]));
+  emitEdge(ctx, L, true);
+  ctx.arc(0, 0, lTip[0] * outerR, lTip[1], rTip[1], rTip[1] < lTip[1]);
+  emitEdge(ctx, R, false);
+  ctx.closePath();
+}
+
 // ── Draw filled areas ─────────────────────────────────────────
-// Each depth level gets its own radial band, colored by that node's seenPct:
-//   Orders  — band [NODE_R[1], NODE_R[2]]
-//   Families — band [NODE_R[2], NODE_R[3]]
-//   Genera  — band [NODE_R[3], NODE_R[4]]
-//   Species — band [NODE_R[4], SPECIES_R]  (solid green / gray ticks)
-// All are flat annular sectors (no tapering wedge) so each band is clearly
-// associated with its taxonomic level.
+// One outline per order, family and genus, shaded by the share of its
+// species seen, parents first so children sit on top. A group with nothing
+// seen is not drawn — its connector lines carry the structure instead.
 function drawFills(ctx) {
-  const BAND_OUT = [0, NODE_R[2], NODE_R[3], NODE_R[4], SPECIES_R];
-
-  for (let depth = 1; depth <= 3; depth++) {
-    const iR      = NODE_R[depth]    * outerR;
-    const oR      = BAND_OUT[depth]  * outerR;
-    const halfGap = GAPS[depth] / 2;
-
-    for (const node of precomp.nodesByDepth.get(depth) || []) {
-      const span = node.x1 - node.x0;
-      if (span < MIN_ARC) continue;
-      const gapped = Math.min(halfGap, span * 0.4);
-      const sA = node.x0 + gapped + DRAW_OFFSET;
-      const eA = node.x1 - gapped + DRAW_OFFSET;
-      if (eA <= sA) continue;
-
-      ctx.beginPath();
-      ctx.arc(0, 0, oR, sA, eA);
-      ctx.arc(0, 0, iR, eA, sA, true);
-      ctx.closePath();
-      ctx.fillStyle = arcColor(node, depth);
+  for (const rank of BAND_RANKS) {
+    const list = rank === 'order' ? precomp.orderBands
+                                  : (precomp.nodesByRank.get(rank) || []);
+    for (const node of list) {
+      if (!(node.seenPct > 0)) continue;
+      groupPath(ctx, node);
+      ctx.fillStyle = arcColor(node, rank);
       ctx.fill();
     }
   }
-
 }
 
 // ── Hover highlight ────────────────────────────────────────────
-// One smooth wedge covering the entire hovered subtree — drawn after
-// fills, before branches.  The inner tip sits at the PARENT's radius
-// (NODE_R[depth-1]), so the radial branch line connecting the node to
-// its parent is fully inside the highlighted shape.  All descendant
-// fills are automatically covered because the wedge extends to SPECIES_R.
+// The same outline in the highlight colour, flat, with no contour of its own.
+// Groups get a filled area; the unnamed backbone clades get nothing, since a
+// wedge on a deep clade sweeps most of the chart and reads as noise.
+const HOVER_AREA_RANKS = new Set(['order', 'family', 'genus']);
+const HOVER_FILL = 'rgba(255,167,38,0.55)';
+const HOVER_LINE = '#ef8f12';
+
 function drawHoverHighlight(ctx) {
-  if (!hovNode) return;
-  const d    = hovNode.depth;
-  const span = hovNode.x1 - hovNode.x0;
-  if (span < MIN_ARC) return;
-
-  const mid  = (hovNode.x0 + hovNode.x1) / 2 + DRAW_OFFSET;
-  // No gap on the highlight — we want full coverage of branch lines at edges
-  const sA   = hovNode.x0 + DRAW_OFFSET;
-  const eA   = hovNode.x1 + DRAW_OFFSET;
-  // NODE_R[0] = 0, so for orders this becomes a full pie slice from center
-  const tipR = NODE_R[d - 1] * outerR;
-  const oR   = SPECIES_R * outerR;
-
-  ctx.beginPath();
-  ctx.moveTo(tipR * Math.cos(mid), tipR * Math.sin(mid));
-  ctx.arc(0, 0, oR, sA, eA);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(245,158,11,0.60)';
+  if (!hovNode || !HOVER_AREA_RANKS.has(hovNode.rank)) return;
+  groupPath(ctx, hovNode);
+  ctx.fillStyle = HOVER_FILL;
   ctx.fill();
 }
 
+// A single species is about a pixel wide, so an area fill is invisible — and
+// it would be painted over by the species' own tick anyway. Its branch is
+// restated in the highlight colour instead, at exactly the weight a seen
+// species is drawn at, and AFTER the branch pass so nothing covers it.
+function drawHoverTip(ctx) {
+  if (!hovNode || hovNode.rank !== 'species') return;
+  const mid = nodeMid(hovNode);
+  const pR  = LY.genus[0]   * outerR;
+  const oR  = LY.species[1] * outerR;
+
+  ctx.save();
+  ctx.lineCap    = 'round';
+  ctx.lineWidth  = LW_SPECIES;
+  ctx.strokeStyle = HOVER_LINE;
+  ctx.beginPath();
+  ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
+  ctx.lineTo(oR * Math.cos(mid), oR * Math.sin(mid));
+  ctx.stroke();
+
+  ctx.fillStyle = HOVER_LINE;
+  ctx.beginPath();
+  ctx.arc(oR * Math.cos(mid), oR * Math.sin(mid), SPECIES_DOT_R, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.restore();
+}
+
 // ── Draw branch connector lines (cladogram style) ─────────────
-// Right-angle connections: arc at parent radius + radial line to child.
+// Right-angle connections: an arc at the parent's radius spanning its
+// children, plus a radial line out to each child. The clade region and the
+// family/genus/species rings use the same idiom, so the phylogeny reads as a
+// continuation of the Linnaean rings rather than a separate picture.
 function drawBranches(ctx) {
   ctx.lineCap  = 'round';
   ctx.lineJoin = 'round';
 
-  // Root → each order: radial stub from center to NODE_R[1]
-  const r1 = NODE_R[1] * outerR;
-  ctx.lineWidth = 1.6;
-  for (const ord of precomp.nodesByDepth.get(1) || []) {
-    const span = ord.x1 - ord.x0;
+  // Clade region (and, in taxonomic mode, the root → order stubs)
+  for (const par of precomp.nodesByRank.get('clade') || []) {
+    const ch = par.children;
+    if (!ch || !ch.length) continue;
+    const span = par.x1 - par.x0;
     if (span < MIN_ARC) continue;
-    const mid = (ord.x0 + ord.x1) / 2 + DRAW_OFFSET;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(r1 * Math.cos(mid), r1 * Math.sin(mid));
-    ctx.strokeStyle = branchStroke(ord);
-    ctx.stroke();
+
+    ctx.lineWidth = LW_CLADE;
+    const pR = par.r * outerR;
+    const firstMid = nodeMid(ch[0]);
+    const lastMid  = nodeMid(ch[ch.length - 1]);
+
+    // The root: a single trunk from the centre, meeting its arc halfway
+    // between the first two branches so the tree forks symmetrically off it.
+    if (!par.parent) {
+      const stem = nodeMid(par);   // == halfway between the first two branches
+      ctx.strokeStyle = branchStroke(par);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(pR * Math.cos(stem), pR * Math.sin(stem));
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = branchStroke(par);
+    if (ch.length > 1 && pR > 0.5) {
+      ctx.beginPath();
+      ctx.arc(0, 0, pR, firstMid, lastMid);
+      ctx.stroke();
+    }
+    for (const child of ch) {
+      const cs = child.x1 - child.x0;
+      if (cs < MIN_ARC) continue;
+      const cR  = child.r * outerR;
+      if (cR - pR < 0.3) continue;
+      const cMid = nodeMid(child);
+      ctx.beginPath();
+      ctx.moveTo(pR * Math.cos(cMid), pR * Math.sin(cMid));
+      ctx.lineTo(cR * Math.cos(cMid), cR * Math.sin(cMid));
+      ctx.strokeStyle = branchStroke(child);
+      ctx.stroke();
+    }
   }
 
-  // Depths 1-3: arc connector at parent radius + radial lines to children
-  const LW = [0, 1.4, 0.90, 0.55];
-  for (let depth = 1; depth <= 3; depth++) {
-    ctx.lineWidth = LW[depth];
-    const pR = NODE_R[depth] * outerR;
-    const cR = NODE_R[depth + 1] * outerR;
+  // Ring ranks: order ▸ family ▸ genus ▸ species
+  const CHAIN = [['order', 'family', LW_CLADE], ['family', 'genus', LW_GENUS],
+                 ['genus', 'species', LW_SPECIES]];
+  for (const [pRank, cRank, lw] of CHAIN) {
+    ctx.lineWidth = lw;
+    const pR = LY[pRank][0] * outerR;
+    const cR = LY[cRank][0] * outerR;
 
-    for (const par of precomp.nodesByDepth.get(depth) || []) {
-      if (!par.children || par.children.length === 0) continue;
+    for (const par of precomp.nodesByRank.get(pRank) || []) {
+      if (!par.children || !par.children.length) continue;
       const span = par.x1 - par.x0;
       if (span < MIN_ARC) continue;
 
-      const ch      = par.children;
-      const firstMid = (ch[0].x0 + ch[0].x1) / 2 + DRAW_OFFSET;
-      const lastMid  = (ch[ch.length - 1].x0 + ch[ch.length - 1].x1) / 2 + DRAW_OFFSET;
+      const ch = par.children;
+      const firstMid = nodeMid(ch[0]);
+      const lastMid  = nodeMid(ch[ch.length - 1]);
 
       ctx.strokeStyle = branchStroke(par);
-
-      // Horizontal arc at parent radius connecting first → last child
       if (ch.length > 1) {
         ctx.beginPath();
         ctx.arc(0, 0, pR, firstMid, lastMid);
         ctx.stroke();
       }
-
-      // Radial lines to children (genus→species handled separately as tick lines)
-      if (depth < 3) {
-        for (const child of ch) {
-          const cs = child.x1 - child.x0;
-          if (cs < MIN_ARC) continue;
-          if (cs * cR < 0.4) continue;
-          const childMid = (child.x0 + child.x1) / 2 + DRAW_OFFSET;
-          ctx.beginPath();
-          ctx.moveTo(pR * Math.cos(childMid), pR * Math.sin(childMid));
-          ctx.lineTo(cR * Math.cos(childMid), cR * Math.sin(childMid));
-          ctx.strokeStyle = branchStroke(child);
-          ctx.stroke();
-        }
+      if (cRank === 'species') continue;   // drawn as ticks below
+      for (const child of ch) {
+        const cs = child.x1 - child.x0;
+        if (cs < MIN_ARC || cs * cR < 0.4) continue;
+        const childMid = nodeMid(child);
+        ctx.beginPath();
+        ctx.moveTo(pR * Math.cos(childMid), pR * Math.sin(childMid));
+        ctx.lineTo(cR * Math.cos(childMid), cR * Math.sin(childMid));
+        ctx.strokeStyle = branchStroke(child);
+        ctx.stroke();
       }
     }
   }
 
-  // Species tick lines: short radials from NODE_R[4] to SPECIES_R, always visible.
-  // Batched by colour so the entire ring is two stroke() calls.
+  // Species tick lines, batched by colour so the ring is two stroke() calls.
   {
-    const pR = NODE_R[4] * outerR;
-    const oR = SPECIES_R * outerR;
-    ctx.lineWidth = 1.2;
+    const species = precomp.nodesByRank.get('species') || [];
+    const pR = LY.genus[0] * outerR;      // the genus arc: where the fan starts
+    const oR = LY.species[1] * outerR;    // the dot: where the tree ends
+    ctx.lineWidth = LW_SPECIES;
 
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(100,116,139,0.55)';
-    for (const sp of precomp.nodesByDepth.get(4) || []) {
+    ctx.strokeStyle = '#cdc9c0';
+    for (const sp of species) {
       if (sp.seenCount > 0) continue;
       const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
       ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
@@ -705,27 +969,25 @@ function drawBranches(ctx) {
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.strokeStyle = '#22c55e';
-    for (const sp of precomp.nodesByDepth.get(4) || []) {
+    ctx.strokeStyle = '#15803d';
+    for (const sp of species) {
       if (sp.seenCount === 0) continue;
       const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
       ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
       ctx.lineTo(oR * Math.cos(mid), oR * Math.sin(mid));
     }
     ctx.stroke();
-  }
 
-  // Green dots drawn last so they appear in front of tick lines
-  ctx.fillStyle = '#16a34a';
-  const dotR = SPECIES_R * outerR;
-  for (const sp of precomp.nodesByDepth.get(4) || []) {
-    if (sp.seenCount === 0) continue;
-    const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
-    ctx.beginPath();
-    ctx.arc(dotR * Math.cos(mid), dotR * Math.sin(mid), 2.0, 0, 2 * Math.PI);
-    ctx.fill();
+    // Green dots last so they sit in front of the ticks
+    ctx.fillStyle = '#15803d';
+    for (const sp of species) {
+      if (sp.seenCount === 0) continue;
+      const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      ctx.beginPath();
+      ctx.arc(oR * Math.cos(mid), oR * Math.sin(mid), SPECIES_DOT_R, 0, 2 * Math.PI);
+      ctx.fill();
+    }
   }
-
 }
 
 // ── Draw labels ────────────────────────────────────────────────
@@ -741,8 +1003,8 @@ function drawLabels(ctx) {
   ctx.textBaseline = 'middle';
 
   // Order labels — just outside the species ring
-  const lblR  = SPECIES_R * outerR + 10;
-  for (const node of precomp.nodesByDepth.get(1) || []) {
+  const lblR = LY.species[1] * outerR + 10;
+  for (const node of precomp.orderBands) {
     const span = node.x1 - node.x0;
     if (span < 0.035) continue;
     const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
@@ -753,15 +1015,17 @@ function drawLabels(ctx) {
     ctx.textAlign = flip ? 'right' : 'left';
     const fs = Math.max(5, Math.min(9, span * outerR * 0.5));
     ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
-    ctx.fillStyle = node.seenPct > 0 ? '#14532d' : '#6b7280';
+    ctx.fillStyle = node.seenPct > 0 ? '#14532d' : '#857f76';
     ctx.fillText(node.data.name, 0, 0);
     ctx.restore();
   }
 
-  // Family labels — inside family band, when zoomed in
+  // Family labels — inside the family band, when zoomed in
   if (xf.k > 2) {
-    const fR = (NODE_R[2] + NODE_R[3]) / 2 * outerR;
-    for (const node of precomp.nodesByDepth.get(2) || []) {
+    for (const node of precomp.nodesByRank.get('family') || []) {
+      // Middle of this family's own visible region, which runs from where it
+      // leaves its parent to where its genera take over.
+      const fR = ((node.baseR || 0) + LY.family[0]) / 2 * outerR;
       const span = node.x1 - node.x0;
       if (span * fR * xf.k < 18) continue;
       const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
@@ -771,16 +1035,16 @@ function drawLabels(ctx) {
       ctx.rotate(mid + (flip ? Math.PI : 0));
       ctx.textAlign = 'center';
       ctx.font = '500 7px Inter, system-ui, sans-serif';
-      ctx.fillStyle = node.seenPct > 0 ? '#166534' : '#94a3b8';
+      ctx.fillStyle = node.seenPct > 0 ? '#166534' : '#a49e96';
       ctx.fillText(node.data.comName || node.data.name, 0, 0);
       ctx.restore();
     }
   }
 
-  // Species labels — outside species ring, deep zoom
+  // Species labels — outside the species ring, deep zoom
   if (xf.k > 5) {
-    const spR = SPECIES_R * outerR + 5;
-    for (const node of precomp.nodesByDepth.get(4) || []) {
+    const spR = LY.species[1] * outerR + 5;
+    for (const node of precomp.nodesByRank.get('species') || []) {
       const span = node.x1 - node.x0;
       if (span * spR * xf.k < 10) continue;
       const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
@@ -790,7 +1054,7 @@ function drawLabels(ctx) {
       ctx.rotate(mid + (flip ? Math.PI : 0));
       ctx.textAlign = flip ? 'right' : 'left';
       ctx.font = '400 5px Inter, system-ui, sans-serif';
-      ctx.fillStyle = node.seenCount > 0 ? '#15803d' : '#9ca3af';
+      ctx.fillStyle = node.seenCount > 0 ? '#15803d' : '#a9a49c';
       ctx.fillText(node.data.comName, 0, 0);
       ctx.restore();
     }
@@ -820,17 +1084,23 @@ function findNodeAt(mx, my) {
   theta = ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
   if (theta > TREE_SPAN) return null; // inside the gap
 
-  // Find which depth band contains r
-  for (let depth = 1; depth <= 3; depth++) {
-    const iR = NODE_R[depth] * outerR;
-    const oR = NODE_R[depth + 1] * outerR;
-    if (r >= iR && r <= oR) {
-      return binarySearch(precomp.nodesByDepth.get(depth) || [], theta);
+  // Which silhouette is on top here? Children paint over their parents, and
+  // each starts at its own attachment radius, so the visible rank at a point
+  // follows directly from those radii. Hit testing mirrors that exactly, so
+  // the hover highlight always matches what the cursor is over.
+  if (r < LY.genus[0] * outerR) {
+    const fam = binarySearch(precomp.nodesByRank.get('family') || [], theta);
+    if (!fam) return null;
+    if (r >= LY.family[0] * outerR) {
+      return binarySearch(precomp.nodesByRank.get('genus') || [], theta) || fam;
     }
+    if (r >= (fam.baseR || 0) * outerR) return fam;
+    return binarySearch(precomp.orderBands, theta);
   }
-  const tickInner = NODE_R[4] * outerR;
-  const tickOuter = SPECIES_R * outerR;
-  const nodes4    = precomp.nodesByDepth.get(4) || [];
+
+  const tickInner = LY.genus[0] * outerR;
+  const tickOuter = LY.species[1] * outerR;
+  const nodes4    = precomp.nodesByRank.get('species') || [];
 
   // Dot check (highest priority): covers the full 2px dot [tickOuter-2, tickOuter+3].
   // A dot covers ~24 species partitions, so scan ±30 neighbours by Euclidean distance
@@ -857,7 +1127,7 @@ function findNodeAt(mx, my) {
     // Not on any dot; fall through to tick-zone handling below
   }
 
-  // Tick zone [NODE_R[4], SPECIES_R]: binary search by angle — any species
+  // Tick zone [species[0], species[1]]: binary search by angle — any species
   if (r >= tickInner && r <= tickOuter) {
     return binarySearch(nodes4, theta);
   }
@@ -1050,19 +1320,49 @@ function updateStats() {
   document.getElementById('stats-panel').style.display = '';
 }
 
+// ── Layout description in the sidebar ─────────────────────────
+function updateLayoutNote() {
+  const rem = document.getElementById('remark-layout');
+  if (!rem) return;
+  if (phyloMode) {
+    const m = (window.BIRD_PHYLOGENY && window.BIRD_PHYLOGENY.meta) || {};
+    const n = m.sourceCount || (m.sources && m.sources.length) || 0;
+    rem.innerHTML = 'Phylogenetic tree built to family level from ' +
+      '<a href="files/bird_phylogeny.json">' +
+      (n ? n + ' published sources' : 'published sources') + '</a>.';
+  } else {
+    rem.textContent = 'Laid out by Linnaean rank — the bundled phylogeny only fits the ' +
+      'checklist shipped with this page.';
+  }
+}
+
 // ── Process taxonomy ───────────────────────────────────────────
-function processTaxonomy(rows, label) {
-  const { root, totalSpecies, codeIndex, sciSet } = buildHierarchy(rows);
+// `allowPhylo` is set only for the bundled checklist. A taxonomy the user
+// drops in is laid out Linnaean-style, because the phylogeny in
+// files/bird_phylogeny.json is keyed to the family list of the bundled
+// edition and grafting it onto a different one would misplace families.
+function processTaxonomy(rows, label, allowPhylo) {
+  const { root, totalSpecies, codeIndex, sciSet, famIndex } = buildHierarchy(rows);
   codeToSci = codeIndex;
   validSci  = sciSet;
-  precompute(root);
+
+  let layoutRoot = root;
+  phyloMode = false;
+  if (allowPhylo) {
+    const grafted = graftPhylogeny(window.BIRD_PHYLOGENY, famIndex);
+    if (grafted) { layoutRoot = grafted; phyloMode = true; }
+  }
+  precompute(layoutRoot, phyloMode);
+  updateLayoutNote();
   // A life list loaded under the previous taxonomy must be re-resolved, since
   // the canonical names it was mapped onto may have changed.
   if (lifeListRows) seenSet = parseLifeList(lifeListRows);
   annotate();
   updateStats();
   scheduleRender();
-  zoneLoaded('zone-tx', 'status-tx', `${label} · ${totalSpecies.toLocaleString()} species`);
+  const layoutName = phyloMode ? 'phylogenetic' : 'taxonomic';
+  zoneLoaded('zone-tx', 'status-tx',
+             `${label} · ${totalSpecies.toLocaleString()} species · ${layoutName} layout`);
   if (lifeListRows) zoneLoaded('zone-ll', 'status-ll', lifeListStatus());
 }
 
@@ -1082,7 +1382,7 @@ function processLifeList(rows, fname) {
 setupZone('zone-tx', 'input-tx', (rows, fname) => {
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById('hint-tx').textContent = `Custom upload · ${today} · Drop another to replace`;
-  processTaxonomy(rows, fname);
+  processTaxonomy(rows, fname, false);
 });
 
 setupZone('zone-ll', 'input-ll', (rows, fname) => processLifeList(rows, fname));
@@ -1113,10 +1413,12 @@ document.getElementById('chk-exotic').addEventListener('change', () => {
     const remarkEl = document.getElementById('remark-version');
     if (remarkEl) {
       const version = window.CLEMENTS_VERSION ? ` ${window.CLEMENTS_VERSION}` : '';
-      remarkEl.textContent =
-        `Built from the eBird/Clements Checklist${version} (${label.replace(/^Clements /, '')}) — drop a different version's CSV above to override it.`;
+      remarkEl.innerHTML =
+        `Built from the eBird/Clements Checklist${version} — drop another version's CSV above ` +
+        `to override. If your eBird list was exported under a different version, some ` +
+        `species will be "unmatched".`;
     }
-    processTaxonomy(rows, label);
+    processTaxonomy(rows, label, true);
     return;
   }
 

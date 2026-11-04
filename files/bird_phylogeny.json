@@ -1,0 +1,2617 @@
+{
+ "meta": {
+  "title": "Family-level phylogeny of birds",
+  "basis": "eBird/Clements checklist v2026",
+  "families": 250,
+  "internalNodes": 197,
+  "maxDepth": 29,
+  "polytomies": 23,
+  "sources": [
+   "Prum, R.O. et al. 2015. A comprehensive phylogeny of birds (Aves) using targeted next-generation DNA sequencing. Nature 526:569-573.",
+   "Jarvis, E.D. et al. 2014. Whole-genome analyses resolve early branches in the tree of life of modern birds. Science 346:1320-1331.",
+   "Kuhl, H. et al. 2021. An unbiased molecular approach using 3'-UTRs resolves the avian family-level tree of life. Mol. Biol. Evol. 38:108-127.",
+   "Stiller, J. et al. 2024. Complexity of avian evolution revealed by family-level genomes. Nature 629:851-860.",
+   "Cloutier, A. et al. 2019. Whole-genome analyses resolve the phylogeny of flightless birds (Palaeognathae). Syst. Biol. 68:937-955.",
+   "Sackton, T.B. et al. 2019. Convergent regulatory evolution and loss of flight in paleognathous birds. Science 364:74-78.",
+   "Chen, A. & Field, D.J. 2020. Phylogenetic definitions for Caprimulgimorphae and other avian clades. BMC Evol. Biol. 20:146.",
+   "Estandia, A. et al. 2021. Substitution rate variation in a robust procellariiform seabird phylogeny. Mol. Phylogenet. Evol. 160:107158.",
+   "Baker, A.J. et al. 2007. Multiple gene evidence for expansion of extant penguins out of Antarctica. Biol. Lett. 3:205-209.",
+   "Cerny, D. & Natale, R. 2022. Comprehensive taxon sampling and vetted fossils help clarify the time tree of shorebirds. Mol. Phylogenet. Evol. 177:107620.",
+   "Oliveros, C.H. et al. 2019. Earth history and the passerine superradiation. PNAS 116:7916-7925.",
+   "Moyle, R.G. et al. 2016. Tectonic collision and uplift of Wallacea triggered the global songbird radiation. Nat. Commun. 7:12709.",
+   "Cai, T. et al. 2019. Near-complete phylogeny and taxonomic revision of the world's babblers. Mol. Phylogenet. Evol. 130:346-356.",
+   "Alstrom, P. et al. 2013. Multilocus phylogeny of the avian family Alaudidae. Mol. Phylogenet. Evol. 69:1043-1056.",
+   "Barker, F.K. et al. 2015. New insights into New World biogeography: an integrated view from the phylogeny of blackbirds, cardinals, sparrows, tanagers, warblers, and allies. Auk 132:333-348."
+  ],
+  "sourceCount": 15,
+  "limitation": "The base of Neoaves is left as a polytomy of well-supported superorders. This is the famously recalcitrant part of the avian tree: Jarvis 2014, Prum 2015, Kuhl 2021 and Stiller 2024 each recover a different arrangement of these lineages, with short internodes and extensive gene-tree conflict. Asserting any one of them here would misrepresent the state of the literature.",
+  "generator": "scripts/generate_phylogeny.py from scripts/phylogeny_source.py"
+ },
+ "tree": {
+  "rank": "clade",
+  "children": [
+   {
+    "rank": "clade",
+    "children": [
+     {
+      "name": "Struthionidae",
+      "rank": "family",
+      "comName": "Ostriches",
+      "order": "Struthioniformes"
+     },
+     {
+      "rank": "clade",
+      "children": [
+       {
+        "name": "Rheidae",
+        "rank": "family",
+        "comName": "Rheas",
+        "order": "Rheiformes"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "name": "Tinamidae",
+          "rank": "family",
+          "comName": "Tinamous",
+          "order": "Tinamiformes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Apterygidae",
+            "rank": "family",
+            "comName": "Kiwis",
+            "order": "Apterygiformes"
+           },
+           {
+            "name": "Casuariidae",
+            "rank": "family",
+            "comName": "Cassowaries and Emu",
+            "order": "Casuariiformes"
+           }
+          ],
+          "name": "Novaeratitae"
+         }
+        ]
+       }
+      ],
+      "name": "Notopalaeognathae"
+     }
+    ],
+    "name": "Palaeognathae"
+   },
+   {
+    "rank": "clade",
+    "children": [
+     {
+      "rank": "clade",
+      "children": [
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "name": "Anhimidae",
+          "rank": "family",
+          "comName": "Screamers",
+          "order": "Anseriformes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Anseranatidae",
+            "rank": "family",
+            "comName": "Magpie Goose",
+            "order": "Anseriformes"
+           },
+           {
+            "name": "Anatidae",
+            "rank": "family",
+            "comName": "Ducks, Geese, and Waterfowl",
+            "order": "Anseriformes"
+           }
+          ],
+          "name": "Anseres"
+         }
+        ],
+        "name": "Anseriformes"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "name": "Megapodiidae",
+          "rank": "family",
+          "comName": "Megapodes",
+          "order": "Galliformes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Cracidae",
+            "rank": "family",
+            "comName": "Guans, Chachalacas, and Curassows",
+            "order": "Galliformes"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Numididae",
+              "rank": "family",
+              "comName": "Guineafowl",
+              "order": "Galliformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Odontophoridae",
+                "rank": "family",
+                "comName": "New World Quail",
+                "order": "Galliformes"
+               },
+               {
+                "name": "Phasianidae",
+                "rank": "family",
+                "comName": "Pheasants, Grouse, and Allies",
+                "order": "Galliformes"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ],
+        "name": "Galliformes"
+       }
+      ],
+      "name": "Galloanserae"
+     },
+     {
+      "rank": "clade",
+      "children": [
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "name": "Caprimulgidae",
+          "rank": "family",
+          "comName": "Nightjars and Allies",
+          "order": "Caprimulgiformes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Steatornithidae",
+              "rank": "family",
+              "comName": "Oilbird",
+              "order": "Steatornithiformes"
+             },
+             {
+              "name": "Nyctibiidae",
+              "rank": "family",
+              "comName": "Potoos",
+              "order": "Nyctibiiformes"
+             }
+            ],
+            "name": "Nyctibiiformes+Steatornithiformes"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Podargidae",
+              "rank": "family",
+              "comName": "Frogmouths",
+              "order": "Podargiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Aegothelidae",
+                "rank": "family",
+                "comName": "Owlet-nightjars",
+                "order": "Aegotheliformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "rank": "clade",
+                  "children": [
+                   {
+                    "name": "Apodidae",
+                    "rank": "family",
+                    "comName": "Swifts",
+                    "order": "Apodiformes"
+                   },
+                   {
+                    "name": "Hemiprocnidae",
+                    "rank": "family",
+                    "comName": "Treeswifts",
+                    "order": "Apodiformes"
+                   }
+                  ],
+                  "name": "Apodi"
+                 },
+                 {
+                  "name": "Trochilidae",
+                  "rank": "family",
+                  "comName": "Hummingbirds",
+                  "order": "Apodiformes"
+                 }
+                ],
+                "name": "Apodiformes"
+               }
+              ],
+              "name": "Daedalornithes"
+             }
+            ]
+           }
+          ]
+         }
+        ],
+        "name": "Strisores"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Musophagidae",
+            "rank": "family",
+            "comName": "Turacos",
+            "order": "Musophagiformes"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Otididae",
+              "rank": "family",
+              "comName": "Bustards",
+              "order": "Otidiformes"
+             },
+             {
+              "name": "Cuculidae",
+              "rank": "family",
+              "comName": "Cuckoos",
+              "order": "Cuculiformes"
+             }
+            ]
+           }
+          ],
+          "name": "Otidimorphae"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Columbidae",
+            "rank": "family",
+            "comName": "Pigeons and Doves",
+            "order": "Columbiformes"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Mesitornithidae",
+              "rank": "family",
+              "comName": "Mesites",
+              "order": "Mesitornithiformes"
+             },
+             {
+              "name": "Pteroclidae",
+              "rank": "family",
+              "comName": "Sandgrouse",
+              "order": "Pterocliformes"
+             }
+            ]
+           }
+          ],
+          "name": "Columbimorphae"
+         }
+        ],
+        "name": "Columbaves"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Sarothruridae",
+              "rank": "family",
+              "comName": "Flufftails",
+              "order": "Gruiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Heliornithidae",
+                "rank": "family",
+                "comName": "Finfoots",
+                "order": "Gruiformes"
+               },
+               {
+                "name": "Rallidae",
+                "rank": "family",
+                "comName": "Rails, Gallinules, and Coots",
+                "order": "Gruiformes"
+               }
+              ]
+             }
+            ],
+            "name": "Ralloidea"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Psophiidae",
+              "rank": "family",
+              "comName": "Trumpeters",
+              "order": "Gruiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Aramidae",
+                "rank": "family",
+                "comName": "Limpkin",
+                "order": "Gruiformes"
+               },
+               {
+                "name": "Gruidae",
+                "rank": "family",
+                "comName": "Cranes",
+                "order": "Gruiformes"
+               }
+              ]
+             }
+            ],
+            "name": "Gruoidea"
+           }
+          ],
+          "name": "Gruiformes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Chionidae",
+                "rank": "family",
+                "comName": "Sheathbills",
+                "order": "Charadriiformes"
+               },
+               {
+                "name": "Pluvianellidae",
+                "rank": "family",
+                "comName": "Magellanic Plover",
+                "order": "Charadriiformes"
+               }
+              ]
+             },
+             {
+              "name": "Burhinidae",
+              "rank": "family",
+              "comName": "Thick-knees",
+              "order": "Charadriiformes"
+             },
+             {
+              "name": "Pluvianidae",
+              "rank": "family",
+              "comName": "Egyptian Plover",
+              "order": "Charadriiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Ibidorhynchidae",
+                  "rank": "family",
+                  "comName": "Ibisbill",
+                  "order": "Charadriiformes"
+                 },
+                 {
+                  "name": "Recurvirostridae",
+                  "rank": "family",
+                  "comName": "Stilts and Avocets",
+                  "order": "Charadriiformes"
+                 }
+                ],
+                "name": "Recurvirostridae+"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Haematopodidae",
+                  "rank": "family",
+                  "comName": "Oystercatchers",
+                  "order": "Charadriiformes"
+                 },
+                 {
+                  "name": "Charadriidae",
+                  "rank": "family",
+                  "comName": "Plovers and Lapwings",
+                  "order": "Charadriiformes"
+                 }
+                ]
+               }
+              ]
+             }
+            ],
+            "name": "Charadrii"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Rostratulidae",
+                  "rank": "family",
+                  "comName": "Painted-Snipes",
+                  "order": "Charadriiformes"
+                 },
+                 {
+                  "name": "Jacanidae",
+                  "rank": "family",
+                  "comName": "Jacanas",
+                  "order": "Charadriiformes"
+                 }
+                ]
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Thinocoridae",
+                  "rank": "family",
+                  "comName": "Seedsnipes",
+                  "order": "Charadriiformes"
+                 },
+                 {
+                  "name": "Pedionomidae",
+                  "rank": "family",
+                  "comName": "Plains-wanderer",
+                  "order": "Charadriiformes"
+                 }
+                ]
+               },
+               {
+                "name": "Scolopacidae",
+                "rank": "family",
+                "comName": "Sandpipers and Allies",
+                "order": "Charadriiformes"
+               }
+              ],
+              "name": "Scolopaci"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Turnicidae",
+                "rank": "family",
+                "comName": "Buttonquail",
+                "order": "Charadriiformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Dromadidae",
+                  "rank": "family",
+                  "comName": "Crab-Plover",
+                  "order": "Charadriiformes"
+                 },
+                 {
+                  "name": "Glareolidae",
+                  "rank": "family",
+                  "comName": "Pratincoles and Coursers",
+                  "order": "Charadriiformes"
+                 }
+                ]
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Stercorariidae",
+                  "rank": "family",
+                  "comName": "Skuas and Jaegers",
+                  "order": "Charadriiformes"
+                 },
+                 {
+                  "rank": "clade",
+                  "children": [
+                   {
+                    "name": "Alcidae",
+                    "rank": "family",
+                    "comName": "Auks, Murres, and Puffins",
+                    "order": "Charadriiformes"
+                   },
+                   {
+                    "name": "Laridae",
+                    "rank": "family",
+                    "comName": "Gulls, Terns, and Skimmers",
+                    "order": "Charadriiformes"
+                   }
+                  ]
+                 }
+                ]
+               }
+              ],
+              "name": "Lari"
+             }
+            ]
+           }
+          ],
+          "name": "Charadriiformes"
+         }
+        ],
+        "name": "Gruimorphae"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "name": "Phoenicopteridae",
+          "rank": "family",
+          "comName": "Flamingos",
+          "order": "Phoenicopteriformes"
+         },
+         {
+          "name": "Podicipedidae",
+          "rank": "family",
+          "comName": "Grebes",
+          "order": "Podicipediformes"
+         }
+        ],
+        "name": "Mirandornithes"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "name": "Phaethontidae",
+          "rank": "family",
+          "comName": "Tropicbirds",
+          "order": "Phaethontiformes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Rhynochetidae",
+            "rank": "family",
+            "comName": "Kagu",
+            "order": "Eurypygiformes"
+           },
+           {
+            "name": "Eurypygidae",
+            "rank": "family",
+            "comName": "Sunbittern",
+            "order": "Eurypygiformes"
+           }
+          ],
+          "name": "Eurypygiformes"
+         }
+        ],
+        "name": "Phaethontimorphae"
+       },
+       {
+        "name": "Opisthocomidae",
+        "rank": "family",
+        "comName": "Hoatzin",
+        "order": "Opisthocomiformes"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "name": "Gaviidae",
+          "rank": "family",
+          "comName": "Loons",
+          "order": "Gaviiformes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Spheniscidae",
+            "rank": "family",
+            "comName": "Penguins",
+            "order": "Sphenisciformes"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Oceanitidae",
+              "rank": "family",
+              "comName": "Southern Storm-Petrels",
+              "order": "Procellariiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Diomedeidae",
+                "rank": "family",
+                "comName": "Albatrosses",
+                "order": "Procellariiformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Hydrobatidae",
+                  "rank": "family",
+                  "comName": "Northern Storm-Petrels",
+                  "order": "Procellariiformes"
+                 },
+                 {
+                  "name": "Procellariidae",
+                  "rank": "family",
+                  "comName": "Shearwaters and Petrels",
+                  "order": "Procellariiformes"
+                 }
+                ]
+               }
+              ]
+             }
+            ],
+            "name": "Procellariiformes"
+           }
+          ],
+          "name": "Austrodyptornithes"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Ciconiidae",
+            "rank": "family",
+            "comName": "Storks",
+            "order": "Ciconiiformes"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Fregatidae",
+                "rank": "family",
+                "comName": "Frigatebirds",
+                "order": "Suliformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Sulidae",
+                  "rank": "family",
+                  "comName": "Boobies and Gannets",
+                  "order": "Suliformes"
+                 },
+                 {
+                  "rank": "clade",
+                  "children": [
+                   {
+                    "name": "Anhingidae",
+                    "rank": "family",
+                    "comName": "Anhingas",
+                    "order": "Suliformes"
+                   },
+                   {
+                    "name": "Phalacrocoracidae",
+                    "rank": "family",
+                    "comName": "Cormorants and Shags",
+                    "order": "Suliformes"
+                   }
+                  ]
+                 }
+                ]
+               }
+              ],
+              "name": "Suliformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Threskiornithidae",
+                "rank": "family",
+                "comName": "Ibises and Spoonbills",
+                "order": "Pelecaniformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Ardeidae",
+                  "rank": "family",
+                  "comName": "Herons, Egrets, and Bitterns",
+                  "order": "Pelecaniformes"
+                 },
+                 {
+                  "rank": "clade",
+                  "children": [
+                   {
+                    "rank": "clade",
+                    "children": [
+                     {
+                      "name": "Scopidae",
+                      "rank": "family",
+                      "comName": "Hamerkop",
+                      "order": "Pelecaniformes"
+                     },
+                     {
+                      "name": "Balaenicipitidae",
+                      "rank": "family",
+                      "comName": "Shoebill",
+                      "order": "Pelecaniformes"
+                     }
+                    ]
+                   },
+                   {
+                    "name": "Pelecanidae",
+                    "rank": "family",
+                    "comName": "Pelicans",
+                    "order": "Pelecaniformes"
+                   }
+                  ],
+                  "name": "Pelecani"
+                 }
+                ]
+               }
+              ],
+              "name": "Pelecaniformes"
+             }
+            ]
+           }
+          ]
+         }
+        ],
+        "name": "Aequornithes"
+       },
+       {
+        "rank": "clade",
+        "children": [
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Cathartidae",
+              "rank": "family",
+              "comName": "New World Vultures",
+              "order": "Cathartiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Sagittariidae",
+                "rank": "family",
+                "comName": "Secretarybird",
+                "order": "Accipitriformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Pandionidae",
+                  "rank": "family",
+                  "comName": "Osprey",
+                  "order": "Accipitriformes"
+                 },
+                 {
+                  "name": "Accipitridae",
+                  "rank": "family",
+                  "comName": "Hawks, Eagles, and Kites",
+                  "order": "Accipitriformes"
+                 }
+                ]
+               }
+              ],
+              "name": "Accipitriformes"
+             }
+            ],
+            "name": "Accipitrimorphae"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Tytonidae",
+                "rank": "family",
+                "comName": "Barn-Owls",
+                "order": "Strigiformes"
+               },
+               {
+                "name": "Strigidae",
+                "rank": "family",
+                "comName": "Owls",
+                "order": "Strigiformes"
+               }
+              ],
+              "name": "Strigiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "name": "Coliidae",
+                "rank": "family",
+                "comName": "Mousebirds",
+                "order": "Coliiformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Leptosomidae",
+                  "rank": "family",
+                  "comName": "Cuckoo-roller",
+                  "order": "Leptosomiformes"
+                 },
+                 {
+                  "rank": "clade",
+                  "children": [
+                   {
+                    "name": "Trogonidae",
+                    "rank": "family",
+                    "comName": "Trogons",
+                    "order": "Trogoniformes"
+                   },
+                   {
+                    "rank": "clade",
+                    "children": [
+                     {
+                      "rank": "clade",
+                      "children": [
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "name": "Upupidae",
+                          "rank": "family",
+                          "comName": "Hoopoes",
+                          "order": "Bucerotiformes"
+                         },
+                         {
+                          "name": "Phoeniculidae",
+                          "rank": "family",
+                          "comName": "Woodhoopoes and Scimitarbills",
+                          "order": "Bucerotiformes"
+                         }
+                        ],
+                        "name": "Upupiformes"
+                       },
+                       {
+                        "name": "Bucerotidae",
+                        "rank": "family",
+                        "comName": "Hornbills",
+                        "order": "Bucerotiformes"
+                       }
+                      ],
+                      "name": "Bucerotiformes"
+                     },
+                     {
+                      "rank": "clade",
+                      "children": [
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Coraciidae",
+                            "rank": "family",
+                            "comName": "Rollers",
+                            "order": "Coraciiformes"
+                           },
+                           {
+                            "name": "Brachypteraciidae",
+                            "rank": "family",
+                            "comName": "Ground-Rollers",
+                            "order": "Coraciiformes"
+                           }
+                          ],
+                          "name": "Coracii"
+                         },
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Meropidae",
+                            "rank": "family",
+                            "comName": "Bee-eaters",
+                            "order": "Coraciiformes"
+                           },
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Alcedinidae",
+                              "rank": "family",
+                              "comName": "Kingfishers",
+                              "order": "Coraciiformes"
+                             },
+                             {
+                              "rank": "clade",
+                              "children": [
+                               {
+                                "name": "Todidae",
+                                "rank": "family",
+                                "comName": "Todies",
+                                "order": "Coraciiformes"
+                               },
+                               {
+                                "name": "Momotidae",
+                                "rank": "family",
+                                "comName": "Motmots",
+                                "order": "Coraciiformes"
+                               }
+                              ],
+                              "name": "Todidae+Momotidae"
+                             }
+                            ],
+                            "name": "Alcedines"
+                           }
+                          ],
+                          "name": "Alcedinimorphae"
+                         }
+                        ],
+                        "name": "Coraciiformes"
+                       },
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Galbulidae",
+                            "rank": "family",
+                            "comName": "Jacamars",
+                            "order": "Piciformes"
+                           },
+                           {
+                            "name": "Bucconidae",
+                            "rank": "family",
+                            "comName": "Puffbirds",
+                            "order": "Piciformes"
+                           }
+                          ],
+                          "name": "Galbuli"
+                         },
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Indicatoridae",
+                              "rank": "family",
+                              "comName": "Honeyguides",
+                              "order": "Piciformes"
+                             },
+                             {
+                              "name": "Picidae",
+                              "rank": "family",
+                              "comName": "Woodpeckers",
+                              "order": "Piciformes"
+                             }
+                            ]
+                           },
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Megalaimidae",
+                              "rank": "family",
+                              "comName": "Asian Barbets",
+                              "order": "Piciformes"
+                             },
+                             {
+                              "rank": "clade",
+                              "children": [
+                               {
+                                "name": "Lybiidae",
+                                "rank": "family",
+                                "comName": "African Barbets",
+                                "order": "Piciformes"
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "name": "Capitonidae",
+                                  "rank": "family",
+                                  "comName": "New World Barbets",
+                                  "order": "Piciformes"
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Semnornithidae",
+                                    "rank": "family",
+                                    "comName": "Toucan-Barbets",
+                                    "order": "Piciformes"
+                                   },
+                                   {
+                                    "name": "Ramphastidae",
+                                    "rank": "family",
+                                    "comName": "Toucans",
+                                    "order": "Piciformes"
+                                   }
+                                  ]
+                                 }
+                                ]
+                               }
+                              ]
+                             }
+                            ],
+                            "name": "Ramphastides"
+                           }
+                          ],
+                          "name": "Pici"
+                         }
+                        ],
+                        "name": "Piciformes"
+                       }
+                      ],
+                      "name": "Picodynastornithes"
+                     }
+                    ],
+                    "name": "Picocoraciae"
+                   }
+                  ],
+                  "name": "Eucavitaves"
+                 }
+                ],
+                "name": "Cavitaves"
+               }
+              ],
+              "name": "Coraciimorphae"
+             }
+            ]
+           }
+          ],
+          "name": "Afroaves"
+         },
+         {
+          "rank": "clade",
+          "children": [
+           {
+            "name": "Cariamidae",
+            "rank": "family",
+            "comName": "Seriemas",
+            "order": "Cariamiformes"
+           },
+           {
+            "rank": "clade",
+            "children": [
+             {
+              "name": "Falconidae",
+              "rank": "family",
+              "comName": "Falcons and Caracaras",
+              "order": "Falconiformes"
+             },
+             {
+              "rank": "clade",
+              "children": [
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Strigopidae",
+                  "rank": "family",
+                  "comName": "New Zealand Parrots",
+                  "order": "Psittaciformes"
+                 },
+                 {
+                  "rank": "clade",
+                  "children": [
+                   {
+                    "name": "Cacatuidae",
+                    "rank": "family",
+                    "comName": "Cockatoos",
+                    "order": "Psittaciformes"
+                   },
+                   {
+                    "rank": "clade",
+                    "children": [
+                     {
+                      "name": "Psittaculidae",
+                      "rank": "family",
+                      "comName": "Old World Parrots",
+                      "order": "Psittaciformes"
+                     },
+                     {
+                      "name": "Psittacidae",
+                      "rank": "family",
+                      "comName": "New World and African Parrots",
+                      "order": "Psittaciformes"
+                     }
+                    ],
+                    "name": "Psittacoidea"
+                   }
+                  ]
+                 }
+                ],
+                "name": "Psittaciformes"
+               },
+               {
+                "rank": "clade",
+                "children": [
+                 {
+                  "name": "Acanthisittidae",
+                  "rank": "family",
+                  "comName": "New Zealand Wrens",
+                  "order": "Passeriformes"
+                 },
+                 {
+                  "rank": "clade",
+                  "children": [
+                   {
+                    "rank": "clade",
+                    "children": [
+                     {
+                      "rank": "clade",
+                      "children": [
+                       {
+                        "name": "Sapayoidae",
+                        "rank": "family",
+                        "comName": "Sapayoa",
+                        "order": "Passeriformes"
+                       },
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "name": "Pittidae",
+                          "rank": "family",
+                          "comName": "Pittas",
+                          "order": "Passeriformes"
+                         },
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Calyptomenidae",
+                            "rank": "family",
+                            "comName": "African and Green Broadbills",
+                            "order": "Passeriformes"
+                           },
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Eurylaimidae",
+                              "rank": "family",
+                              "comName": "Asian and Grauer's Broadbills",
+                              "order": "Passeriformes"
+                             },
+                             {
+                              "name": "Philepittidae",
+                              "rank": "family",
+                              "comName": "Asities",
+                              "order": "Passeriformes"
+                             }
+                            ]
+                           }
+                          ]
+                         }
+                        ]
+                       }
+                      ],
+                      "name": "Eurylaimides"
+                     },
+                     {
+                      "rank": "clade",
+                      "children": [
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Thamnophilidae",
+                            "rank": "family",
+                            "comName": "Typical Antbirds",
+                            "order": "Passeriformes"
+                           },
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Melanopareiidae",
+                              "rank": "family",
+                              "comName": "Crescentchests",
+                              "order": "Passeriformes"
+                             },
+                             {
+                              "name": "Conopophagidae",
+                              "rank": "family",
+                              "comName": "Gnateaters",
+                              "order": "Passeriformes"
+                             }
+                            ]
+                           }
+                          ],
+                          "name": "Thamnophilida"
+                         },
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Grallariidae",
+                              "rank": "family",
+                              "comName": "Antpittas",
+                              "order": "Passeriformes"
+                             },
+                             {
+                              "name": "Rhinocryptidae",
+                              "rank": "family",
+                              "comName": "Tapaculos",
+                              "order": "Passeriformes"
+                             }
+                            ]
+                           },
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Formicariidae",
+                              "rank": "family",
+                              "comName": "Antthrushes",
+                              "order": "Passeriformes"
+                             },
+                             {
+                              "name": "Furnariidae",
+                              "rank": "family",
+                              "comName": "Ovenbirds and Woodcreepers",
+                              "order": "Passeriformes"
+                             }
+                            ]
+                           }
+                          ],
+                          "name": "Furnariida s.s."
+                         }
+                        ],
+                        "name": "Furnariida"
+                       },
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Tityridae",
+                            "rank": "family",
+                            "comName": "Tityras and Allies",
+                            "order": "Passeriformes"
+                           },
+                           {
+                            "name": "Oxyruncidae",
+                            "rank": "family",
+                            "comName": "Sharpbill",
+                            "order": "Passeriformes"
+                           },
+                           {
+                            "name": "Onychorhynchidae",
+                            "rank": "family",
+                            "comName": "Royal Flycatchers and Allies",
+                            "order": "Passeriformes"
+                           }
+                          ],
+                          "name": "Tityroidea"
+                         },
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Cotingidae",
+                            "rank": "family",
+                            "comName": "Cotingas",
+                            "order": "Passeriformes"
+                           },
+                           {
+                            "name": "Pipridae",
+                            "rank": "family",
+                            "comName": "Manakins",
+                            "order": "Passeriformes"
+                           }
+                          ]
+                         },
+                         {
+                          "name": "Tyrannidae",
+                          "rank": "family",
+                          "comName": "Tyrant Flycatchers",
+                          "order": "Passeriformes"
+                         }
+                        ],
+                        "name": "Tyrannida"
+                       }
+                      ],
+                      "name": "Tyrannides"
+                     }
+                    ],
+                    "name": "Tyranni"
+                   },
+                   {
+                    "rank": "clade",
+                    "children": [
+                     {
+                      "rank": "clade",
+                      "children": [
+                       {
+                        "name": "Menuridae",
+                        "rank": "family",
+                        "comName": "Lyrebirds",
+                        "order": "Passeriformes"
+                       },
+                       {
+                        "name": "Atrichornithidae",
+                        "rank": "family",
+                        "comName": "Scrub-birds",
+                        "order": "Passeriformes"
+                       }
+                      ],
+                      "name": "Menurides"
+                     },
+                     {
+                      "rank": "clade",
+                      "children": [
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "name": "Ptilonorhynchidae",
+                          "rank": "family",
+                          "comName": "Bowerbirds",
+                          "order": "Passeriformes"
+                         },
+                         {
+                          "name": "Climacteridae",
+                          "rank": "family",
+                          "comName": "Australasian Treecreepers",
+                          "order": "Passeriformes"
+                         }
+                        ],
+                        "name": "Climacterides"
+                       },
+                       {
+                        "rank": "clade",
+                        "children": [
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "name": "Maluridae",
+                            "rank": "family",
+                            "comName": "Fairywrens",
+                            "order": "Passeriformes"
+                           },
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Dasyornithidae",
+                              "rank": "family",
+                              "comName": "Bristlebirds",
+                              "order": "Passeriformes"
+                             },
+                             {
+                              "rank": "clade",
+                              "children": [
+                               {
+                                "name": "Meliphagidae",
+                                "rank": "family",
+                                "comName": "Honeyeaters",
+                                "order": "Passeriformes"
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "name": "Pardalotidae",
+                                  "rank": "family",
+                                  "comName": "Pardalotes",
+                                  "order": "Passeriformes"
+                                 },
+                                 {
+                                  "name": "Acanthizidae",
+                                  "rank": "family",
+                                  "comName": "Thornbills and Allies",
+                                  "order": "Passeriformes"
+                                 }
+                                ],
+                                "name": "Pardalotidae+Acanthizidae"
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ],
+                          "name": "Meliphagides"
+                         },
+                         {
+                          "rank": "clade",
+                          "children": [
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "name": "Orthonychidae",
+                              "rank": "family",
+                              "comName": "Logrunners and Chowchilla",
+                              "order": "Passeriformes"
+                             },
+                             {
+                              "name": "Pomatostomidae",
+                              "rank": "family",
+                              "comName": "Australasian Babblers",
+                              "order": "Passeriformes"
+                             }
+                            ],
+                            "name": "Orthonychides"
+                           },
+                           {
+                            "rank": "clade",
+                            "children": [
+                             {
+                              "rank": "clade",
+                              "children": [
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "name": "Campephagidae",
+                                  "rank": "family",
+                                  "comName": "Cuckooshrikes",
+                                  "order": "Passeriformes"
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Mohouidae",
+                                    "rank": "family",
+                                    "comName": "Whiteheads",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Neosittidae",
+                                    "rank": "family",
+                                    "comName": "Sittellas",
+                                    "order": "Passeriformes"
+                                   }
+                                  ]
+                                 }
+                                ]
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "name": "Psophodidae",
+                                  "rank": "family",
+                                  "comName": "Whipbirds and Wedgebills",
+                                  "order": "Passeriformes"
+                                 },
+                                 {
+                                  "name": "Cinclosomatidae",
+                                  "rank": "family",
+                                  "comName": "Quail-thrushes and Jewel-babblers",
+                                  "order": "Passeriformes"
+                                 }
+                                ]
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Eulacestomatidae",
+                                    "rank": "family",
+                                    "comName": "Ploughbill",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Oreoicidae",
+                                    "rank": "family",
+                                    "comName": "Australo-Papuan Bellbirds",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Falcunculidae",
+                                    "rank": "family",
+                                    "comName": "Shrike-tits",
+                                    "order": "Passeriformes"
+                                   }
+                                  ],
+                                  "name": "Falcunculidae+"
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Paramythiidae",
+                                    "rank": "family",
+                                    "comName": "Tit Berrypecker and Crested Berrypecker",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Vireonidae",
+                                    "rank": "family",
+                                    "comName": "Vireos, Shrike-Babblers, and Erpornis",
+                                    "order": "Passeriformes"
+                                   }
+                                  ]
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Pachycephalidae",
+                                    "rank": "family",
+                                    "comName": "Whistlers and Allies",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Oriolidae",
+                                    "rank": "family",
+                                    "comName": "Old World Orioles",
+                                    "order": "Passeriformes"
+                                   }
+                                  ]
+                                 }
+                                ],
+                                "name": "Orioloidea"
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Machaerirhynchidae",
+                                    "rank": "family",
+                                    "comName": "Boatbills",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Artamidae",
+                                    "rank": "family",
+                                    "comName": "Woodswallows, Bellmagpies, and Allies",
+                                    "order": "Passeriformes"
+                                   }
+                                  ]
+                                 },
+                                 {
+                                  "name": "Rhagologidae",
+                                  "rank": "family",
+                                  "comName": "Mottled Berryhunter",
+                                  "order": "Passeriformes"
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "rank": "clade",
+                                    "children": [
+                                     {
+                                      "name": "Platysteiridae",
+                                      "rank": "family",
+                                      "comName": "Wattle-eyes and Batises",
+                                      "order": "Passeriformes"
+                                     },
+                                     {
+                                      "name": "Vangidae",
+                                      "rank": "family",
+                                      "comName": "Vangas, Helmetshrikes, and Allies",
+                                      "order": "Passeriformes"
+                                     }
+                                    ],
+                                    "name": "Vangoidea"
+                                   },
+                                   {
+                                    "rank": "clade",
+                                    "children": [
+                                     {
+                                      "name": "Pityriasidae",
+                                      "rank": "family",
+                                      "comName": "Bristlehead",
+                                      "order": "Passeriformes"
+                                     },
+                                     {
+                                      "rank": "clade",
+                                      "children": [
+                                       {
+                                        "name": "Aegithinidae",
+                                        "rank": "family",
+                                        "comName": "Ioras",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "name": "Malaconotidae",
+                                        "rank": "family",
+                                        "comName": "Bushshrikes and Allies",
+                                        "order": "Passeriformes"
+                                       }
+                                      ]
+                                     }
+                                    ]
+                                   }
+                                  ]
+                                 }
+                                ],
+                                "name": "Malaconotoidea"
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Rhipiduridae",
+                                    "rank": "family",
+                                    "comName": "Fantails",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Dicruridae",
+                                    "rank": "family",
+                                    "comName": "Drongos",
+                                    "order": "Passeriformes"
+                                   }
+                                  ]
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "rank": "clade",
+                                    "children": [
+                                     {
+                                      "name": "Paradisaeidae",
+                                      "rank": "family",
+                                      "comName": "Birds-of-Paradise",
+                                      "order": "Passeriformes"
+                                     },
+                                     {
+                                      "name": "Ifritidae",
+                                      "rank": "family",
+                                      "comName": "Ifrit",
+                                      "order": "Passeriformes"
+                                     }
+                                    ]
+                                   },
+                                   {
+                                    "rank": "clade",
+                                    "children": [
+                                     {
+                                      "name": "Monarchidae",
+                                      "rank": "family",
+                                      "comName": "Monarch Flycatchers",
+                                      "order": "Passeriformes"
+                                     },
+                                     {
+                                      "rank": "clade",
+                                      "children": [
+                                       {
+                                        "name": "Corcoracidae",
+                                        "rank": "family",
+                                        "comName": "White-winged Chough and Apostlebird",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "name": "Melampittidae",
+                                        "rank": "family",
+                                        "comName": "Melampittas",
+                                        "order": "Passeriformes"
+                                       }
+                                      ]
+                                     }
+                                    ]
+                                   }
+                                  ]
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Platylophidae",
+                                    "rank": "family",
+                                    "comName": "Crested Jayshrike",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Laniidae",
+                                    "rank": "family",
+                                    "comName": "Shrikes",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "name": "Corvidae",
+                                    "rank": "family",
+                                    "comName": "Crows, Jays, and Magpies",
+                                    "order": "Passeriformes"
+                                   }
+                                  ]
+                                 }
+                                ],
+                                "name": "Corvoidea"
+                               }
+                              ],
+                              "name": "Corvides"
+                             },
+                             {
+                              "rank": "clade",
+                              "children": [
+                               {
+                                "name": "Melanocharitidae",
+                                "rank": "family",
+                                "comName": "New Guinea Longbills and Berrypeckers",
+                                "order": "Passeriformes"
+                               },
+                               {
+                                "name": "Cnemophilidae",
+                                "rank": "family",
+                                "comName": "Satinbirds",
+                                "order": "Passeriformes"
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "name": "Callaeidae",
+                                  "rank": "family",
+                                  "comName": "Wattlebirds",
+                                  "order": "Passeriformes"
+                                 },
+                                 {
+                                  "name": "Notiomystidae",
+                                  "rank": "family",
+                                  "comName": "Stitchbird",
+                                  "order": "Passeriformes"
+                                 }
+                                ],
+                                "name": "Callaeoidea"
+                               },
+                               {
+                                "name": "Petroicidae",
+                                "rank": "family",
+                                "comName": "Australasian Robins",
+                                "order": "Passeriformes"
+                               },
+                               {
+                                "rank": "clade",
+                                "children": [
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "name": "Picathartidae",
+                                    "rank": "family",
+                                    "comName": "Rockfowl",
+                                    "order": "Passeriformes"
+                                   },
+                                   {
+                                    "rank": "clade",
+                                    "children": [
+                                     {
+                                      "name": "Chaetopidae",
+                                      "rank": "family",
+                                      "comName": "Rockjumpers",
+                                      "order": "Passeriformes"
+                                     },
+                                     {
+                                      "name": "Eupetidae",
+                                      "rank": "family",
+                                      "comName": "Rail-babbler",
+                                      "order": "Passeriformes"
+                                     }
+                                    ]
+                                   }
+                                  ],
+                                  "name": "Picathartides"
+                                 },
+                                 {
+                                  "rank": "clade",
+                                  "children": [
+                                   {
+                                    "rank": "clade",
+                                    "children": [
+                                     {
+                                      "name": "Hyliotidae",
+                                      "rank": "family",
+                                      "comName": "Hyliotas",
+                                      "order": "Passeriformes"
+                                     },
+                                     {
+                                      "rank": "clade",
+                                      "children": [
+                                       {
+                                        "name": "Stenostiridae",
+                                        "rank": "family",
+                                        "comName": "Fairy Flycatchers",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Paridae",
+                                          "rank": "family",
+                                          "comName": "Tits, Chickadees, and Titmice",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Remizidae",
+                                          "rank": "family",
+                                          "comName": "Penduline-Tits",
+                                          "order": "Passeriformes"
+                                         }
+                                        ]
+                                       }
+                                      ],
+                                      "name": "Paroidea"
+                                     },
+                                     {
+                                      "rank": "clade",
+                                      "children": [
+                                       {
+                                        "name": "Macrosphenidae",
+                                        "rank": "family",
+                                        "comName": "African Longbills, Crombecs, and Allies",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "name": "Nicatoridae",
+                                        "rank": "family",
+                                        "comName": "Nicators",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Panuridae",
+                                          "rank": "family",
+                                          "comName": "Bearded Reedling",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Alaudidae",
+                                          "rank": "family",
+                                          "comName": "Larks",
+                                          "order": "Passeriformes"
+                                         }
+                                        ]
+                                       },
+                                       {
+                                        "name": "Cisticolidae",
+                                        "rank": "family",
+                                        "comName": "Cisticolas and Allies",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Acrocephalidae",
+                                          "rank": "family",
+                                          "comName": "Reed Warblers and Allies",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Locustellidae",
+                                            "rank": "family",
+                                            "comName": "Grassbirds and Allies",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Donacobiidae",
+                                            "rank": "family",
+                                            "comName": "Donacobius",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Bernieridae",
+                                            "rank": "family",
+                                            "comName": "Malagasy Warblers",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Pnoepygidae",
+                                            "rank": "family",
+                                            "comName": "Cupwings",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "name": "Locustelloidea"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Hirundinidae",
+                                          "rank": "family",
+                                          "comName": "Swallows",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Pycnonotidae",
+                                          "rank": "family",
+                                          "comName": "Bulbuls",
+                                          "order": "Passeriformes"
+                                         }
+                                        ]
+                                       },
+                                       {
+                                        "name": "Hyliidae",
+                                        "rank": "family",
+                                        "comName": "Hylias",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "name": "Erythrocercidae",
+                                        "rank": "family",
+                                        "comName": "Yellow Flycatchers",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Phylloscopidae",
+                                          "rank": "family",
+                                          "comName": "Leaf Warblers",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Cettiidae",
+                                            "rank": "family",
+                                            "comName": "Bush Warblers and Allies",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Aegithalidae",
+                                            "rank": "family",
+                                            "comName": "Long-tailed Tits",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "name": "Cettioidea"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Sylviidae",
+                                            "rank": "family",
+                                            "comName": "Sylviid Warblers and Allies",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Paradoxornithidae",
+                                            "rank": "family",
+                                            "comName": "Parrotbills",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         },
+                                         {
+                                          "name": "Zosteropidae",
+                                          "rank": "family",
+                                          "comName": "White-eyes, Yuhinas, and Allies",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Timaliidae",
+                                            "rank": "family",
+                                            "comName": "Tree-Babblers, Scimitar-Babblers, and Allies",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "rank": "clade",
+                                            "children": [
+                                             {
+                                              "name": "Pellorneidae",
+                                              "rank": "family",
+                                              "comName": "Ground Babblers and Allies",
+                                              "order": "Passeriformes"
+                                             },
+                                             {
+                                              "name": "Leiothrichidae",
+                                              "rank": "family",
+                                              "comName": "Laughingthrushes and Allies",
+                                              "order": "Passeriformes"
+                                             }
+                                            ]
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "name": "Sylviida s.s."
+                                       }
+                                      ],
+                                      "name": "Sylvioidea"
+                                     }
+                                    ],
+                                    "name": "Sylviida"
+                                   },
+                                   {
+                                    "rank": "clade",
+                                    "children": [
+                                     {
+                                      "rank": "clade",
+                                      "children": [
+                                       {
+                                        "name": "Regulidae",
+                                        "rank": "family",
+                                        "comName": "Kinglets",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "name": "Elachuridae",
+                                        "rank": "family",
+                                        "comName": "Spotted Elachura",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Sittidae",
+                                            "rank": "family",
+                                            "comName": "Nuthatches",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Tichodromidae",
+                                            "rank": "family",
+                                            "comName": "Wallcreeper",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "rank": "clade",
+                                            "children": [
+                                             {
+                                              "name": "Certhiidae",
+                                              "rank": "family",
+                                              "comName": "Treecreepers",
+                                              "order": "Passeriformes"
+                                             },
+                                             {
+                                              "name": "Salpornithidae",
+                                              "rank": "family",
+                                              "comName": "Spotted Creepers",
+                                              "order": "Passeriformes"
+                                             }
+                                            ]
+                                           },
+                                           {
+                                            "rank": "clade",
+                                            "children": [
+                                             {
+                                              "name": "Polioptilidae",
+                                              "rank": "family",
+                                              "comName": "Gnatcatchers",
+                                              "order": "Passeriformes"
+                                             },
+                                             {
+                                              "name": "Troglodytidae",
+                                              "rank": "family",
+                                              "comName": "Wrens",
+                                              "order": "Passeriformes"
+                                             }
+                                            ]
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "name": "Certhioidea"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Cinclidae",
+                                          "rank": "family",
+                                          "comName": "Dippers",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "rank": "clade",
+                                            "children": [
+                                             {
+                                              "name": "Buphagidae",
+                                              "rank": "family",
+                                              "comName": "Oxpeckers",
+                                              "order": "Passeriformes"
+                                             },
+                                             {
+                                              "name": "Sturnidae",
+                                              "rank": "family",
+                                              "comName": "Starlings",
+                                              "order": "Passeriformes"
+                                             }
+                                            ]
+                                           },
+                                           {
+                                            "name": "Mimidae",
+                                            "rank": "family",
+                                            "comName": "Mockingbirds and Thrashers",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Turdidae",
+                                            "rank": "family",
+                                            "comName": "Thrushes and Allies",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Muscicapidae",
+                                            "rank": "family",
+                                            "comName": "Old World Flycatchers",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "name": "Muscicapoidea"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Mohoidae",
+                                          "rank": "family",
+                                          "comName": "Hawaiian Honeyeaters",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Hylocitreidae",
+                                          "rank": "family",
+                                          "comName": "Hylocitrea",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Hypocoliidae",
+                                          "rank": "family",
+                                          "comName": "Hypocolius",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Dulidae",
+                                          "rank": "family",
+                                          "comName": "Palmchat",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Bombycillidae",
+                                            "rank": "family",
+                                            "comName": "Waxwings",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Ptiliogonatidae",
+                                            "rank": "family",
+                                            "comName": "Silky-flycatchers",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "name": "Bombycilloidea"
+                                       }
+                                      ],
+                                      "name": "Muscicapida"
+                                     },
+                                     {
+                                      "rank": "clade",
+                                      "children": [
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Promeropidae",
+                                          "rank": "family",
+                                          "comName": "Sugarbirds",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Modulatricidae",
+                                          "rank": "family",
+                                          "comName": "Dapple-throat and Allies",
+                                          "order": "Passeriformes"
+                                         }
+                                        ]
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Dicaeidae",
+                                          "rank": "family",
+                                          "comName": "Flowerpeckers",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Nectariniidae",
+                                          "rank": "family",
+                                          "comName": "Sunbirds and Spiderhunters",
+                                          "order": "Passeriformes"
+                                         }
+                                        ],
+                                        "name": "Nectariniidae+Dicaeidae"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Irenidae",
+                                          "rank": "family",
+                                          "comName": "Fairy-bluebirds",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Chloropseidae",
+                                          "rank": "family",
+                                          "comName": "Leafbirds",
+                                          "order": "Passeriformes"
+                                         }
+                                        ]
+                                       },
+                                       {
+                                        "name": "Peucedramidae",
+                                        "rank": "family",
+                                        "comName": "Olive Warbler",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "name": "Urocynchramidae",
+                                        "rank": "family",
+                                        "comName": "Przevalski's Pinktail",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "name": "Prunellidae",
+                                        "rank": "family",
+                                        "comName": "Accentors",
+                                        "order": "Passeriformes"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Ploceidae",
+                                          "rank": "family",
+                                          "comName": "Weavers and Allies",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Estrildidae",
+                                            "rank": "family",
+                                            "comName": "Waxbills and Allies",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "name": "Viduidae",
+                                            "rank": "family",
+                                            "comName": "Whydahs and Indigobirds",
+                                            "order": "Passeriformes"
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "name": "Ploceoidea"
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Passeridae",
+                                          "rank": "family",
+                                          "comName": "Old World Sparrows",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "name": "Motacillidae",
+                                          "rank": "family",
+                                          "comName": "Wagtails and Pipits",
+                                          "order": "Passeriformes"
+                                         }
+                                        ]
+                                       },
+                                       {
+                                        "rank": "clade",
+                                        "children": [
+                                         {
+                                          "name": "Fringillidae",
+                                          "rank": "family",
+                                          "comName": "Finches, Euphonias, and Allies",
+                                          "order": "Passeriformes"
+                                         },
+                                         {
+                                          "rank": "clade",
+                                          "children": [
+                                           {
+                                            "name": "Calcariidae",
+                                            "rank": "family",
+                                            "comName": "Longspurs and Snow Buntings",
+                                            "order": "Passeriformes"
+                                           },
+                                           {
+                                            "rank": "clade",
+                                            "children": [
+                                             {
+                                              "name": "Rhodinocichlidae",
+                                              "rank": "family",
+                                              "comName": "Thrush-Tanager",
+                                              "order": "Passeriformes"
+                                             },
+                                             {
+                                              "rank": "clade",
+                                              "children": [
+                                               {
+                                                "name": "Emberizidae",
+                                                "rank": "family",
+                                                "comName": "Old World Buntings",
+                                                "order": "Passeriformes"
+                                               },
+                                               {
+                                                "rank": "clade",
+                                                "children": [
+                                                 {
+                                                  "name": "Passerellidae",
+                                                  "rank": "family",
+                                                  "comName": "New World Sparrows",
+                                                  "order": "Passeriformes"
+                                                 },
+                                                 {
+                                                  "rank": "clade",
+                                                  "children": [
+                                                   {
+                                                    "name": "Calyptophilidae",
+                                                    "rank": "family",
+                                                    "comName": "Chat-Tanagers",
+                                                    "order": "Passeriformes"
+                                                   },
+                                                   {
+                                                    "name": "Phaenicophilidae",
+                                                    "rank": "family",
+                                                    "comName": "Greater Antillean Tanagers",
+                                                    "order": "Passeriformes"
+                                                   },
+                                                   {
+                                                    "name": "Zeledoniidae",
+                                                    "rank": "family",
+                                                    "comName": "Wrenthrush",
+                                                    "order": "Passeriformes"
+                                                   },
+                                                   {
+                                                    "name": "Teretistridae",
+                                                    "rank": "family",
+                                                    "comName": "Cuban Warblers",
+                                                    "order": "Passeriformes"
+                                                   },
+                                                   {
+                                                    "rank": "clade",
+                                                    "children": [
+                                                     {
+                                                      "rank": "clade",
+                                                      "children": [
+                                                       {
+                                                        "name": "Icteridae",
+                                                        "rank": "family",
+                                                        "comName": "Troupials and Allies",
+                                                        "order": "Passeriformes"
+                                                       },
+                                                       {
+                                                        "name": "Parulidae",
+                                                        "rank": "family",
+                                                        "comName": "New World Warblers",
+                                                        "order": "Passeriformes"
+                                                       }
+                                                      ]
+                                                     },
+                                                     {
+                                                      "rank": "clade",
+                                                      "children": [
+                                                       {
+                                                        "name": "Mitrospingidae",
+                                                        "rank": "family",
+                                                        "comName": "Mitrospingid Tanagers",
+                                                        "order": "Passeriformes"
+                                                       },
+                                                       {
+                                                        "rank": "clade",
+                                                        "children": [
+                                                         {
+                                                          "name": "Cardinalidae",
+                                                          "rank": "family",
+                                                          "comName": "Cardinals and Allies",
+                                                          "order": "Passeriformes"
+                                                         },
+                                                         {
+                                                          "name": "Thraupidae",
+                                                          "rank": "family",
+                                                          "comName": "Tanagers and Allies",
+                                                          "order": "Passeriformes"
+                                                         }
+                                                        ]
+                                                       }
+                                                      ]
+                                                     }
+                                                    ]
+                                                   }
+                                                  ]
+                                                 }
+                                                ]
+                                               }
+                                              ]
+                                             }
+                                            ]
+                                           }
+                                          ],
+                                          "name": "Emberizoidea"
+                                         }
+                                        ]
+                                       }
+                                      ],
+                                      "name": "Passerida"
+                                     }
+                                    ]
+                                   }
+                                  ]
+                                 }
+                                ],
+                                "name": "core Passerides"
+                               }
+                              ],
+                              "name": "Passerides"
+                             }
+                            ]
+                           }
+                          ]
+                         }
+                        ]
+                       }
+                      ]
+                     }
+                    ],
+                    "name": "Passeri"
+                   }
+                  ],
+                  "name": "Eupasseres"
+                 }
+                ],
+                "name": "Passeriformes"
+               }
+              ],
+              "name": "Psittacopasseres"
+             }
+            ],
+            "name": "Eufalconimorphae"
+           }
+          ],
+          "name": "Australaves"
+         }
+        ],
+        "name": "Telluraves"
+       }
+      ],
+      "name": "Neoaves"
+     }
+    ],
+    "name": "Neognathae"
+   }
+  ],
+  "name": "Aves"
+ }
+}

@@ -150,24 +150,38 @@
     .tb-check input:checked + .switch::after { transform: translateX(13px); }
     .tb-check input:focus-visible + .switch { outline: 2px solid var(--link); outline-offset: 2px; }
 
+    /* The track and thumb are styled separately so the thumb's offset is an
+       exact integer: with a 4px track and a 14px thumb it is -5px, where a 3px
+       track would need -5.5px and Chrome would round it, leaving the circle
+       half a pixel below the bar. */
     .toolbar input[type=range] {
       appearance: none; -webkit-appearance: none;
-      width: 84px; height: 3px;
-      border-radius: 2px;
-      background: var(--rule-bold);
+      width: 84px; height: 14px;
+      background: transparent;
       cursor: pointer;
     }
+    .toolbar input[type=range]::-webkit-slider-runnable-track {
+      height: 4px; border-radius: 2px; background: var(--rule-bold);
+    }
     .toolbar input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px; height: 14px; border-radius: 50%;
+      -webkit-appearance: none; box-sizing: border-box;
+      width: 14px; height: 14px; margin-top: -5px;
+      border-radius: 50%;
       background: var(--link); border: 2px solid #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toolbar input[type=range]::-moz-range-track {
+      height: 4px; border-radius: 2px; background: var(--rule-bold);
     }
     .toolbar input[type=range]::-moz-range-thumb {
-      width: 12px; height: 12px; border-radius: 50%;
+      box-sizing: border-box;
+      width: 14px; height: 14px;
+      border-radius: 50%;
       background: var(--link); border: 2px solid #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
+    .toolbar input[type=range]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--link); outline-offset: 2px; }
+
     .tb-val {
       font-size: 0.74rem; color: var(--ink-faint);
       font-variant-numeric: tabular-nums; min-width: 22px;
@@ -833,13 +847,13 @@ const SEVENTH = [
     p:[{ n:'Chain of fifths', c:[C(11,'dom7'),C(4,'m7'),C(9,'dom7'),C(2,'m7'),C(7,'dom7'),C(0,'maj7')] }] },
   m7b5:{ r:'diatonic', tag:'viiø7', s:['dia','relii'],
     t:'The only half-diminished chord in the major scale. It can stand in for V7, and often serves as the ii of III7.',
-    p:[{ n:'The color within the key', c:[C(0,'maj7'),C(11,'m7b5'),C(0,'maj7')] },
-       { n:'Standing in for V7', c:[C(11,'m7b5'),C(0,'maj7')] },
+    p:[{ n:'The color within the key', c:[C(0,'maj7'),C(11,'m7b5'),C(0,'maj7')],
+         note:'Heard on its own it stands in for V7 — it is V7 without its root.' },
        { n:'As a secondary ii', c:[C(11,'m7b5'),C(4,'dom7'),C(9,'m7')] }] },
   dim7:{ r:'common', tag:'Harmonic minor vii°', s:['mixture','secdim'],
     t:'Borrowed from the parallel harmonic minor, and identical to V7♭9 without its root. Every voice moves by step when it resolves to I.',
-    p:[{ n:'The color within the key', c:[C(0,'maj7'),C(11,'dim7'),C(0,'maj7')] },
-       { n:'Resolving to I', c:[C(11,'dim7'),C(0,'maj7')] },
+    p:[{ n:'The color within the key', c:[C(0,'maj7'),C(11,'dim7'),C(0,'maj7')],
+         note:'Every voice moves by step on the way back to I.' },
        { n:'Approached from IV', c:[C(5,'maj7'),C(11,'dim7'),C(0,'maj7')] }] }
 }
 ];
@@ -997,8 +1011,8 @@ const TRIAD = [
     t:'Rare as a triad: the diatonic chord on this degree is diminished, and a minor triad here points toward a modulation.' },
   dim:{ r:'diatonic', tag:'vii°', s:['dia'],
     t:'The only diminished triad in the major scale. It carries the leading tone and can stand in for V, usually in first inversion so that the bass still rises by step.',
-    p:[{ n:'The color within the key', c:[C(0,'maj'),C(11,'dim'),C(0,'maj')] },
-       { n:'Resolving to I', c:[C(11,'dim'),C(0,'maj')] },
+    p:[{ n:'The color within the key', c:[C(0,'maj'),C(11,'dim'),C(0,'maj')],
+         note:'Every voice moves by step on the way back to I.' },
        { n:'Approached from IV', c:[C(5,'maj'),C(11,'dim'),C(0,'maj')] }] }
 }
 ];
@@ -1008,6 +1022,19 @@ const TRIAD = [
 /* ════════════════════════════════════════════════════════════
    5. State
    ════════════════════════════════════════════════════════════ */
+
+// Every example is heard against the tonic, so each one starts at home and
+// returns there: a secondary dominant plays as I – V7/X – X – I, a secondary
+// ii–V as I – ii/X – V7/X – X – I. Examples that already open on a chord built
+// on the tonic (the blues I7, borrowed Im7) are left to start on it.
+[[SEVENTH, 'maj7'], [TRIAD, 'maj']].forEach(([data, home]) => {
+  data.forEach(row => Object.keys(row).forEach(q => {
+    (row[q].p || []).forEach(pg => {
+      if (pg.c[0][0] !== 0) pg.c.unshift(C(0, home));
+      if (pg.c[pg.c.length - 1][0] !== 0) pg.c.push(C(0, home));
+    });
+  }));
+});
 
 const state = {
   keyIdx  : 0,
