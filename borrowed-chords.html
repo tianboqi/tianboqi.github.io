@@ -329,6 +329,11 @@
     .chip.src { cursor: pointer; }
     .chip.src:hover { border-color: var(--link); color: var(--link); }
     .d-notes { font-size: 0.75rem; color: var(--ink-faint); margin: 10px 0 0; }
+    .d-scales { margin-top: 12px; }
+    .d-scales .prog-title { margin-bottom: 5px; }
+    .d-scales ul { margin: 0; padding: 0; list-style: none; }
+    .d-scales li { font-size: 0.8rem; color: var(--ink-faint); line-height: 1.6; }
+    .d-scales li b { font-weight: 600; color: var(--ink); }
     .d-text { margin: 12px 0 0; line-height: 1.62; color: var(--ink-soft); }
     .d-text em { color: var(--ink); font-style: normal; font-weight: 600; }
 
@@ -1099,6 +1104,90 @@ function toneNames(d, q) {
 }
 
 /* ════════════════════════════════════════════════════════════
+   6b. Chord scales and available tensions
+       Each cell lists the scales commonly played over it, most
+       usual first. Tensions are derived: any scale tone that is not
+       a chord tone, minus avoid notes — a semitone above a chord
+       tone, except on dominants, where only the natural 11 is avoided.
+   ════════════════════════════════════════════════════════════ */
+
+const SCALE_LIB = {
+  ion : ['Ionian',              [0,2,4,5,7,9,11]],
+  dor : ['Dorian',              [0,2,3,5,7,9,10]],
+  phr : ['Phrygian',            [0,1,3,5,7,8,10]],
+  lyd : ['Lydian',              [0,2,4,6,7,9,11]],
+  mix : ['Mixolydian',          [0,2,4,5,7,9,10]],
+  aeo : ['Aeolian',             [0,2,3,5,7,8,10]],
+  loc : ['Locrian',             [0,1,3,5,6,8,10]],
+  loc2: ['Locrian ♮2',          [0,2,3,5,6,8,10]],
+  lydd: ['Lydian dominant',     [0,2,4,6,7,9,10]],
+  alt : ['Altered',             [0,1,3,4,6,8,10]],
+  phd : ['Phrygian dominant',   [0,1,4,5,7,8,10]],
+  mb13: ['Mixolydian ♭13',      [0,2,4,5,7,8,10]],
+  hw  : ['Half-whole diminished', [0,1,3,4,6,7,9,10]],
+  wh  : ['Whole-half diminished', [0,2,3,5,6,8,9,11]]
+};
+
+// Indexed by degree, then quality
+const SCALES = {
+  seventh: [
+    { maj7:['ion','lyd'], m7:['aeo','dor'], dom7:['mix','hw'] },
+    { maj7:['lyd'], m7:['dor'], dom7:['lydd','mix'], dim7:['wh'] },
+    { maj7:['ion','lyd'], m7:['dor'], dom7:['mix','lydd','alt'], m7b5:['loc','loc2'], dim7:['wh'] },
+    { maj7:['ion','lyd'], m7:['dor'], dom7:['lydd','mix'], dim7:['wh'] },
+    { maj7:['lyd','ion'], m7:['phr'], dom7:['phd','alt','hw'], m7b5:['loc','loc2'] },
+    { maj7:['lyd'], m7:['dor','aeo'], dom7:['mix','lydd'], m7b5:['loc'] },
+    { maj7:['lyd'], m7:['dor'], dom7:['lydd'], m7b5:['loc','loc2'], dim7:['wh'] },
+    { maj7:['ion','lyd'], m7:['dor','aeo'], dom7:['mix','alt','hw','phd'] },
+    { maj7:['lyd'], m7:['dor'], dom7:['lydd'], dim7:['wh'] },
+    { maj7:['lyd','ion'], m7:['aeo','dor'], dom7:['phd','mb13','alt'], m7b5:['loc'] },
+    { maj7:['lyd'], m7:['dor'], dom7:['lydd','mix'] },
+    { maj7:['lyd','ion'], m7:['dor'], dom7:['phd','alt'], m7b5:['loc'], dim7:['wh'] }
+  ],
+  triad: [
+    { maj:['ion','lyd'], min:['aeo','dor'] },
+    { maj:['lyd'], min:['dor'], dim:['wh'] },
+    { maj:['mix','lydd'], min:['dor'], dim:['loc','loc2'] },
+    { maj:['ion','lyd'], min:['dor'], dim:['wh'] },
+    { maj:['phd','mix','lyd'], min:['phr'] },
+    { maj:['lyd','mix'], min:['dor','aeo'] },
+    { maj:['lyd'], min:['dor'], dim:['wh'] },
+    { maj:['mix','ion'], min:['dor','aeo'] },
+    { maj:['lyd'], min:['dor'], dim:['wh'] },
+    { maj:['phd','mb13'], min:['aeo','dor'] },
+    { maj:['lyd','mix'], min:['dor'] },
+    { maj:['phd'], min:['dor'], dim:['loc'] }
+  ]
+};
+
+function tensionsOf(q, scale) {
+  const ch = QUAL[q].iv, dimQ = q === 'dim' || q === 'dim7';
+  const dominant = ch.indexOf(4) >= 0 && (ch.indexOf(10) >= 0 || scale.indexOf(10) >= 0);
+  const chordInScale = ch.filter(i => scale.indexOf(i) >= 0);
+  const out = [];
+  scale.forEach(i => {
+    if (ch.indexOf(i) >= 0) return;
+    const avoid = dominant ? i === 5 : chordInScale.indexOf((i + 11) % 12) >= 0;
+    if (avoid) return;
+    const name = { 1:'♭9', 2:'9', 3:'♯9', 5:'11', 6:'♯11', 8:'♭13',
+                   9: dimQ ? '°7' : '13', 10:'7', 11:'maj7' }[i];
+    if (!name) return;
+    // In the triad view the sevenths come first, as in a chord symbol
+    const rank = (ch.length === 3 && i >= 9 && (i !== 9 || dimQ)) ? i - 20 : i;
+    out.push([rank, name]);
+  });
+  return out.sort((a, b) => a[0] - b[0]).map(x => x[1]);
+}
+
+function scalesOf(d, q) {
+  const row = SCALES[state.form][d];
+  return ((row && row[q]) || []).map(k => ({
+    name: SCALE_LIB[k][0],
+    ext : tensionsOf(q, SCALE_LIB[k][1])
+  }));
+}
+
+/* ════════════════════════════════════════════════════════════
    7. Voice leading
    ════════════════════════════════════════════════════════════ */
 
@@ -1419,6 +1508,14 @@ function renderDetail() {
   });
   h += '</div>';
   h += '<p class="d-notes">Notes: ' + toneNames(d, q) + '</p>';
+  const scs = scalesOf(d, q);
+  if (scs.length) {
+    h += '<div class="d-scales"><div class="prog-title">Scales (available tensions)</div><ul>';
+    scs.forEach(s => {
+      h += '<li><b>' + rootName(d, q) + ' ' + s.name + '</b> (' + (s.ext.join(', ') || '—') + ')</li>';
+    });
+    h += '</ul></div>';
+  }
   h += '<p class="d-text">' + (cell.t || '') + '</p>';
 
   h += '<div class="prog"><div class="prog-title">Listen</div>';
