@@ -44,6 +44,7 @@
     .tb-group { display: flex; align-items: center; gap: 9px; }
     .tb-group.grow { margin-left: auto; }
     .tb-group[hidden] { display: none; }
+    .tb-group.sound { padding-left: 24px; border-left: 1px solid var(--rule); }
 
     .tb-label {
       font-size: 0.68rem; font-weight: 600;
@@ -120,7 +121,7 @@
     .sym .acc { font-size: 0.8em; margin: 0 -0.12em 0 -0.06em; }
     .tones { display: flex; flex-wrap: wrap; gap: 6px; }
     .tone {
-      display: inline-flex; align-items: baseline; gap: 5px;
+      display: inline-flex; align-items: center; gap: 5px; line-height: 1.4;
       padding: 2px 9px 2px 3px;
       border: 1px solid var(--rule); border-radius: 999px;
       font-size: 0.86rem; background: #fff;
@@ -211,6 +212,7 @@
       .toolbar { position: static; padding: 12px 14px; }
       .tb-row { gap: 10px 16px; }
       .tb-group.grow { margin-left: 0; }
+      .tb-group.sound { padding-left: 0; border-left: 0; }
       .family { scroll-margin-top: 16px; }
     }
     @media (max-width: 520px) {
@@ -236,9 +238,8 @@
 
   <section>
     <p class="lead">
-    A summary of common piano voicings. Pick a chord and its tensions, and the page lists the voicings most often used for it,
-    each shown on a staff and a keyboard.
-    It is a starting point rather than a complete catalogue, so feel free to experiment beyond it!
+    A summary of common piano voicings. Pick a chord and its tensions, and the page lists the voicings most often used for it.
+    Of course, this can never be a comprehensive summary, so be creative and experiment beyond it!
     </p>
   </section>
 
@@ -268,7 +269,8 @@
           <span class="tb-label">Top note</span>
           <span class="sel-wrap"><select id="topSel" aria-label="Top note"></select></span>
         </div>
-        <div class="tb-group">
+        <div class="tb-group grow"><span class="status" id="status">Press Chord or Notes on any voicing</span></div>
+        <div class="tb-group sound">
           <span class="tb-label">Sound</span>
           <span class="sel-wrap"><select id="instSel" aria-label="Sound">
             <option value="acoustic_grand_piano">Piano</option>
@@ -276,7 +278,6 @@
             <option value="synth">Synth (offline)</option>
           </select></span>
         </div>
-        <div class="tb-group grow"><span class="status" id="status">Press Chord or Notes on any voicing</span></div>
       </div>
     </div>
 
