@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Piano Voicing Finder — Tianbo Qi</title>
+  <meta name="description" content="An interactive reference of common piano voicings: pick a chord, its tensions, the bass and the top note, and see every standard voicing on a staff and a keyboard, with each note labelled and playable.">
+  <meta name="author" content="Tianbo Qi">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,400&family=Noto+Music&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      --max-w: 1240px;
+      --c-root:  #1d3f8f;
+      --c-guide: #3f73e0;
+      --c-fifth: #a9c1f2;
+      --c-tens:  #ec6a1e;
+    }
+
+    .lead { color: var(--ink-soft); }
+
+    /* ── Toolbar ────────────────────────────────────────── */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 0 0 22px;
+      padding: 12px 18px;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: saturate(180%) blur(8px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .tb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; }
+    .tb-row + .tb-row { border-top: 1px solid var(--rule); padding-top: 10px; }
+    .tb-group { display: flex; align-items: center; gap: 9px; }
+    .tb-group.grow { margin-left: auto; }
+    .tb-group[hidden] { display: none; }
+
+    .tb-label {
+      font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.09em; text-transform: uppercase;
+      color: var(--ink-faint); white-space: nowrap;
+    }
+
+    .sel-wrap { position: relative; display: inline-flex; }
+    .sel-wrap::after {
+      content: '';
+      position: absolute; right: 11px; top: 50%;
+      width: 6px; height: 6px;
+      border-right: 1.5px solid var(--ink-faint);
+      border-bottom: 1.5px solid var(--ink-faint);
+      transform: translateY(-70%) rotate(45deg);
+      pointer-events: none;
+    }
+    .toolbar select {
+      appearance: none; -webkit-appearance: none;
+      font-family: inherit; font-size: 0.85rem; line-height: 1.3;
+      padding: 5px 30px 5px 11px;
+      border: 1px solid var(--rule-bold); border-radius: 6px;
+      background: #fff; color: var(--ink);
+      cursor: pointer;
+      transition: border-color 0.12s ease;
+    }
+    .toolbar select:hover { border-color: var(--link); }
+    .toolbar select:focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+
+    .seg {
+      display: inline-flex; padding: 2px;
+      background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 7px;
+    }
+    .seg button {
+      font-family: inherit; font-size: 0.82rem;
+      min-width: 34px; padding: 4px 11px;
+      border: 0; border-radius: 5px;
+      background: transparent; color: var(--ink-faint);
+      cursor: pointer; transition: color 0.12s ease;
+    }
+    .seg button:hover { color: var(--ink); }
+    .seg button.on {
+      background: #fff; color: var(--ink); font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.13);
+    }
+    /* A chosen tension takes the tension colour used on the keyboard */
+    .seg button.on:not(.none) { background: var(--c-tens); color: #fff; }
+
+    .btn {
+      font-family: inherit; font-size: 0.8rem;
+      padding: 4px 11px;
+      border: 1px solid var(--rule-bold); border-radius: 6px;
+      background: #fff; color: var(--ink-soft);
+      cursor: pointer; white-space: nowrap;
+      transition: border-color 0.12s ease, color 0.12s ease;
+    }
+    .btn:hover { border-color: var(--link-hover); color: var(--link-hover); }
+    .btn.playing { border-color: var(--link-hover); color: var(--link-hover); }
+
+    .status { font-size: 0.78rem; color: var(--ink-faint); white-space: nowrap; font-style: italic; }
+    .status.busy { color: var(--link-hover); font-style: normal; }
+
+    /* ── Chord summary ──────────────────────────────────── */
+    .summary {
+      display: flex; flex-wrap: wrap; align-items: baseline;
+      gap: 8px 22px; margin: 0 0 6px;
+    }
+    .sym {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 2rem; font-weight: 600; line-height: 1.1;
+    }
+    /* Lora has no ♭/♯; the fallback glyph sits on a full em, so pull it in */
+    .sym .acc { font-size: 0.8em; margin: 0 -0.12em 0 -0.06em; }
+    .tones { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tone {
+      display: inline-flex; align-items: baseline; gap: 5px;
+      padding: 2px 9px 2px 3px;
+      border: 1px solid var(--rule); border-radius: 999px;
+      font-size: 0.86rem; background: #fff;
+    }
+    .tone b {
+      display: inline-block; min-width: 26px; padding: 1px 6px;
+      border-radius: 999px; text-align: center;
+      font-size: 0.72rem; font-weight: 600; color: #fff;
+    }
+    .r-root  { background: var(--c-root); }
+    .r-guide { background: var(--c-guide); }
+    .r-fifth { background: var(--c-fifth); color: var(--ink) !important; }
+    .r-tens  { background: var(--c-tens); }
+    .tone.omitted { opacity: 0.45; }
+
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 6px 18px;
+      font-size: 0.78rem; color: var(--ink-faint);
+      margin: 10px 0 0;
+    }
+    .legend i {
+      display: inline-block; width: 11px; height: 11px;
+      border-radius: 3px; margin-right: 6px; vertical-align: -1px;
+    }
+
+    .jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 0; }
+    .jump a {
+      font-size: 0.8rem; padding: 3px 10px;
+      border: 1px solid var(--rule); border-radius: 999px;
+      color: var(--ink-soft); background: #fff;
+    }
+    .jump a:hover { border-color: var(--link-hover); color: var(--link-hover); text-decoration: none; }
+    .jump a span { color: var(--ink-faint); margin-left: 4px; font-size: 0.74rem; }
+
+    /* ── Families and cards ─────────────────────────────── */
+    .family { margin-top: 38px; scroll-margin-top: 150px; }
+    .family h3 {
+      font-size: 1.22rem; font-weight: 600;
+      display: flex; align-items: baseline; gap: 10px;
+      margin: 0 0 4px;
+    }
+    .family h3 .count { font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 400; color: var(--ink-faint); }
+    .family .fam-desc { font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; max-width: 860px; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr));
+      gap: 14px;
+    }
+    .card {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 10px 14px 10px;
+      background: #fff;
+    }
+    .card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .card-title { font-weight: 600; font-size: 0.92rem; }
+    .card-tag {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--surface); color: var(--ink-soft);
+      border: 1px solid var(--rule);
+    }
+    .card-head .btns { margin-left: auto; display: flex; gap: 6px; }
+    .card-body {
+      display: flex; align-items: flex-end; gap: 12px;
+      margin-top: 6px;
+    }
+    /* Pulled down by the room kept for low ledger notes (--sb), so the bass
+       staff's bottom line sits level with the bottom of the keys */
+    .staff { flex: none; width: 138px; margin-bottom: var(--sb, 0); }
+    .kbwrap { flex: 1; min-width: 0; }
+    .staff svg, .kbwrap svg { display: block; width: 100%; height: auto; }
+
+    .kb .key { cursor: pointer; }
+    .kb .key.hit { filter: brightness(1.35) saturate(1.2); }
+    .kb .white { fill: #fff; stroke: #9a9a9a; stroke-width: 0.6; }
+    .kb .black { fill: #262626; stroke: #111; stroke-width: 0.5; }
+    .kb .white:hover:not(.on) { fill: #f1f1f1; }
+
+    .empty {
+      margin-top: 30px; padding: 22px;
+      border: 1px dashed var(--rule-bold); border-radius: 10px;
+      color: var(--ink-faint); text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .toolbar { position: static; padding: 12px 14px; }
+      .tb-row { gap: 10px 16px; }
+      .tb-group.grow { margin-left: 0; }
+      .family { scroll-margin-top: 16px; }
+    }
+    @media (max-width: 520px) {
+      .card-body { flex-direction: column; align-items: stretch; }
+      .staff { width: 150px; margin: 0 auto; }
+      .sym { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="banner">
+  <div class="banner-inner">
+    <div class="banner-text">
+      <h1 class="banner-name">Piano Voicing Finder</h1>
+      <p class="banner-sub"><a href="misc.html">← Miscellaneous</a></p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <p class="lead">
+    A summary of common piano voicings. Pick a chord and its tensions, and the page lists the voicings most often used for it,
+    each shown on a staff and a keyboard.
+    It is a starting point rather than a complete catalogue, so feel free to experiment beyond it!
+    </p>
+  </section>
+
+  <section>
+    <h2>Voicings</h2>
+
+    <div class="toolbar" id="toolbar">
+      <div class="tb-row">
+        <div class="tb-group">
+          <span class="tb-label">Root</span>
+          <span class="sel-wrap"><select id="rootSel" aria-label="Root"></select></span>
+        </div>
+        <div class="tb-group">
+          <span class="tb-label">Chord</span>
+          <span class="sel-wrap"><select id="qualSel" aria-label="Chord quality"></select></span>
+        </div>
+        <div class="tb-group" id="g9"><span class="tb-label">9th</span><div class="seg" id="seg9"></div></div>
+        <div class="tb-group" id="g11"><span class="tb-label">11th</span><div class="seg" id="seg11"></div></div>
+        <div class="tb-group" id="g13"><span class="tb-label">13th</span><div class="seg" id="seg13"></div></div>
+      </div>
+      <div class="tb-row">
+        <div class="tb-group">
+          <span class="tb-label">Bass</span>
+          <span class="sel-wrap"><select id="bassSel" aria-label="Bass note"></select></span>
+        </div>
+        <div class="tb-group">
+          <span class="tb-label">Top note</span>
+          <span class="sel-wrap"><select id="topSel" aria-label="Top note"></select></span>
+        </div>
+        <div class="tb-group">
+          <span class="tb-label">Sound</span>
+          <span class="sel-wrap"><select id="instSel" aria-label="Sound">
+            <option value="acoustic_grand_piano">Piano</option>
+            <option value="electric_piano_1">Electric piano</option>
+            <option value="synth">Synth (offline)</option>
+          </select></span>
+        </div>
+        <div class="tb-group grow"><span class="status" id="status">Press Chord or Notes on any voicing</span></div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <span class="sym" id="sym"></span>
+      <span class="tones" id="tones"></span>
+    </div>
+    <div class="legend">
+      <span><i class="r-root"></i>Root</span>
+      <span><i class="r-guide"></i>3rd and 7th (guide tones)</span>
+      <span><i class="r-fifth"></i>5th</span>
+      <span><i class="r-tens"></i>Tensions</span>
+    </div>
+    <nav class="jump" id="jump"></nav>
+
+    <div id="results"></div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>
+      Sampled instruments from the <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">FluidR3_GM</a>
+      soundfont (Frank Wen, MIT), loaded through <a href="https://github.com/danigb/soundfont-player" target="_blank" rel="noopener">soundfont-player</a> (MIT);
+      the page falls back to a built-in Web Audio synth when they are unavailable. Clefs set in Noto Music (OFL).
+    </p>
+    <p style="margin-top:6px">&copy; 2026 Tianbo Qi. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   1. Theory: spelling, chord members, chord symbols
+   ════════════════════════════════════════════════════════════ */
+
+const $ = id => document.getElementById(id);
+const LETTERS   = ['C','D','E','F','G','A','B'];
+const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
+const mod12 = x => ((x % 12) + 12) % 12;
+
+const ROOTS = [
+  ['C',0,0], ['C♯',0,1], ['D♭',1,-1], ['D',1,0], ['E♭',2,-1], ['E',2,0], ['F',3,0],
+  ['F♯',3,1], ['G♭',4,-1], ['G',4,0], ['A♭',5,-1], ['A',5,0], ['B♭',6,-1], ['B',6,0]
+].map(([name, letter, acc]) => ({ name, letter, acc, pc: mod12(LETTER_PC[letter] + acc) }));
+
+// label → [semitones, letter steps above the root, role]
+// Roles: root, third (incl. sus4), fifth, sev (7th or 6th), t (tension)
+const IV = {
+  'R':  [0,0,'root'],
+  '♭9': [1,1,'t'], '9': [2,1,'t'], '♯9': [3,1,'t'],
+  '♭3': [3,2,'third'], '3': [4,2,'third'], '4': [5,3,'third'],
+  '11': [5,3,'t'], '♯11': [6,3,'t'],
+  '♭5': [6,4,'fifth'], '5': [7,4,'fifth'],
+  '♭13': [8,5,'t'], '13': [9,5,'t'], '6': [9,5,'sev'],
+  '♭♭7': [9,6,'sev'], '♭7': [10,6,'sev'], '7': [11,6,'sev']
+};
+
+// n / e / t: the tensions on offer in the 9th, 11th and 13th groups
+const QUALS = [
+  { id:'maj',  name:'Major triad',     tones:['R','3','5'],       n:[['9']], e:[], t:[] },
+  { id:'min',  name:'Minor triad',     tones:['R','♭3','5'],      n:[['9']], e:['11'], t:[] },
+  { id:'6',    name:'Major 6th',       tones:['R','3','5','6'],   n:[['9']], e:['♯11'], t:[] },
+  { id:'maj7', name:'Major 7th',       tones:['R','3','5','7'],   n:[['9']], e:['♯11'], t:['13'] },
+  { id:'7',    name:'Dominant 7th',    tones:['R','3','5','♭7'],  n:[['♭9'],['9'],['♯9'],['♭9','♯9']], e:['♯11'], t:['♭13','13'] },
+  { id:'7sus4',name:'Dominant 7sus4',  tones:['R','4','5','♭7'],  n:[['♭9'],['9']], e:[], t:['13'] },
+  { id:'m6',   name:'Minor 6th',       tones:['R','♭3','5','6'],  n:[['9']], e:['11'], t:[] },
+  { id:'m7',   name:'Minor 7th',       tones:['R','♭3','5','♭7'], n:[['9']], e:['11'], t:['13'] },
+  { id:'mM7',  name:'Minor-major 7th', tones:['R','♭3','5','7'],  n:[['9']], e:['11'], t:['13'] },
+  { id:'m7b5', name:'Half-diminished', tones:['R','♭3','♭5','♭7'],n:[['9']], e:['11'], t:['♭13'] },
+  { id:'dim7', name:'Diminished 7th',  tones:['R','♭3','♭5','♭♭7'],n:[['9']], e:['11'], t:['♭13'] }
+];
+const qualById = id => QUALS.find(q => q.id === id);
+
+function spell(root, semis, steps) {
+  const letter = (root.letter + steps) % 7;
+  let acc = mod12(root.pc + semis - LETTER_PC[letter]);
+  if (acc > 6) acc -= 12;
+  return { letter, acc, name: LETTERS[letter] + accStr(acc) };
+}
+function accStr(a) { return a === 0 ? '' : a === 1 ? '♯' : a === 2 ? '𝄪' : a === -1 ? '♭' : '𝄫'; }
+
+function makeMember(root, lab) {
+  const [semis, steps, role] = IV[lab];
+  const sp = spell(root, semis, steps);
+  return { lab, semis, steps, role, pc: mod12(root.pc + semis), letter: sp.letter, acc: sp.acc, name: sp.name };
+}
+
+function roleClass(m) {
+  return m.role === 'root' ? 'root' : m.role === 't' ? 'tens' : m.role === 'fifth' ? 'fifth' : 'guide';
+}
+
+function chordSymbol(root, q, tens) {
+  const has = l => tens.includes(l);
+  let base, absorbed = [];
+  switch (q.id) {
+    case 'maj': {
+      return root.name + (has('9') ? 'add9' : '');
+    }
+    case 'min': {
+      const adds = ['9','11'].filter(has);
+      return root.name + 'm' + (adds.length ? '(add' + adds.join(', ') + ')' : '');
+    }
+    case '6':  base = has('9') ? '6/9' : '6';   absorbed = ['9']; break;
+    case 'm6': base = has('9') ? 'm6/9' : 'm6'; absorbed = ['9']; break;
+    case 'maj7': case '7': case 'm7': case 'mM7': {
+      let ext = 7;
+      if (has('9')) { ext = 9; if (has('11')) ext = 11; if (has('13')) ext = 13; }
+      if (ext >= 9) absorbed.push('9');
+      if (ext >= 11 || (ext === 13 && has('11'))) absorbed.push('11');
+      if (ext === 13) absorbed.push('13');
+      base = { maj7:'maj' + ext, '7':'' + ext, m7:'m' + ext, mM7:'m(maj' + ext + ')' }[q.id];
+      break;
+    }
+    case '7sus4': {
+      let ext = 7;
+      if (has('9')) { ext = 9; if (has('13')) ext = 13; }
+      if (ext >= 9) absorbed.push('9');
+      if (ext === 13) absorbed.push('13');
+      base = ext + 'sus4';
+      break;
+    }
+    case 'm7b5': base = 'm7♭5'; break;
+    case 'dim7': base = '°7'; break;
+  }
+  const extra = tens.filter(l => !absorbed.includes(l)).sort((a, b) => IV[a][0] - IV[b][0]);
+  return root.name + base + (extra.length ? '(' + extra.join(', ') + ')' : '');
+}
+
+/* ════════════════════════════════════════════════════════════
+   2. Voicing generation
+   ════════════════════════════════════════════════════════════ */
+
+// Every register is measured from one anchor: the root's pitch in the bass,
+// somewhere in E♭2–D3. Placing both hands relative to that one pitch makes a
+// voicing an exact transposition of itself in every key. With separate fixed
+// windows for each hand, the two windows wrap at different roots and the gap
+// between the hands jumps by an octave (e.g. between C♯ and D).
+let ROOT_MIDI = 48;
+let BASS_RANGE, RH_TOP, LH_BOTTOM;
+function setAnchor(root, hasBass) {
+  // With a bass, the root sits in F2–E3: low enough to be a bass, high enough
+  // that a root–7th shell clears the low interval limit (F2). Without one, the
+  // anchor is a silent reference set so the rootless hand lands in D3–C♯4.
+  ROOT_MIDI  = hasBass ? 41 + mod12(root.pc - 5)        // F2 – E3
+                       : 46 + mod12(root.pc - 10);      // B♭2 – A3
+  BASS_RANGE = [ROOT_MIDI - 6, ROOT_MIDI + 5];        // inversions sit near the root
+  RH_TOP     = [ROOT_MIDI + 22, ROOT_MIDI + 33];      // top voice: B♭4–A5 over C3
+  LH_BOTTOM  = [ROOT_MIDI + 2, ROOT_MIDI + 13];       // one-hand rootless: D3–C♯4 over C3
+}
+
+const bySemis = (a, b) => a.semis - b.semis;
+
+// Stack members upward, each one the nearest pitch above the last
+function stack(ms, start) {
+  const out = []; let prev = (start == null ? 48 : start) - 1;
+  for (const m of ms) {
+    let x = prev + 1;
+    while (mod12(x) !== m.pc) x++;
+    out.push({ m, midi: x });
+    prev = x;
+  }
+  return out;
+}
+
+function shift(notes, s) { return notes.map(n => ({ m: n.m, midi: n.midi + s })); }
+const lowest  = ns => Math.min(...ns.map(n => n.midi));
+const highest = ns => Math.max(...ns.map(n => n.midi));
+
+// Octave-shift a block so its top (or bottom) falls in a range, and above `floor`
+function place(notes, { top, bottom, floor }) {
+  let s = 0;
+  const lo = lowest(notes), hi = highest(notes);
+  if (top)    { while (hi + s < top[0]) s += 12;    while (hi + s > top[1]) s -= 12; }
+  if (bottom) { while (lo + s < bottom[0]) s += 12; while (lo + s > bottom[1]) s -= 12; }
+  if (floor != null) while (lo + s <= floor) s += 12;
+  return shift(notes, s);
+}
+
+function bassNote(m) {
+  let x = BASS_RANGE[0];
+  while (mod12(x) !== m.pc) x++;
+  return { m, midi: x };
+}
+
+/* ── Sound checks ─────────────────────────────────────────
+   Three standard voicing rules, applied to every generated voicing:
+   1. No minor 9th between any two voices (adjacent or not). The one accepted
+      exception is the ♭9 over the root of a dominant chord.
+   2. Low interval limits: each interval has a lowest pitch for its lower note
+      below which it turns muddy (approximate Berklee chart, checked between
+      neighbouring voices).
+   3. No minor 2nd between the top two voices, which blurs the melody note.
+   4. No doubled 3rd or 7th in a seventh chord. */
+const LIL = { 1: 52, 2: 51, 3: 48, 4: 46, 5: 46, 6: 47, 7: 34, 8: 41, 9: 41, 10: 41, 11: 41,
+              13: 40, 14: 39, 15: 36, 16: 34 };              // interval → lowest lower note (MIDI)
+
+function soundsGood(notes) {
+  const ns = notes.slice().sort((a, b) => a.midi - b.midi);
+  for (let i = 0; i < ns.length; i++)
+    for (let j = i + 1; j < ns.length; j++) {
+      const iv = ns[j].midi - ns[i].midi;
+      if (iv >= 13 && iv % 12 === 1 && !(ns[i].m.role === 'root' && ns[j].m.lab === '♭9')) return false;
+    }
+  for (let i = 0; i + 1 < ns.length; i++) {
+    const lim = LIL[ns[i + 1].midi - ns[i].midi];
+    if (lim != null && ns[i].midi < lim) return false;
+  }
+  const n = ns.length;
+  if (n >= 3 && ns[n - 1].midi - ns[n - 2].midi === 1) return false;
+  // 4. Seventh chords: never double the 3rd or the 7th (triads are exempt)
+  if (ns.some(x => x.m.role === 'sev')) {
+    for (const role of ['third', 'sev'])
+      if (ns.filter(x => x.m.role === role).length > 1) return false;
+  }
+  return true;
+}
+
+// Put a right-hand block over a left-hand part. The right hand keeps its
+// register; if the two would cross, the left hand drops an octave instead.
+function combine(lh, rh) {
+  lh = lh.slice();
+  while (lh.length && highest(lh) >= lowest(rh) && lowest(lh) - 12 >= 28) lh = shift(lh, -12);
+  return lh.concat(rh).sort((a, b) => a.midi - b.midi);
+}
+
+function rotations(arr) { return arr.map((_, i) => arr.slice(i).concat(arr.slice(0, i))); }
+
+// The notes the right hand (or the single hand) is given to voice
+const fifthOf = U => U.find(m => m.role === 'fifth');
+function upperSet(members, bass, tens) {
+  let U = members.slice();
+  const five = U.find(m => m.lab === '5');
+  const root = U.find(m => m.role === 'root');
+  if (five && tens.some(m => m.lab === '13' || m.lab === '♭13')) U = U.filter(m => m !== five);
+  if (!bass) {
+    if (U.length - 1 >= 3) U = U.filter(m => m !== root);
+  } else if (bass.role === 'root') {
+    if (U.length - 1 >= 4) U = U.filter(m => m !== root);
+  } else {
+    // Avoid doubling the 3rd or 7th that is already in the bass
+    const need = bass.role === 'fifth' ? 4 : 3;
+    if (U.length - 1 >= need) U = U.filter(m => m !== bass);
+  }
+  if (U.length > 4 && five && U.includes(five)) U = U.filter(m => m !== five);
+  // Heavily altered chords over an inversion: the tensions imply the root
+  if (U.length > 5 && root && U.includes(root)) U = U.filter(m => m !== root);
+  if (U.length > 5 && fifthOf(U)) U = U.filter(m => m !== fifthOf(U));
+  return U.sort(bySemis);
+}
+
+function generate(ch) {
+  const { members, tens, bass } = ch;
+  setAnchor(rootObj(), !!bass);
+  const find = role => members.find(m => m.role === role);
+  const root = find('root'), third = find('third'), fifth = find('fifth'), sev = find('sev');
+  const perfect5 = members.find(m => m.lab === '5');
+  const bassIsRoot = bass && bass.role === 'root';
+  const lhBass = bass ? [bassNote(bass)] : [];
+  const U = upperSet(members, bass, tens);
+  const fams = [];
+
+  const fam = (id, title, desc) => { const f = { id, title, desc, items: [] }; fams.push(f); return f; };
+  const rhPlace = notes => place(notes, { top: RH_TOP });
+  const add = (f, notes, title, tag) => f.items.push({ notes: notes.sort((a, b) => a.midi - b.midi), title, tag });
+  const topTitle = notes => notes.reduce((a, b) => (b.midi > a.midi ? b : a)).m.lab + ' on top';
+
+  /* Close position */
+  {
+    const f = fam('close', bass ? 'Close position' : 'Close position (one hand)',
+      bass
+        ? 'Every upper note inside one octave, stacked as tightly as possible over the bass. Each inversion puts a different chord member on top: the bread-and-butter right hand of pop and jazz alike.'
+        : 'All notes within an octave in one hand, the usual left-hand comping shape when a bass player has the root. Only the two standard positions are shown: built up from the 3rd (“A”) or from the 7th (“B”).');
+    if (U.length >= 2 && U.length <= 5) {
+      for (const rot of rotations(U)) {
+        if (!bass && rot[0].role !== 'third' && rot[0].role !== 'sev') continue;
+        let rh = stack(rot);
+        rh = bass ? rhPlace(rh) : place(rh, { bottom: LH_BOTTOM });
+        let tag = null;
+        if (!U.includes(root) && U.length === 4 && U.includes(third) && U.includes(sev)) {
+          if (rot[0] === third) tag = 'Rootless type A';
+          if (rot[0] === sev)   tag = 'Rootless type B';
+        }
+        add(f, combine(lhBass, rh), topTitle(rh), tag);
+      }
+    }
+  }
+
+  /* Drop 2 (four-note sets only). Drop 3 and drop 2 & 4 are left out:
+     they are mainly guitar voicings and rare at the piano. */
+  if (U.length === 4) {
+    const f = fam('drop2', 'Drop 2',
+      'Take a close voicing and drop its second voice from the top by an octave. The top note stays put while the sound opens up: the standard four-note voicing of jazz arranging, and comfortable to split between the hands.');
+    for (const rot of rotations(U)) {
+      const close = stack(rot);
+      const n = close.length;
+      let v = close.map((x, i) => i === n - 2 ? { m: x.m, midi: x.midi - 12 } : x);
+      v = bass ? rhPlace(v) : place(v, { top: RH_TOP });
+      add(f, combine(lhBass, v), topTitle(v));
+    }
+  }
+
+  /* Shells: root and 7th in the left hand (root–10th lives under "Open tenth") */
+  if (bassIsRoot && sev && third) {
+    const f = fam('shell', 'Shell + right hand',
+      'The left hand holds the root with the 7th, the classic jazz shell; the right hand adds the 3rd and the colours.');
+    const rest = exclude => {
+      let r = members.filter(m => m.role !== 'root' && !exclude.includes(m));
+      if (perfect5 && r.includes(perfect5) && (r.length - 1 >= 3 || tens.some(m => m.lab === '13' || m.lab === '♭13')))
+        r = r.filter(m => m !== perfect5);
+      return r.sort(bySemis);
+    };
+    const r = bassNote(root);
+    const sevNote = stack([sev], r.midi + 1)[0];
+    const lhs = [['L.H. R–' + sev.lab, [r, sevNote], rest([sev])]];
+    for (const [name, lh, rhSet] of lhs) {
+      if (rhSet.length < 1) continue;
+      for (const rot of rotations(rhSet)) {
+        const rh = place(stack(rot), { top: RH_TOP, floor: highest(lh) });
+        add(f, lh.concat(rh), topTitle(rh), name);
+      }
+    }
+  }
+
+  /* Open tenth: root–5th–10th in the left hand. (A plain root–5th left hand
+     under the same right hand is left out: it only adds a 5th to the close
+     position cards.) */
+  if (bassIsRoot && perfect5 && third && !tens.some(m => m.lab === '♭13')) {
+    const f = fam('open', 'Open tenth',
+      'Root, 5th and the 3rd an octave up (a tenth) spread through the left hand, with the 7th and colours in the right. The full, ringing sound of ballad and pop piano.');
+    const r = bassNote(root);
+    const p5 = stack([perfect5], r.midi + 1)[0];
+    const lhs = [[[root, perfect5, third], [r, p5, stack([third], r.midi + 13)[0]]]];
+    const triad = members.every(m => m.role !== 'sev');
+    for (const [lhM, lh] of lhs) {
+      let rh = members.filter(m => !lhM.includes(m));
+      // Triads (pop) take the whole triad in the right hand; seventh chords
+      // only borrow the 5th or root, never a second 3rd
+      const backs = triad ? [third, perfect5, root] : [perfect5, root];
+      const want = triad ? 3 : 2;
+      for (const back of backs) if (rh.length < want && !rh.includes(back)) rh.push(back);
+      rh.sort(bySemis);
+      const lhName = 'L.H. R–5–10';
+      for (const rot of rotations(rh)) {
+        const v = place(stack(rot), { top: RH_TOP, floor: highest(lh) });
+        add(f, lh.concat(v), topTitle(v), lhName);
+      }
+    }
+  }
+
+  /* Stacked fifths (Kenny Barron) */
+  if (bassIsRoot) {
+    const has = l => tens.some(m => m.lab === l);
+    const get = l => members.find(m => m.lab === l);
+    let seq = null, label = null;
+    if (third && sev && third.lab === '♭3' && sev.lab === '♭7' && perfect5 && has('9') && has('11'))
+      { seq = ['R','5','9','♭3','♭7','11']; label = 'R–5–9 | ♭3–♭7–11'; }
+    else if (q().id === 'maj7' && has('9') && has('♯11'))
+      { seq = ['R','5','9','3','7','♯11']; label = 'R–5–9 | 3–7–♯11'; }
+    if (seq) {
+      const f = fam('fifths', 'Stacked fifths',
+        'Two stacks of fifths, one per hand. Kenny Barron’s minor-eleventh voicing (R–5–9 | ♭3–♭7–11) is the classic; the major version with a ♯11 is its Lydian cousin. Wide, even and very modern.');
+      const v = stack(seq.map(get), bassNote(root).midi);
+      add(f, v, topTitle(v), label);
+    }
+  }
+
+  /* Quartal */
+  if (!bass || bassIsRoot) {
+    const stacks = quartalStacks(members);
+    if (stacks.length) {
+      const f = fam('quartal', 'Quartal',
+        'Three or four notes stacked in perfect fourths, drawn from the chord’s own notes, and the “So What” voicing: three fourths capped by a major third. Open and ambiguous; the sound of modal jazz and McCoy Tyner.');
+      for (const s of stacks) {
+        let v = stack(s.ms);
+        v = bass ? rhPlace(v) : (v.length <= 4 ? place(v, { bottom: LH_BOTTOM }) : place(v, { top: RH_TOP }));
+        add(f, combine(lhBass, v), topTitle(v), s.sowhat ? 'So What' : s.ms.length + ' notes');
+      }
+    }
+  }
+
+  /* Upper-structure triads */
+  if ((!bass || bassIsRoot) && q().id === '7' && tens.length) {
+    const usts = upperTriads(members, tens, root);
+    if (usts.length) {
+      const f = fam('ust', 'Upper-structure triads',
+        'A plain triad in the right hand over the left hand’s root, 7th and 3rd. The triad carries the tensions, so a shape any beginner knows produces a rich, precise colour. Only the standard dominant upper structures are listed: major II, ♭V, ♭VI and VI, and minor i, ♭ii and ♭iii.');
+      let lh;
+      if (bass) {
+        const r = bassNote(root);
+        const s7 = stack([sev], r.midi + 1)[0];
+        lh = [r, s7, stack([third], s7.midi + 1)[0]];
+      } else {
+        lh = place(stack([sev, third]), { bottom: LH_BOTTOM });
+      }
+      for (const u of usts) {
+        for (const rot of rotations(u.ms)) {
+          const v = place(stack(rot), { top: RH_TOP, floor: highest(lh) });
+          add(f, lh.concat(v), topTitle(v), u.name);
+        }
+      }
+    }
+  }
+
+  return fams;
+}
+
+function quartalStacks(members) {
+  const byPc = {};
+  members.forEach(m => { byPc[m.pc] = m; });
+  const raw = [];
+  const dfs = (seq, tritone) => {
+    if (seq.length >= 3) raw.push({ ms: seq, sowhat: false });
+    const last = seq[seq.length - 1].pc;
+    if (seq.length < 4) {
+      const m = byPc[mod12(last + 5)];
+      if (m && !seq.includes(m)) dfs(seq.concat([m]), false);
+    }
+    // “So What”: three fourths capped by a major third
+    if (seq.length === 4) {
+      const m = byPc[mod12(last + 4)];
+      if (m && !seq.includes(m)) raw.push({ ms: seq.concat([m]), sowhat: true });
+    }
+  };
+  members.forEach(m => dfs([m], false));
+
+  const ok = raw.filter(s => {
+    const hasThird = s.ms.some(m => m.role === 'third');
+    const hasSev = s.ms.some(m => m.role === 'sev');
+    const has11 = s.ms.some(m => m.lab === '11');
+    const hasT = s.ms.some(m => m.role === 't');
+    return (hasThird || (hasSev && has11)) && (hasSev || hasT);
+  });
+  const key = s => s.ms.map(m => m.lab).join(',');
+  const keys = ok.map(key);
+  // Keep only maximal stacks: drop any that sits inside a longer one
+  const maximal = ok.filter((s, i) => !keys.some((k, j) => j !== i && k !== keys[i] && (',' + k + ',').includes(',' + keys[i] + ',')));
+  const score = s => s.ms.length * 10
+    + (s.ms.some(m => m.role === 'third') ? 3 : 0)
+    + (s.ms.some(m => m.role === 'sev') ? 3 : 0)
+    + (s.sowhat ? 2 : 0);
+  const seen = new Set();
+  return maximal
+    .sort((a, b) => score(b) - score(a))
+    .filter(s => { const k = key(s); if (seen.has(k)) return false; seen.add(k); return true; })
+    .slice(0, 6);
+}
+
+const ROMAN = ['I','♭II','II','♭III','III','IV','♭V','V','♭VI','VI','♭VII','VII'];
+
+function upperTriads(members, tens, root) {
+  const byPc = {};
+  members.forEach(m => { byPc[m.pc] = m; });
+  const core = members.filter(m => m.role !== 't').map(m => m.pc);
+  const out = [];
+  // The standard dominant upper structures (Levine, The Jazz Piano Book, ch. 14)
+  const STANDARD = { maj: [2, 6, 8, 9], min: [0, 1, 3] };
+  for (let p = 0; p < 12; p++) {
+    for (const [kind, iv] of [['maj', [0, 4, 7]], ['min', [0, 3, 7]]]) {
+      if (!STANDARD[kind].includes(mod12(p - root.pc))) continue;
+      const ms = iv.map(i => byPc[mod12(p + i)]);
+      if (ms.some(m => !m)) continue;
+      if (ms.every(m => core.includes(m.pc))) continue;               // just the chord itself
+      if (!tens.every(t => ms.includes(t))) continue;                  // must carry every tension
+      const rn = ROMAN[mod12(p - root.pc)];
+      // Spell the triad's root from its degree (♭iii over C7 is E♭m, not D♯m)
+      const iv0 = mod12(p - root.pc);
+      const tr = spell(root, iv0, { 0: 0, 1: 1, 2: 1, 3: 2, 6: 4, 8: 5, 9: 5 }[iv0]);
+      const name = (kind === 'maj' ? rn : rn.toLowerCase()) + ' · ' + tr.name + (kind === 'min' ? 'm' : '') + ' triad';
+      out.push({ ms: ms.slice().sort(bySemis), name, nT: ms.filter(m => m.role === 't').length });
+    }
+  }
+  return out.sort((a, b) => b.nT - a.nT).slice(0, 4);
+}
+
+/* ════════════════════════════════════════════════════════════
+   3. Drawing: grand staff and keyboard
+   ════════════════════════════════════════════════════════════ */
+
+const SP = 7;                     // staff space
+const HS = SP / 2;
+const STAFF_W = 138;
+const NOTE_X = 98;
+const INK = '#1a1a1a';
+
+function staffPos(n) {
+  const natural = n.midi - n.m.acc;
+  const oct = Math.floor(natural / 12) - 1;
+  return n.m.letter + 7 * oct;     // diatonic step; C4 = 28
+}
+
+function svgEl(tag, attrs, inner) {
+  const a = Object.entries(attrs).map(([k, v]) => k + '="' + v + '"').join(' ');
+  return '<' + tag + ' ' + a + (inner == null ? '/>' : '>' + inner + '</' + tag + '>');
+}
+
+function accGlyph(acc, xr, y) {
+  // xr: right edge of the glyph
+  let s = '';
+  const flat = x => {
+    const xs = x - 4.6;
+    return svgEl('line', { x1: xs, y1: y - 10.5, x2: xs, y2: y + 3.4, stroke: INK, 'stroke-width': 1.1 }) +
+      svgEl('path', { d: `M${xs} ${y + 3.4} C${xs + 3.2} ${y + 1.6} ${xs + 5.6} ${y - 1.2} ${xs + 4.4} ${y - 2.8} C${xs + 3.4} ${y - 4.1} ${xs + 1.2} ${y - 3.4} ${xs} ${y - 1.4}`,
+        fill: 'none', stroke: INK, 'stroke-width': 1.4 });
+  };
+  if (acc === -1) s = flat(xr);
+  else if (acc === -2) s = flat(xr) + flat(xr - 5.4);
+  else if (acc === 1) {
+    const c = xr - 3.6;
+    s = svgEl('line', { x1: c - 1.4, y1: y - 6.6, x2: c - 1.4, y2: y + 7.6, stroke: INK, 'stroke-width': 1 }) +
+        svgEl('line', { x1: c + 1.4, y1: y - 7.6, x2: c + 1.4, y2: y + 6.6, stroke: INK, 'stroke-width': 1 }) +
+        svgEl('line', { x1: c - 3.4, y1: y - 1.2, x2: c + 3.4, y2: y - 3.2, stroke: INK, 'stroke-width': 1.9 }) +
+        svgEl('line', { x1: c - 3.4, y1: y + 3.2, x2: c + 3.4, y2: y + 1.2, stroke: INK, 'stroke-width': 1.9 });
+  } else if (acc === 2) {
+    const c = xr - 3;
+    s = svgEl('path', { d: `M${c - 2.6} ${y - 2.6} L${c + 2.6} ${y + 2.6} M${c + 2.6} ${y - 2.6} L${c - 2.6} ${y + 2.6}`, stroke: INK, 'stroke-width': 1.5, 'stroke-linecap': 'round' });
+  }
+  return s;
+}
+const accWidth = a => a === -2 ? 11 : a === 2 ? 7 : a === 1 ? 8.5 : 7;
+
+function staffSVG(notes, range) {
+  // The two staves are drawn apart (a real grand staff leaves about five
+  // spaces between them), so the bass staff is shifted down by GAP.
+  const GAP = 3 * SP;
+  const top = range.dMax + 2, bot = range.dMin - 2;
+  const H = (top - bot) * HS + GAP;
+  const yT = d => (top - d) * HS;
+  const yB = d => (top - d) * HS + GAP;
+  let y = yT;
+  let s = '';
+
+  // Staves, opening bar line, clefs
+  for (const d of [30, 32, 34, 36, 38]) s += svgEl('line', { x1: 2, y1: yT(d), x2: STAFF_W - 2, y2: yT(d), stroke: '#8a8a8a', 'stroke-width': 0.8 });
+  for (const d of [18, 20, 22, 24, 26]) s += svgEl('line', { x1: 2, y1: yB(d), x2: STAFF_W - 2, y2: yB(d), stroke: '#8a8a8a', 'stroke-width': 0.8 });
+  s += svgEl('line', { x1: 2, y1: yT(38), x2: 2, y2: yB(18), stroke: '#8a8a8a', 'stroke-width': 1 });
+  s += svgEl('text', { x: 6, y: yT(30) + 2.7, 'font-family': "'Noto Music', 'Apple Symbols', 'Segoe UI Symbol', serif", 'font-size': 30.5, fill: INK }, '\u{1D11E}');
+  s += svgEl('text', { x: 6, y: yB(24) + 19.2, 'font-family': "'Noto Music', 'Apple Symbols', 'Segoe UI Symbol', serif", 'font-size': 30.5, fill: INK }, '\u{1D122}');
+
+  // Split by clef: middle C and above on the treble staff
+  const ps = notes.map(n => ({ n, d: staffPos(n) }));
+  const groups = [ps.filter(p => p.d >= 28), ps.filter(p => p.d < 28)];
+  groups.forEach((g, gi) => {
+    if (!g.length) return;
+    y = gi === 0 ? yT : yB;
+    g.sort((a, b) => a.d - b.d || a.n.midi - b.n.midi);
+    // Seconds: the upper note of a step goes to the right of the stem side
+    let prev = null;
+    g.forEach(p => { p.right = !!(prev && p.d - prev.d <= 1 && !prev.right); prev = p; });
+    const anyRight = g.some(p => p.right);
+
+    // Ledger lines
+    const ledgers = new Set();
+    for (const p of g) {
+      if (gi === 0) {
+        for (let L = 28; L >= p.d; L -= 2) ledgers.add(L);
+        for (let L = 40; L <= p.d; L += 2) ledgers.add(L);
+      } else {
+        for (let L = 16; L >= p.d; L -= 2) ledgers.add(L);
+        for (let L = 28; L <= p.d; L += 2) ledgers.add(L);
+      }
+    }
+    for (const L of ledgers) {
+      const wide = anyRight && g.some(p => p.right && Math.abs(p.d - L) <= 1);
+      s += svgEl('line', { x1: NOTE_X - 8.5, y1: y(L), x2: NOTE_X + (wide ? 19 : 8.5), y2: y(L), stroke: '#555', 'stroke-width': 1 });
+    }
+
+    // Note heads (whole notes)
+    for (const p of g) {
+      const cx = NOTE_X + (p.right ? 10.6 : 0), cy = y(p.d);
+      s += svgEl('ellipse', { cx, cy, rx: 5.3, ry: 3.6, fill: INK });
+      s += svgEl('ellipse', { cx, cy, rx: 2.5, ry: 1.75, fill: '#fff', transform: `rotate(-55 ${cx} ${cy})` });
+    }
+
+    // Accidentals, columns from right to left, top note first
+    const placed = [];
+    g.filter(p => p.n.m.acc !== 0).sort((a, b) => b.d - a.d).forEach(p => {
+      let xr = NOTE_X - 7.5;
+      // step past columns that already hold a nearby accidental
+      for (;;) {
+        const clash = placed.find(q => Math.abs(q.d - p.d) < 6 && q.xr - q.w < xr && q.xr > xr - accWidth(p.n.m.acc));
+        if (!clash) break;
+        xr = clash.xr - clash.w - 1.5;
+      }
+      placed.push({ d: p.d, xr, w: accWidth(p.n.m.acc) });
+      s += accGlyph(p.n.m.acc, xr, y(p.d));
+    });
+  });
+
+  return `<svg viewBox="0 0 ${STAFF_W} ${H.toFixed(1)}" role="img" aria-label="Notation">${s}</svg>`;
+}
+
+const isBlack = m => [1, 3, 6, 8, 10].includes(mod12(m));
+const ROLE_FILL = { root: '#1d3f8f', guide: '#3f73e0', fifth: '#a9c1f2', tens: '#ec6a1e' };
+const ROLE_TEXT = { root: '#fff', guide: '#fff', fifth: '#1a1a1a', tens: '#fff' };
+
+function keyboardSVG(notes, lo, hi, cardId) {
+  const WW = 14, WH = 58, BW = 8.6, BH = 36;
+  const whites = [];
+  for (let m = lo; m <= hi; m++) if (!isBlack(m)) whites.push(m);
+  const W = whites.length * WW;
+  const xOfWhite = m => whites.indexOf(m) * WW;
+  const centerX = m => isBlack(m) ? xOfWhite(m - 1) + WW : xOfWhite(m) + WW / 2;
+  const on = {};
+  notes.forEach(n => { on[n.midi] = n; });
+
+  // Labels: rows chosen so neighbouring badges never overlap
+  const labels = notes.slice().sort((a, b) => a.midi - b.midi).map(n => {
+    const w = 7 + n.m.lab.length * 5.6;
+    return { n, x: centerX(n.midi), w };
+  });
+  const rowsEnd = [];
+  labels.forEach(L => {
+    let r = 0;
+    while (rowsEnd[r] != null && rowsEnd[r] > L.x - L.w / 2 - 1) r++;
+    L.row = r;
+    rowsEnd[r] = L.x + L.w / 2;
+  });
+  const nRows = Math.max(1, rowsEnd.length);
+  const LH = 15, top = nRows * (LH + 3) + 4;
+  const H = top + WH + 1;
+
+  let s = '';
+  for (const m of whites) {
+    const n = on[m];
+    const attrs = { class: 'key white' + (n ? ' on' : ''), x: xOfWhite(m), y: top, width: WW, height: WH, rx: 1.5, 'data-midi': m };
+    if (n) { attrs.style = `fill:${ROLE_FILL[roleClass(n.m)]}`; }
+    s += svgEl('rect', attrs);
+  }
+  for (let m = lo; m <= hi; m++) {
+    if (!isBlack(m) || m - 1 < lo) continue;
+    const n = on[m];
+    const attrs = { class: 'key black' + (n ? ' on' : ''), x: centerX(m) - BW / 2, y: top, width: BW, height: BH, rx: 1, 'data-midi': m };
+    if (n) attrs.style = `fill:${ROLE_FILL[roleClass(n.m)]};stroke:#111`;
+    s += svgEl('rect', attrs);
+  }
+  // Middle C marker
+  if (60 >= lo && 60 <= hi) s += svgEl('circle', { cx: centerX(60), cy: top + WH - 6, r: 1.6, fill: on[60] ? '#fff' : '#bbb' });
+
+  for (const L of labels) {
+    const rc = roleClass(L.n.m);
+    const by = top - 4 - (L.row + 1) * (LH + 3) + 3;
+    s += svgEl('line', { x1: L.x, y1: by + LH, x2: L.x, y2: top, stroke: ROLE_FILL[rc], 'stroke-width': 1 });
+    s += svgEl('rect', { x: L.x - L.w / 2, y: by, width: L.w, height: LH, rx: 4, fill: ROLE_FILL[rc] });
+    s += svgEl('text', { x: L.x, y: by + 11, 'text-anchor': 'middle', 'font-size': 9.5, 'font-weight': 600, fill: ROLE_TEXT[rc], 'font-family': 'Inter, sans-serif' }, L.n.m.lab);
+  }
+  return `<svg class="kb" data-card="${cardId}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Keyboard">${s}</svg>`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   4. Audio (shared with the chord-summary page)
+   ════════════════════════════════════════════════════════════ */
+
+const SF_BASE = 'https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/';
+const INST_LABEL = { acoustic_grand_piano: 'piano', electric_piano_1: 'electric piano' };
+const STYLE = {
+  acoustic_grand_piano: { attack: 0.004, decay: 0.15, sustain: 0.85, release: 0.5 },
+  electric_piano_1:     { attack: 0.004, decay: 0.2,  sustain: 0.8,  release: 0.5 },
+  synth:                { attack: 0.012, decay: 0.35, sustain: 0.55, release: 0.4 }
+};
+
+const Snd = {
+  ac: null, master: null, inst: null, loaded: {}, failed: false, sampleLen: 3.1,
+  players: [], synths: [], timers: [],
+
+  ensure() {
+    if (!this.ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ac = new AC();
+      this.master = this.ac.createGain();
+      this.master.gain.value = 0.8;
+      this.master.connect(this.ac.destination);
+    }
+    if (this.ac.state === 'suspended') this.ac.resume();
+    return this.ac;
+  },
+  style() { return (this.inst && STYLE[state.inst]) || STYLE.synth; },
+
+  async ready() {
+    this.ensure();
+    const name = state.inst;
+    if (name === 'synth' || this.failed || !window.Soundfont) { this.inst = null; return; }
+    if (this.loaded[name]) { this.inst = this.loaded[name]; return; }
+    setStatus('Loading the ' + INST_LABEL[name] + ' (first time only)…', true);
+    try {
+      const inst = await Soundfont.instrument(this.ac, name, {
+        format: 'mp3', soundfont: 'FluidR3_GM', destination: this.master,
+        nameToUrl: (n, sf, f) => SF_BASE + sf + '/' + n + '-' + f + '.js'
+      });
+      this.loaded[name] = inst;
+      this.inst = inst;
+      const buf = inst.buffers && inst.buffers[Object.keys(inst.buffers)[0]];
+      this.sampleLen = buf ? buf.duration : 3.1;
+      setStatus('Sound ready');
+    } catch (e) {
+      this.failed = true;
+      this.inst = null;
+      setStatus('Samples unavailable — using the built-in synth');
+    }
+  },
+
+  note(midi, when, dur, gain) {
+    const st = this.style();
+    if (this.inst) {
+      const room = Math.max(0.3, this.sampleLen - 0.05 - st.release);
+      try {
+        this.players.push(this.inst.play(midi, when, {
+          duration: Math.min(dur, room), gain,
+          attack: st.attack, decay: st.decay, sustain: st.sustain, release: st.release
+        }));
+        return;
+      } catch (e) { /* fall through */ }
+    }
+    this.synth(midi, when, dur, gain, st);
+  },
+
+  synth(midi, when, dur, gain, st) {
+    const ac = this.ac;
+    const f = 440 * Math.pow(2, (midi - 69) / 12);
+    const g = ac.createGain();
+    const lp = ac.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 2400; lp.Q.value = 0.4;
+    lp.connect(g); g.connect(this.master);
+    [[1, 0.55, 'sine'], [2, 0.2, 'sine'], [3, 0.08, 'triangle'], [4, 0.04, 'triangle']].forEach(([mul, amp, type]) => {
+      const o = ac.createOscillator(), og = ac.createGain();
+      o.type = type; o.frequency.value = f * mul; og.gain.value = amp;
+      o.connect(og); og.connect(lp);
+      o.start(when); o.stop(when + dur + st.release + 0.2);
+      this.synths.push({ o, g });
+    });
+    const peak = Math.max(gain, 0.001);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(peak, when + st.attack);
+    g.gain.exponentialRampToValueAtTime(Math.max(peak * st.sustain, 0.001), when + st.attack + st.decay);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur + st.release);
+  },
+
+  stop() {
+    this.timers.forEach(clearTimeout);
+    this.timers = [];
+    this.players.forEach(p => { try { p.stop(); } catch (e) {} });
+    this.players = [];
+    if (this.ac) {
+      const t = this.ac.currentTime;
+      this.synths.forEach(s => {
+        try { s.g.gain.cancelScheduledValues(t); s.g.gain.setTargetAtTime(0.0001, t, 0.03); s.o.stop(t + 0.3); } catch (e) {}
+      });
+    }
+    this.synths = [];
+    document.querySelectorAll('.key.hit').forEach(k => k.classList.remove('hit'));
+    document.querySelectorAll('.btn.playing').forEach(b => b.classList.remove('playing'));
+  }
+};
+
+function setStatus(msg, busy) {
+  const el = $('status');
+  el.textContent = msg;
+  el.classList.toggle('busy', !!busy);
+}
+
+let playToken = 0;
+
+function flashKey(svg, midi, on) {
+  const k = svg && svg.querySelector(`.key[data-midi="${midi}"]`);
+  if (k) k.classList.toggle('hit', on);
+}
+
+async function playVoicing(v, mode, btn) {
+  const token = ++playToken;
+  Snd.stop();
+  await Snd.ready();
+  if (token !== playToken) return;
+  btn.classList.add('playing');
+  const svg = document.querySelector(`.kb[data-card="${v.id}"]`);
+  const t0 = Snd.ac.currentTime + 0.08;
+  const notes = v.notes.slice().sort((a, b) => a.midi - b.midi);
+  const gain = 0.5 / Math.sqrt(notes.length) + 0.18;
+  let end;
+  if (mode === 'chord') {
+    notes.forEach(n => Snd.note(n.midi, t0, 2.4, gain));
+    notes.forEach(n => flashKey(svg, n.midi, true));
+    end = 2.6;
+  } else {
+    const step = 0.42;
+    notes.forEach((n, i) => {
+      Snd.note(n.midi, t0 + i * step, 0.75, 0.62);
+      Snd.timers.push(setTimeout(() => flashKey(svg, n.midi, true), 80 + i * step * 1000));
+      Snd.timers.push(setTimeout(() => flashKey(svg, n.midi, false), 80 + (i * step + 0.6) * 1000));
+    });
+    end = notes.length * step + 0.6;
+  }
+  Snd.timers.push(setTimeout(() => {
+    if (token !== playToken) return;
+    btn.classList.remove('playing');
+    notes.forEach(n => flashKey(svg, n.midi, false));
+  }, end * 1000 + 100));
+}
+
+async function playKey(midi, svg) {
+  const token = ++playToken;
+  await Snd.ready();
+  if (token !== playToken) return;
+  Snd.note(midi, Snd.ac.currentTime + 0.02, 1.2, 0.6);
+  flashKey(svg, midi, true);
+  setTimeout(() => flashKey(svg, midi, false), 450);
+}
+
+/* ════════════════════════════════════════════════════════════
+   5. State, controls and rendering
+   ════════════════════════════════════════════════════════════ */
+
+const state = { root: 'C', qual: 'maj7', n: '', e: '', t: '', bass: 'root', top: 'any', inst: 'acoustic_grand_piano' };
+const q = () => qualById(state.qual);
+const rootObj = () => ROOTS.find(r => r.name === state.root) || ROOTS[0];
+
+function readHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  for (const k of Object.keys(state)) if (p.has(k)) state[k] = p.get(k);
+  if (!qualById(state.qual)) state.qual = 'maj7';
+}
+function writeHash() {
+  const p = new URLSearchParams();
+  for (const k of ['root', 'qual', 'n', 'e', 't', 'bass', 'top']) if (state[k]) p.set(k, state[k]);
+  history.replaceState(null, '', '#' + p.toString());
+}
+
+function tensionsSel() {
+  return [state.n, state.e, state.t].filter(Boolean).flatMap(s => s.split(' '));
+}
+
+function sanitize() {
+  const Q = q();
+  const nOpts = Q.n.map(a => a.join(' '));
+  if (state.n && !nOpts.includes(state.n)) state.n = '';
+  if (state.e && !Q.e.includes(state.e)) state.e = '';
+  if (state.t && !Q.t.includes(state.t)) state.t = '';
+  const roles = ['root', 'third', 'fifth', 'sev', 'none'];
+  if (!roles.includes(state.bass)) state.bass = 'root';
+  if (state.bass === 'sev' && !Q.tones.some(l => IV[l][2] === 'sev' && l !== '7')) state.bass = 'root';
+  const labs = Q.tones.concat(tensionsSel());
+  if (state.top !== 'any' && !labs.includes(state.top)) state.top = 'any';
+}
+
+function buildSeg(el, opts, key) {
+  el.innerHTML = '';
+  const all = [['', '–']].concat(opts.map(o => [o, o]));
+  for (const [val, txt] of all) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = txt;
+    b.className = (state[key] === val ? 'on' : '') + (val ? '' : ' none');
+    b.setAttribute('aria-pressed', state[key] === val);
+    if (!val) b.title = 'None';
+    b.addEventListener('click', () => { state[key] = val; update(); });
+    el.appendChild(b);
+  }
+}
+
+function buildControls() {
+  const Q = q();
+  $('rootSel').innerHTML = ROOTS.map(r => `<option${r.name === state.root ? ' selected' : ''}>${r.name}</option>`).join('');
+  $('qualSel').innerHTML = QUALS.map(x => `<option value="${x.id}"${x.id === state.qual ? ' selected' : ''}>${x.name}</option>`).join('');
+  $('g9').hidden  = !Q.n.length;  buildSeg($('seg9'),  Q.n.map(a => a.join(' ')), 'n');
+  $('g11').hidden = !Q.e.length;  buildSeg($('seg11'), Q.e, 'e');
+  $('g13').hidden = !Q.t.length;  buildSeg($('seg13'), Q.t, 't');
+
+  const tone = role => Q.tones.find(l => IV[l][2] === role);
+  const ord = { third: 'first inversion', fifth: 'second inversion', sev: 'third inversion' };
+  const bassOpts = [['root', 'Root']];
+  for (const role of ['third', 'fifth', 'sev']) {
+    const l = tone(role);
+    // A major 7th in the bass always forms a minor 9th with the root above
+    if (l && !(role === 'sev' && l === '7')) bassOpts.push([role, l + ' (' + ord[role] + ')']);
+  }
+  bassOpts.push(['none', 'None — rootless']);
+  $('bassSel').innerHTML = bassOpts.map(([v, t]) => `<option value="${v}"${v === state.bass ? ' selected' : ''}>${t}</option>`).join('');
+
+  const r = rootObj();
+  const labs = Q.tones.concat(tensionsSel()).sort((a, b) => IV[a][0] - IV[b][0]);
+  $('topSel').innerHTML = `<option value="any">Any</option>` +
+    labs.map(l => `<option value="${l}"${l === state.top ? ' selected' : ''}>${l} (${makeMember(r, l).name})</option>`).join('');
+  $('instSel').value = state.inst;
+}
+
+let current = [];   // flat list of rendered voicings, for playback lookup
+
+function render() {
+  const Q = q(), r = rootObj();
+  const tens = tensionsSel();
+  const members = Q.tones.concat(tens).map(l => makeMember(r, l)).sort(bySemis);
+  const tensM = members.filter(m => m.role === 't');
+  const bass = state.bass === 'none' ? null : members.find(m => m.role === state.bass);
+
+  $('sym').innerHTML = chordSymbol(r, Q, tens).replace(/([♭♯])/g, '<span class="acc">$1</span>');
+  $('tones').innerHTML = members.map(m =>
+    `<span class="tone"><b class="r-${roleClass(m)}">${m.lab}</b>${m.name}</span>`).join('');
+
+  let fams = generate({ members, tens: tensM, bass });
+
+  // Filter by top note and remove duplicates across families
+  const seen = new Set();
+  fams.forEach(f => {
+    f.items = f.items.filter(v => {
+      const top = v.notes[v.notes.length - 1];
+      if (state.top !== 'any' && top.m.lab !== state.top) return false;
+      if (!soundsGood(v.notes)) return false;
+      const k = v.notes.map(n => n.midi).join(',');
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  });
+  fams = fams.filter(f => f.items.length);
+
+  current = [];
+  let id = 0;
+  fams.forEach(f => f.items.forEach(v => { v.id = 'v' + (id++); current.push(v); }));
+
+  if (!current.length) {
+    $('jump').innerHTML = '';
+    $('results').innerHTML = state.top === 'any'
+      ? `<div class="empty">No common voicing works over this bass: some note clashes with it (a minor 9th or a muddy low interval) or there are too many notes. Drop a tension, or put the root in the bass.</div>`
+      : `<div class="empty">No standard voicing puts the ${state.top} on top with these settings. Try another top note, or change the bass.</div>`;
+    return;
+  }
+
+  // Shared ranges so every card is drawn on the same keyboard and staff
+  let lo = Math.min(...current.map(v => v.notes[0].midi));
+  let hi = Math.max(...current.map(v => v.notes[v.notes.length - 1].midi));
+  while (mod12(lo) !== 0 && mod12(lo) !== 5) lo--;
+  while (mod12(hi) !== 4 && mod12(hi) !== 11) hi++;
+  const ds = current.flatMap(v => v.notes.map(staffPos));
+  const range = { dMin: Math.min(16, ...ds), dMax: Math.max(40, ...ds) };
+  const staffSink = -((20 - range.dMin) * HS - 1);   // blank space under the bass staff
+
+  $('jump').innerHTML = fams.map(f => `<a href="#fam-${f.id}">${f.title}<span>${f.items.length}</span></a>`).join('');
+
+  $('results').innerHTML = fams.map(f => `
+    <div class="family" id="fam-${f.id}">
+      <h3>${f.title}<span class="count">${f.items.length} voicing${f.items.length > 1 ? 's' : ''}</span></h3>
+      <p class="fam-desc">${f.desc}</p>
+      <div class="cards">
+        ${f.items.map(v => `
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">${v.title}</span>
+              ${v.tag ? `<span class="card-tag">${v.tag}</span>` : ''}
+              <span class="btns">
+                <button class="btn" type="button" data-play="chord" data-id="${v.id}">▶ Chord</button>
+                <button class="btn" type="button" data-play="notes" data-id="${v.id}">▶ Notes</button>
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="staff" style="--sb:${staffSink}px">${staffSVG(v.notes, range)}</div>
+              <div class="kbwrap">${keyboardSVG(v.notes, lo, hi, v.id)}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function update() {
+  sanitize();
+  buildControls();
+  render();
+  writeHash();
+}
+
+$('rootSel').addEventListener('change', e => { state.root = e.target.value; update(); });
+$('qualSel').addEventListener('change', e => { state.qual = e.target.value; update(); });
+$('bassSel').addEventListener('change', e => { state.bass = e.target.value; update(); });
+$('topSel').addEventListener('change', e => { state.top = e.target.value; update(); });
+$('instSel').addEventListener('change', e => {
+  state.inst = e.target.value;
+  Snd.stop();
+  if (Snd.ac) Snd.ready();
+});
+
+$('results').addEventListener('click', e => {
+  const b = e.target.closest('[data-play]');
+  if (b) {
+    const v = current.find(x => x.id === b.dataset.id);
+    if (v) playVoicing(v, b.dataset.play, b);
+    return;
+  }
+  const k = e.target.closest('.key');
+  if (k) playKey(+k.dataset.midi, k.closest('svg'));
+});
+
+readHash();
+update();
+</script>
+
+</body>
+</html>
