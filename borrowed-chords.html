@@ -790,9 +790,9 @@ const SEVENTH = [
 /* ───── 8  ♭VI / ♯V ────────────────────────────────────── */
 {
   maj7:{ r:'common', tag:'Aeolian ♭VI', s:['mixture','mediant'],
-    t:'VI of the parallel minor, sharing the tonic note itself. <em>♭VI – ♭VII – I</em> is the standard lift-off cadence of pop and film scoring.',
+    t:'VI of the parallel minor, sharing the tonic note itself. <em>♭VI – ♭VII – I</em>, colloquially the “Mario cadence”, is the standard lift-off cadence of pop and film scoring.',
     p:[{ n:'The color within the key', c:[C(0,'maj7'),C(8,'maj7'),C(0,'maj7')] },
-       { n:'♭VI – ♭VII – I', c:[C(8,'maj7'),C(10,'dom7'),C(0,'maj7')] }] },
+       { n:'“Mario cadence”', c:[C(8,'maj7'),C(10,'dom7'),C(0,'maj7')] }] },
   m7:{ r:'ok', tag:'ii of subV7/I', s:['relii','tritone'],
     t:'The ii belonging to ♭II7: <em>♭vim7 – ♭II7 – Imaj7</em>. The whole ii–V moves up a semitone together, which softens the cadence.',
     p:[{ n:'Substituted ii–V', c:[C(8,'m7'),C(1,'dom7'),C(0,'maj7')] }] },
@@ -836,7 +836,8 @@ const SEVENTH = [
     t:'The <em>backdoor dominant</em>. Instead of approaching the tonic from V it comes from a whole tone below: its third and seventh resolve to the root and the major third of I. It doubles as the tritone substitute for III7.',
     p:[{ n:'A · front door', c:[C(2,'m7'),C(7,'dom7'),C(0,'maj7')] },
        { n:'B · backdoor', c:[C(5,'m7'),C(10,'dom7'),C(0,'maj7')] },
-       { n:'As subV7/vi', c:[C(10,'dom7'),C(9,'m7')] }] },
+       { n:'As subV7/vi', c:[C(10,'dom7'),C(9,'m7')] },
+       { n:'“Mario cadence”', c:[C(8,'maj7'),C(10,'dom7'),C(0,'maj7')] }] },
   m7b5:{ r:'none' },
   dim7:{ r:'none' }
 },
@@ -977,9 +978,9 @@ const TRIAD = [
 /* ───── 8  ♭VI / ♯V ────────────────────────────────────── */
 {
   maj:{ r:'common', tag:'Aeolian ♭VI', s:['mixture','mediant'],
-    t:'VI of the parallel minor, sharing the tonic note itself. <em>♭VI – ♭VII – I</em> is the standard lift-off cadence of pop and film scoring.',
+    t:'VI of the parallel minor, sharing the tonic note itself. <em>♭VI – ♭VII – I</em>, colloquially the “Mario cadence”, is the standard lift-off cadence of pop and film scoring.',
     p:[{ n:'The color within the key', c:[C(0,'maj'),C(8,'maj'),C(0,'maj')] },
-       { n:'♭VI – ♭VII – I', c:[C(8,'maj'),C(10,'maj'),C(0,'maj')] }] },
+       { n:'“Mario cadence”', c:[C(8,'maj'),C(10,'maj'),C(0,'maj')] }] },
   min:{ r:'rare', tag:'Rare', s:['chromatic'],
     t:'Rare. Found as a passing darkening of ♭VI, or on the way into a key on the flat side.' },
   dim:{ r:'ok', tag:'Passing V – vi', s:['secdim'], sp:'alt',
@@ -1003,7 +1004,8 @@ const TRIAD = [
   maj:{ r:'common', tag:'Mixolydian ♭VII', s:['mixture','modal'],
     t:'VII of the parallel minor, or the ♭7 of Mixolydian. <em>I – ♭VII – IV – I</em> is the defining rock progression, and ♭VII – I works as a cadence on its own terms.',
     p:[{ n:'The color within the key', c:[C(0,'maj'),C(10,'maj'),C(0,'maj')] },
-       { n:'Rock progression', c:[C(0,'maj'),C(10,'maj'),C(5,'maj'),C(0,'maj')] }] },
+       { n:'Rock progression', c:[C(0,'maj'),C(10,'maj'),C(5,'maj'),C(0,'maj')] },
+       { n:'“Mario cadence”', c:[C(8,'maj'),C(10,'maj'),C(0,'maj')] }] },
   min:{ r:'rare', tag:'Rare', s:['chromatic'],
     t:'Rare. ♭VII is borrowed as a major triad; the minor form has no standard route into a major key.' },
   dim:{ r:'none' }
