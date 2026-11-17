@@ -94,6 +94,21 @@
     /* A chosen tension takes the tension colour used on the keyboard */
     .seg button.on:not(.none) { background: var(--c-tens); color: #fff; }
 
+    /* ± : the tension is optional, so voicings with and without it are listed */
+    .optbtn {
+      font-family: inherit; font-size: 0.85rem; line-height: 1;
+      min-width: 28px; padding: 5px 7px;
+      border: 1px dashed var(--rule-bold); border-radius: 6px;
+      background: #fff; color: var(--ink-faint);
+      cursor: pointer; transition: color 0.12s ease, border-color 0.12s ease;
+    }
+    .optbtn:hover:not(:disabled) { color: var(--ink); border-color: var(--c-tens); }
+    .optbtn.on { border-color: var(--c-tens); color: var(--c-tens); background: #fdf0e8; font-weight: 600; }
+    .optbtn:disabled { opacity: 0.35; cursor: default; }
+    .tone.opt { border-style: dashed; }
+    .tone.opt em { font-style: normal; font-size: 0.72rem; color: var(--ink-faint); }
+    .card-tag.drop { background: #fdf0e8; border-color: #f3c4a6; color: #a8470f; }
+
     .btn {
       font-family: inherit; font-size: 0.8rem;
       padding: 4px 11px;
@@ -239,6 +254,7 @@
   <section>
     <p class="lead">
     A summary of common piano voicings. Pick a chord and its tensions, and the page lists the voicings most often used for it.
+    Every voicing keeps all the chosen tensions; press ± next to a tension to make it optional and also list the voicings without it.
     Of course, this can never be a comprehensive summary, so be creative and experiment beyond it!
     </p>
   </section>
@@ -256,9 +272,9 @@
           <span class="tb-label">Chord</span>
           <span class="sel-wrap"><select id="qualSel" aria-label="Chord quality"></select></span>
         </div>
-        <div class="tb-group" id="g9"><span class="tb-label">9th</span><div class="seg" id="seg9"></div></div>
-        <div class="tb-group" id="g11"><span class="tb-label">11th</span><div class="seg" id="seg11"></div></div>
-        <div class="tb-group" id="g13"><span class="tb-label">13th</span><div class="seg" id="seg13"></div></div>
+        <div class="tb-group" id="g9"><span class="tb-label">9th</span><div class="seg" id="seg9"></div><button class="optbtn" id="opt9" type="button">±</button></div>
+        <div class="tb-group" id="g11"><span class="tb-label">11th</span><div class="seg" id="seg11"></div><button class="optbtn" id="opt11" type="button">±</button></div>
+        <div class="tb-group" id="g13"><span class="tb-label">13th</span><div class="seg" id="seg13"></div><button class="optbtn" id="opt13" type="button">±</button></div>
       </div>
       <div class="tb-row">
         <div class="tb-group">
@@ -634,13 +650,16 @@ function generate(ch) {
     const has = l => tens.some(m => m.lab === l);
     const get = l => members.find(m => m.lab === l);
     let seq = null, label = null;
-    if (third && sev && third.lab === '♭3' && sev.lab === '♭7' && perfect5 && has('9') && has('11'))
+    // Only when the six notes are the whole chord: no tension may be left out
+    if (tens.length === 2 && third && sev && third.lab === '♭3' && sev.lab === '♭7' && perfect5 && has('9') && has('11'))
       { seq = ['R','5','9','♭3','♭7','11']; label = 'R–5–9 | ♭3–♭7–11'; }
-    else if (q().id === 'maj7' && has('9') && has('♯11'))
+    else if (tens.length === 2 && q().id === 'maj7' && has('9') && has('♯11'))
       { seq = ['R','5','9','3','7','♯11']; label = 'R–5–9 | 3–7–♯11'; }
     if (seq) {
-      const f = fam('fifths', 'Stacked fifths',
-        'Two stacks of fifths, one per hand. Kenny Barron’s minor-eleventh voicing (R–5–9 | ♭3–♭7–11) is the classic; the major version with a ♯11 is its Lydian cousin. Wide, even and very modern.');
+      const f = fam('fifths', 'Stacked fifths', items =>
+        'Two stacks of fifths, one per hand' +
+        (items.some(v => (v.tag || '').includes('♭3')) ? ': Kenny Barron’s minor-eleventh voicing.' : '.') +
+        ' Wide, even and very modern.');
       const v = stack(seq.map(get), bassNote(root).midi);
       add(f, v, topTitle(v), label);
     }
@@ -650,8 +669,11 @@ function generate(ch) {
   if (!bass || bassIsRoot) {
     const stacks = quartalStacks(members);
     if (stacks.length) {
-      const f = fam('quartal', 'Quartal',
-        'Three or four notes stacked in perfect fourths, drawn from the chord’s own notes, and the “So What” voicing: three fourths capped by a major third. Open and ambiguous; the sound of modal jazz and McCoy Tyner.');
+      const f = fam('quartal', 'Quartal', items =>
+        'Notes stacked in perfect fourths, drawn from the chord’s own notes. Every note but the 5th has to fit in the stack (the root is left to the bass). Open and ambiguous; the sound of modal jazz and McCoy Tyner.' +
+        (items.some(v => v.tag === 'So What')
+          ? ' The “So What” voicing caps three fourths with a major third: the chord Bill Evans plays on Miles Davis’s “So What”.'
+          : ''));
       for (const s of stacks) {
         let v = stack(s.ms);
         v = bass ? rhPlace(v) : (v.length <= 4 ? place(v, { bottom: LH_BOTTOM }) : place(v, { top: RH_TOP }));
@@ -705,13 +727,9 @@ function quartalStacks(members) {
   };
   members.forEach(m => dfs([m], false));
 
-  const ok = raw.filter(s => {
-    const hasThird = s.ms.some(m => m.role === 'third');
-    const hasSev = s.ms.some(m => m.role === 'sev');
-    const has11 = s.ms.some(m => m.lab === '11');
-    const hasT = s.ms.some(m => m.role === 't');
-    return (hasThird || (hasSev && has11)) && (hasSev || hasT);
-  });
+  // Only the 5th may be left out (the root is the bass's job)
+  const need = members.filter(m => m.role !== 'root' && m.role !== 'fifth');
+  const ok = raw.filter(s => need.every(m => s.ms.includes(m)));
   const key = s => s.ms.map(m => m.lab).join(',');
   const keys = ok.map(key);
   // Keep only maximal stacks: drop any that sits inside a longer one
@@ -1090,7 +1108,8 @@ async function playKey(midi, svg) {
    5. State, controls and rendering
    ════════════════════════════════════════════════════════════ */
 
-const state = { root: 'C', qual: 'maj7', n: '', e: '', t: '', bass: 'root', top: 'any', inst: 'acoustic_grand_piano' };
+// opt: comma-separated tension labels marked ± (optional)
+const state = { root: 'C', qual: 'maj7', n: '', e: '', t: '', opt: '', bass: 'root', top: 'any', inst: 'acoustic_grand_piano' };
 const q = () => qualById(state.qual);
 const rootObj = () => ROOTS.find(r => r.name === state.root) || ROOTS[0];
 
@@ -1101,13 +1120,14 @@ function readHash() {
 }
 function writeHash() {
   const p = new URLSearchParams();
-  for (const k of ['root', 'qual', 'n', 'e', 't', 'bass', 'top']) if (state[k]) p.set(k, state[k]);
+  for (const k of ['root', 'qual', 'n', 'e', 't', 'opt', 'bass', 'top']) if (state[k]) p.set(k, state[k]);
   history.replaceState(null, '', '#' + p.toString());
 }
 
 function tensionsSel() {
   return [state.n, state.e, state.t].filter(Boolean).flatMap(s => s.split(' '));
 }
+const optSel = () => state.opt ? state.opt.split(',') : [];
 
 function sanitize() {
   const Q = q();
@@ -1115,6 +1135,7 @@ function sanitize() {
   if (state.n && !nOpts.includes(state.n)) state.n = '';
   if (state.e && !Q.e.includes(state.e)) state.e = '';
   if (state.t && !Q.t.includes(state.t)) state.t = '';
+  state.opt = optSel().filter(l => tensionsSel().includes(l)).join(',');
   const roles = ['root', 'third', 'fifth', 'sev', 'none'];
   if (!roles.includes(state.bass)) state.bass = 'root';
   if (state.bass === 'sev' && !Q.tones.some(l => IV[l][2] === 'sev' && l !== '7')) state.bass = 'root';
@@ -1144,6 +1165,16 @@ function buildControls() {
   $('g9').hidden  = !Q.n.length;  buildSeg($('seg9'),  Q.n.map(a => a.join(' ')), 'n');
   $('g11').hidden = !Q.e.length;  buildSeg($('seg11'), Q.e, 'e');
   $('g13').hidden = !Q.t.length;  buildSeg($('seg13'), Q.t, 't');
+  for (const [key, id] of [['n', 'opt9'], ['e', 'opt11'], ['t', 'opt13']]) {
+    const b = $(id), labs = state[key] ? state[key].split(' ') : [];
+    const on = labs.length > 0 && labs.every(l => optSel().includes(l));
+    b.disabled = !labs.length;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on);
+    b.title = labs.length
+      ? (on ? 'Optional: voicings with and without the ' : 'Make optional: also list voicings without the ') + labs.join(' and ')
+      : 'Pick a tension first';
+  }
 
   const tone = role => Q.tones.find(l => IV[l][2] === role);
   const ord = { third: 'first inversion', fifth: 'second inversion', sev: 'third inversion' };
@@ -1173,10 +1204,28 @@ function render() {
   const bass = state.bass === 'none' ? null : members.find(m => m.role === state.bass);
 
   $('sym').innerHTML = chordSymbol(r, Q, tens).replace(/([♭♯])/g, '<span class="acc">$1</span>');
-  $('tones').innerHTML = members.map(m =>
-    `<span class="tone"><b class="r-${roleClass(m)}">${m.lab}</b>${m.name}</span>`).join('');
+  const opt = optSel();
+  $('tones').innerHTML = members.map(m => opt.includes(m.lab)
+    ? `<span class="tone opt" title="Optional"><b class="r-${roleClass(m)}">${m.lab}</b>${m.name} <em>±</em></span>`
+    : `<span class="tone"><b class="r-${roleClass(m)}">${m.lab}</b>${m.name}</span>`).join('');
 
-  let fams = generate({ members, tens: tensM, bass });
+  // One pass per subset of the optional tensions, the full chord first and
+  // then fewer and fewer of them, merged family by family
+  let drops = [[]];
+  for (const l of opt) drops = drops.concat(drops.map(d => d.concat([l])));
+  drops.sort((a, b) => a.length - b.length);
+  const byId = {};
+  let fams = [];
+  for (const drop of drops) {
+    const ms = members.filter(m => !drop.includes(m.lab));
+    for (const f of generate({ members: ms, tens: ms.filter(m => m.role === 't'), bass })) {
+      f.items.forEach(v => { v.drop = drop; });
+      if (byId[f.id]) byId[f.id].items.push(...f.items);
+      else { byId[f.id] = f; fams.push(f); }
+    }
+  }
+  const ORDER = ['close', 'drop2', 'shell', 'open', 'fifths', 'quartal', 'ust'];
+  fams.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
 
   // Filter by top note and remove duplicates across families
   const seen = new Set();
@@ -1219,13 +1268,14 @@ function render() {
   $('results').innerHTML = fams.map(f => `
     <div class="family" id="fam-${f.id}">
       <h3>${f.title}<span class="count">${f.items.length} voicing${f.items.length > 1 ? 's' : ''}</span></h3>
-      <p class="fam-desc">${f.desc}</p>
+      <p class="fam-desc">${typeof f.desc === 'function' ? f.desc(f.items) : f.desc}</p>
       <div class="cards">
         ${f.items.map(v => `
           <div class="card">
             <div class="card-head">
               <span class="card-title">${v.title}</span>
               ${v.tag ? `<span class="card-tag">${v.tag}</span>` : ''}
+              ${v.drop.length ? `<span class="card-tag drop">no ${v.drop.join(', ')}</span>` : ''}
               <span class="btns">
                 <button class="btn" type="button" data-play="chord" data-id="${v.id}">▶ Chord</button>
                 <button class="btn" type="button" data-play="notes" data-id="${v.id}">▶ Notes</button>
@@ -1251,6 +1301,15 @@ $('rootSel').addEventListener('change', e => { state.root = e.target.value; upda
 $('qualSel').addEventListener('change', e => { state.qual = e.target.value; update(); });
 $('bassSel').addEventListener('change', e => { state.bass = e.target.value; update(); });
 $('topSel').addEventListener('change', e => { state.top = e.target.value; update(); });
+for (const [key, id] of [['n', 'opt9'], ['e', 'opt11'], ['t', 'opt13']]) {
+  $(id).addEventListener('click', () => {
+    const labs = state[key] ? state[key].split(' ') : [];
+    const cur = optSel();
+    const on = labs.every(l => cur.includes(l));
+    state.opt = (on ? cur.filter(l => !labs.includes(l)) : cur.concat(labs.filter(l => !cur.includes(l)))).join(',');
+    update();
+  });
+}
 $('instSel').addEventListener('change', e => {
   state.inst = e.target.value;
   Snd.stop();
