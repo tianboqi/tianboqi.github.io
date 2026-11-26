@@ -79,8 +79,11 @@ window.OdoLib = (function () {
 
   // ── World Odonata List ──────────────────────────────────────
   // The list is hierarchical: each row fills one column and applies to the
-  // rows below it. Subfamily headings are not used — in the list they are not
-  // closed, so every later genus in the family would inherit the last one.
+  // rows below it. A subfamily heading lasts until the next one or the end of
+  // its family. The exception is Coenagrionidae: its one subfamily,
+  // Protoneurinae, is listed first and never closed, so every later genus
+  // would inherit it. Its other genera have no accepted subfamily (Carter et
+  // al. 2026), so the family is kept without subfamilies.
   //
   // Besides each accepted binomial, a species can be found by its listed
   // synonyms ("Syn Genus epithet ..."), by its original combination
@@ -101,19 +104,21 @@ window.OdoLib = (function () {
       if (!aliasOwners.has(alias)) aliasOwners.set(alias, new Set());
       aliasOwners.get(alias).add(sci);
     };
-    let sub = '', sup = '', fam = '', last = null;
+    const OPEN_SUBFAMILIES = new Set(['Coenagrionidae']);
+    let sub = '', sup = '', fam = '', subfam = '', last = null;
 
     for (const r of rows) {
-      if (r.Suborder)    { sub = first(r.Suborder); sup = ''; fam = ''; }
-      if (r.Superfamily) { sup = first(r.Superfamily); fam = ''; }
+      if (r.Suborder)    { sub = first(r.Suborder); sup = ''; fam = ''; subfam = ''; }
+      if (r.Superfamily) { sup = first(r.Superfamily); fam = ''; subfam = ''; }
       if (r.Family) {
-        fam = first(r.Family);
+        fam = first(r.Family); subfam = '';
         if (fam.toUpperCase() === 'INCERTAE') fam = sup + ' incertae sedis';
         if (!famSeen.has(fam)) {
           const f = { name: fam, superfamily: sup, suborder: sub, en: FAMILY_EN[fam] || '' };
           famSeen.set(fam, f); families.push(f);
         }
       }
+      if (r.Subfamily && fam && !OPEN_SUBFAMILIES.has(fam)) subfam = first(r.Subfamily);
       if (r.Species) {
         const full = r.Species.trim();
         const sci = binomial(full);
@@ -129,7 +134,7 @@ window.OdoLib = (function () {
           .replace(/\s*\(([^)]*)\)/g, (m, inner) =>
             /^(doubtful|original|incertae|nec\b)/i.test(inner) || ORIG_NAME.test(inner) ? '' : m)
           .trim();
-        last = { sci, author, genus: sci.split(' ')[0], family: fam,
+        last = { sci, author, genus: sci.split(' ')[0], family: fam, subfamily: subfam,
                  superfamily: sup, suborder: sub, synonyms: [],
                  doubtful: /doubtful species/i.test(full) };
         // Older names for this species: listed synonyms, plus the original

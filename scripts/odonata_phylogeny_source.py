@@ -7,9 +7,15 @@ Same conventions as phylogeny_source.py (birds). The tree is a nested Python
 literal. A plain string is a terminal: a World Odonata List family. A tuple
 (name, [children]) is an internal clade; `name` may be None where the clade has
 no established name. Nodes with three or more children are POLYTOMIES, and they
-are deliberate — they mark nodes the cited study did not resolve, did not
-sample, or resolved only with poor support. Resolving one requires a citation,
-not a guess.
+are deliberate — they mark nodes the cited study did not resolve or did not
+sample. Resolving one requires a citation, not a guess.
+
+The topology is read from Figure 1 of Carter et al. 2026, which summarises
+Newton et al. 2026 (all families outside Libelluloidea) and Goodman et al. 2026
+(Libelluloidea). Every node of that figure is kept. Nodes the figure marks with
+an asterisk (bootstrap below 100 in the source study) are noted with "BS<100"
+beside them; they are kept resolved, as Carter et al. use them to define the
+superfamilies.
 
 The World Odonata List puts two species of Sciotropis in Calopterygoidea as
 "INCERTAE SEDIS". The page and generate_odonata_data.py turn that row into the
@@ -20,84 +26,67 @@ PRIMARY SOURCES
 One citation per line; a line beginning with '#' is a grouping header, not a
 source. generate_odonata_data.py parses this block, so keep the format.
 
-# Backbone, Zygoptera and Anisoptera
-Bybee, S.M. et al. 2021. Phylogeny and classification of Odonata using targeted genomics. Mol. Phylogenet. Evol. 160:107115.
+# Family-level tree (Figure 1) and superfamilies
+Carter, P. et al. 2026. The classification and diversity of extant dragonflies and damselflies (Odonata). Int. J. Odonatol. 29:95-124. doi:10.48156/1388.2026.1917385
+# Studies the figure summarises
+Newton, L.G. et al. 2026. Soaring systematics: an evaluation of biogeography and flight behavior in dragonflies and damselflies (Insecta: Odonata) using phylogenomics. Syst. Biol. doi:10.1093/sysbio/syag005
+Goodman, A. et al. 2026. Systematic and taxonomic revision of emerald and tigertail dragonflies (Anisoptera: Synthemistidae and Corduliidae). Syst. Entomol. 51(1):e70000. doi:10.1111/syen.70000
 # Classification and family composition
 Schorr, M. & Paulson, D. World Odonata List. Slater Museum of Natural History, University of Puget Sound.
-Goodman, A. et al. 2025. Systematic and taxonomic revision of emerald and tigertail dragonflies (Anisoptera: Synthemistidae and Corduliidae). Syst. Entomol. e70000.
 
 KNOWN LIMITATION
 ----------------
-Libelluloidea is left as a polytomy of its thirteen families. Goodman et al.
-2025 split the old Corduliidae and Synthemistidae into the families used here,
-but their family-level tree could not be consulted, and Bybee et al. 2021
-sampled too few of these lineages (before the split) to place them. Within the
-damselflies, Bybee et al. describe the former Calopterygoidea as a pectinate
-grade of four groups toward Coenagrionoidea with low quartet support along
-that backbone; the text does not state the order of groups 2 and 3, so they
-form a polytomy with group 4 + Coenagrionoidea. Rimanellidae and Sciotropis
-were not sampled and are placed only by their World Odonata List superfamily.
+Sciotropis (Calopterygoidea incertae sedis in the World Odonata List) is absent
+from the phylogenies Carter et al. 2026 summarise and cannot be placed in a
+family, so it forms a polytomy with Calopterygidae and Chlorocyphidae. Eight
+nodes rest on bootstrap support below 100 in the source studies.
 """
 
-# --- Zygoptera: Bybee et al. 2021, sections 4.1.2-4.1.6 ---------------------
+# --- Zygoptera: Newton et al. 2026, via Carter et al. 2026 Fig. 1 -----------
 
-# Hemiphlebia sister to the remaining Lestoidea; Perilestidae + Synlestidae
-# recovered together (BS 100, PP 1), with Lestidae outside them.
-LESTOIDEA = ("Lestoidea", [
+LESTOIDEA = ("Lestoidea", [                     # BS<100
     "Hemiphlebiidae",
     (None, [
-        (None, ["Perilestidae", "Synlestidae"]),
         "Lestidae",
+        (None, ["Perilestidae", "Synlestidae"]),
     ]),
 ])
 
-# 'Calopterygoidea' group 2 (BS 100, PP 1, QS 0.47/0.44/0.97). The three
-# Afrotropical families form a well-supported cluster; Mesagrion is sister to
-# Dicteriadidae + Hypolestidae; Heteragrionidae + Polythoridae is one of the
-# weakly supported backbone nodes. Philogeniidae's position is not stated and
-# Rimanellidae was not sampled.
-GROUP2 = ("'Calopterygoidea' group 2", [
-    ("Tatocnemidoidea", ["Pentaphlebiidae", "Protolestidae", "Tatocnemididae"]),
-    ("Polythoroidea", [
-        (None, ["Mesagrionidae", (None, ["Dicteriadidae", "Hypolestidae"])]),
-        (None, ["Heteragrionidae", "Polythoridae"]),
-        "Philogeniidae",
-        "Rimanellidae",
-    ]),
+TATOCNEMIDOIDEA = ("Tatocnemidoidea", [
+    "Tatocnemididae",
+    (None, ["Pentaphlebiidae", "Protolestidae"]),
 ])
 
-# 'Calopterygoidea' group 3 (BS 100, PP 1, QS 0.48/0.59/0.96).
-# Amanipodagrion + Mesopodagrion is sister to the rest of the group;
-# Euphaeidae + Lestoideidae, then Pseudolestidae; (Devadattidae +
-# Amphipterygidae) + (Thaumatoneuridae + Rhipidolestidae), the last a
-# weakly supported node.
-GROUP3 = ("'Calopterygoidea' group 3", [
-    ("Mesopodagrionoidea", ["Amanipodagrionidae", "Mesopodagrionidae"]),
+POLYTHOROIDEA = ("Polythoroidea", [
+    (None, ["Rimanellidae", "Polythoridae"]),
     (None, [
-        ("Euphaeoidea", [
-            (None, ["Euphaeidae", "Lestoideidae"]),
-            "Pseudolestidae",
-        ]),
-        ("Amphipterygoidea", [
-            (None, ["Devadattidae", "Amphipterygidae"]),
-            (None, ["Thaumatoneuridae", "Rhipidolestidae"]),
-        ]),
+        (None, ["Philogeniidae", "Heteragrionidae"]),               # BS<100
+        (None, ["Mesagrionidae",                                    # BS<100
+                (None, ["Dicteriadidae", "Hypolestidae"])]),
     ]),
 ])
 
-# 'Calopterygoidea' group 4 (BS 100, PP 1, QS 0.37/0.42/0.96): "three pairs
-# of families", sister to Coenagrionoidea. How the pairs relate is not stated.
-# Sciotropis (not sampled) joins Calopterygidae + Chlorocyphidae as a polytomy.
-GROUP4 = ("'Calopterygoidea' group 4", [
-    ("Philogangoidea", ["Philogangidae", "Philosinidae"]),
-    ("Megapodagrionoidea", ["Megapodagrionidae", "Argiolestidae"]),
-    ("Calopterygoidea", [
-        "Calopterygidae", "Chlorocyphidae", "Calopterygoidea incertae sedis",
-    ]),
+MESOPODAGRIONOIDEA = ("Mesopodagrionoidea", ["Amanipodagrionidae", "Mesopodagrionidae"])
+
+AMPHIPTERYGOIDEA = ("Amphipterygoidea", [
+    (None, ["Devadattidae", "Amphipterygidae"]),
+    (None, ["Rhipidolestidae", "Thaumatoneuridae"]),
 ])
 
-# Isostictidae sister to Platycnemididae + Coenagrionidae (BS 100, PP 1, but
-# QS -0.33 — counter-support at this node).
+EUPHAEOIDEA = ("Euphaeoidea", [
+    "Pseudolestidae",
+    (None, ["Lestoideidae", "Euphaeidae"]),
+])
+
+PHILOGANGOIDEA = ("Philogangoidea", ["Philogangidae", "Philosinidae"])
+
+MEGAPODAGRIONOIDEA = ("Megapodagrionoidea", ["Megapodagrionidae", "Argiolestidae"])
+
+# Sciotropis is not in the figure: see KNOWN LIMITATION.
+CALOPTERYGOIDEA = ("Calopterygoidea", [
+    "Chlorocyphidae", "Calopterygidae", "Calopterygoidea incertae sedis",
+])
+
 COENAGRIONOIDEA = ("Coenagrionoidea", [
     "Isostictidae",
     (None, ["Platycnemididae", "Coenagrionidae"]),
@@ -108,34 +97,64 @@ ZYGOPTERA = ("Zygoptera", [
     (None, [
         "Platystictidae",                       # Platystictoidea
         (None, [
-            "Priscagrionidae",                  # group 1 (Priscagrionoidea)
-            (None, [                            # order of groups 2 and 3 unstated
-                GROUP2,
-                GROUP3,
-                (None, [GROUP4, COENAGRIONOIDEA]),
+            "Priscagrionidae",                  # Priscagrionoidea
+            (None, [
+                (None, [TATOCNEMIDOIDEA, POLYTHOROIDEA]),
+                (None, [
+                    (None, [                    # BS<100
+                        MESOPODAGRIONOIDEA,
+                        (None, [AMPHIPTERYGOIDEA, EUPHAEOIDEA]),    # BS<100
+                    ]),
+                    (None, [
+                        (None, [
+                            PHILOGANGOIDEA,
+                            (None, [MEGAPODAGRIONOIDEA, CALOPTERYGOIDEA]),
+                        ]),
+                        COENAGRIONOIDEA,
+                    ]),
+                ]),
             ]),
         ]),
     ]),
 ])
 
-# --- Anisozygoptera + Anisoptera: Bybee et al. 2021, sections 4.1.8-4.1.12 ---
+# --- Anisozygoptera + Anisoptera: Newton et al. 2026 and, for Libelluloidea,
+# Goodman et al. 2026, via Carter et al. 2026 Fig. 1 ---------------------------
 
-# See KNOWN LIMITATION.
 LIBELLULOIDEA = ("Libelluloidea", [
-    "Pseudocorduliidae", "Gomphomacromiidae", "Synthemistidae",
-    "Austrocorduliidae", "Idomacromiidae", "Macromiidae", "Idionychidae",
-    "Lauromacromiidae", "Macromidiidae", "Neophyidae", "Libellulidae",
-    "Aeschnosomatidae", "Corduliidae",
+    (None, [                                    # BS<100
+        "Pseudocorduliidae",
+        (None, ["Gomphomacromiidae", "Synthemistidae"]),
+    ]),
+    (None, [
+        "Austrocorduliidae",
+        (None, [                                # BS<100
+            (None, [                            # BS<100
+                "Idomacromiidae",
+                (None, ["Macromiidae", "Idionychidae"]),
+            ]),
+            (None, [
+                "Lauromacromiidae",
+                (None, [
+                    "Macromidiidae",
+                    (None, [
+                        "Neophyidae",
+                        (None, [
+                            "Corduliidae",
+                            (None, ["Aeschnosomatidae", "Libellulidae"]),
+                        ]),
+                    ]),
+                ]),
+            ]),
+        ]),
+    ]),
 ])
 
-# Aeshnoidea sister to the remaining Anisoptera; Gomphidae + Petaluridae
-# (BS 97) sister to Cordulegastroidea + Libelluloidea; within
-# Cordulegastroidea, Chlorogomphidae + (Neopetaliidae + Cordulegastridae).
 ANISOPTERA = ("Anisoptera", [
     ("Aeshnoidea", ["Austropetaliidae", "Aeshnidae"]),
     (None, [
         ("Gomphoidea", ["Petaluridae", "Gomphidae"]),
-        ("Cordulegastroidea + Libelluloidea", [
+        (None, [
             ("Cordulegastroidea", [
                 "Chlorogomphidae",
                 (None, ["Neopetaliidae", "Cordulegastridae"]),
@@ -145,8 +164,6 @@ ANISOPTERA = ("Anisoptera", [
     ]),
 ])
 
-# Bybee et al. advise against the name Epiprocta, so this clade is left
-# descriptive.
 TREE = ("Odonata", [
     ZYGOPTERA,
     ("Anisozygoptera + Anisoptera", [

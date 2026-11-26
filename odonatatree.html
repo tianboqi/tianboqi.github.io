@@ -308,6 +308,7 @@
     <ul>
       <li id="remark-version">Built from the World Odonata List — drop a newer CSV above to override it.</li>
       <li id="remark-layout">Laid out by Linnaean rank.</li>
+      <li>Subfamilies are shown where the World Odonata List gives them, except in Coenagrionidae, whose subdivision is not yet resolved (<a href="https://doi.org/10.48156/1388.2026.1917385" target="_blank" rel="noopener">Carter et al. 2026</a>).</li>
     </ul>
   </div>
 </aside>
@@ -391,6 +392,9 @@ let LY = LAYOUT_TAXONOMIC;
 // of the geometry rather than being inset by hand.
 const MIN_ARC = 0.0003;
 const BAND_RANKS = ['order', 'family', 'genus'];
+// Subfamilies (only in families the World Odonata List divides) take this
+// share of the gap between their family's radius and the genus ring.
+const SUBFAM_FRAC = 0.45;
 
 // One line thickness per level — the cladogram down to family, the genus
 // branches, the species fan — so no line reads as more important than its
@@ -419,8 +423,8 @@ let rafId     = null;
 // the branch lines carry the structure where no species have been seen.
 function arcColor(node, rank) {
   const p = node.seenPct || 0;
-  if (p >= 1.0) return { order: '#14532d', family: '#15803d', genus: '#166534' }[rank];
-  const dark = rank === 'order' ? '#14532d' : rank === 'family' ? '#15803d' : '#16a34a';
+  if (p >= 1.0) return { order: '#14532d', family: '#15803d', subfamily: '#15803d', genus: '#166534' }[rank];
+  const dark = rank === 'order' ? '#14532d' : rank === 'family' || rank === 'subfamily' ? '#15803d' : '#16a34a';
   return d3.interpolateRgb('#cdf0da', dark)(Math.pow(p, 0.55));
 }
 
@@ -442,11 +446,12 @@ let taxonomy       = null;   // OdoLib.parseWOL() result
 let unmatchedCount = 0;      // life-list names the taxonomy does not know
 
 // ── Build hierarchy data structure ────────────────────────────
-// Superfamily ▸ family ▸ genus ▸ species. The superfamily band is drawn with
-// the code the bird tree uses for orders, so its node type stays 'order'.
+// Superfamily ▸ family ▸ (subfamily) ▸ genus ▸ species. The superfamily band
+// is drawn with the code the bird tree uses for orders, so its node type stays
+// 'order'. Subfamilies appear only in the families the list divides into them.
 function buildHierarchy(tax) {
   const root = { name: 'Odonata', type: 'root', children: [] };
-  const sMap = new Map(), fMap = new Map(), gMap = new Map();
+  const sMap = new Map(), fMap = new Map(), sfMap = new Map(), gMap = new Map();
   for (const f of tax.families) {
     if (!sMap.has(f.superfamily)) {
       const n = { name: f.superfamily, type: 'order', suborder: f.suborder, children: [] };
@@ -456,9 +461,17 @@ function buildHierarchy(tax) {
     fMap.set(f.name, n); sMap.get(f.superfamily).children.push(n);
   }
   for (const s of tax.species) {
-    const fam = fMap.get(s.family);
+    let parent = fMap.get(s.family);
+    if (s.subfamily) {
+      const sk = s.family + '\0' + s.subfamily;
+      if (!sfMap.has(sk)) {
+        const n = { name: s.subfamily, type: 'subfamily', family: s.family, children: [] };
+        sfMap.set(sk, n); parent.children.push(n);
+      }
+      parent = sfMap.get(sk);
+    }
     const gk  = s.family + '\0' + s.genus;
-    if (!gMap.has(gk)) { const n = { name: s.genus, type: 'genus', children: [] }; gMap.set(gk, n); fam.children.push(n); }
+    if (!gMap.has(gk)) { const n = { name: s.genus, type: 'genus', children: [] }; gMap.set(gk, n); parent.children.push(n); }
     gMap.get(gk).children.push({ name: s.sci, author: s.author, doubtful: s.doubtful, type: 'species' });
   }
   for (const [k, n] of fMap) if (!n.children.length) {     // a family with no species
@@ -637,8 +650,14 @@ function precompute(hierarchyRoot, phyloMode) {
     for (const f of nodesByRank.get('family') || []) {
       f.r = Math.min(GENUS_IN_MAX, Math.max(GENUS_IN_MIN, f.baseR + FAM_BAND));
     }
-    for (const g of nodesByRank.get('genus') || []) g.baseR = g.parent.r;
   }
+  // A subfamily sits part-way between its family and the genus ring; its
+  // genera then leave from it instead of from the family.
+  for (const sf of nodesByRank.get('subfamily') || []) {
+    sf.baseR = sf.parent.r;
+    sf.r = sf.parent.r + SUBFAM_FRAC * (LY.genus[0] - sf.parent.r);
+  }
+  for (const g of nodesByRank.get('genus') || []) g.baseR = g.parent.r;
   const eps = 1e-9;
   for (const b of orderBands) {
     if (b.depth !== undefined) { b.baseR = b.parent ? b.parent.r : 0; b.walk = b; continue; }
@@ -787,7 +806,7 @@ function groupPath(ctx, node) {
 // species seen, parents first so children sit on top. A group with nothing
 // seen is not drawn — its connector lines carry the structure instead.
 function drawFills(ctx) {
-  for (const rank of BAND_RANKS) {
+  for (const rank of ['order', 'family', 'subfamily', 'genus']) {
     const list = rank === 'order' ? precomp.orderBands
                                   : (precomp.nodesByRank.get(rank) || []);
     for (const node of list) {
@@ -803,7 +822,7 @@ function drawFills(ctx) {
 // The same outline in the highlight colour, flat, with no contour of its own.
 // Groups get a filled area; the unnamed backbone clades get nothing, since a
 // wedge on a deep clade sweeps most of the chart and reads as noise.
-const HOVER_AREA_RANKS = new Set(['order', 'family', 'genus']);
+const HOVER_AREA_RANKS = new Set(['order', 'family', 'subfamily', 'genus']);
 const HOVER_FILL = 'rgba(255,167,38,0.55)';
 const HOVER_LINE = '#ef8f12';
 
@@ -892,9 +911,11 @@ function drawBranches(ctx) {
     }
   }
 
-  // Ring ranks: order ▸ family ▸ genus ▸ species
+  // Ring ranks: order ▸ family ▸ (subfamily) ▸ genus ▸ species. A family's
+  // children are its subfamilies where it has them, so the family entry draws
+  // whichever it holds.
   const CHAIN = [['order', 'family', LW_CLADE], ['family', 'genus', LW_GENUS],
-                 ['genus', 'species', LW_SPECIES]];
+                 ['subfamily', 'genus', LW_GENUS], ['genus', 'species', LW_SPECIES]];
   for (const [pRank, cRank, lw] of CHAIN) {
     ctx.lineWidth = lw;
 
@@ -1019,6 +1040,29 @@ function drawLabels(ctx) {
     }
   }
 
+  // Subfamily labels — along the arc of their own band, at a fixed on-screen
+  // size, so zooming in reveals the ones too narrow to label at first.
+  if (xf.k > 2) {
+    const fs = 10 / xf.k;
+    ctx.font = `italic 500 ${fs}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    for (const node of precomp.nodesByRank.get('subfamily') || []) {
+      const sR = (node.baseR + node.r) / 2 * outerR;
+      if ((node.r - node.baseR) * outerR < fs * 1.3) continue;
+      const span = node.x1 - node.x0;
+      if (ctx.measureText(node.data.name).width > span * sR * 0.9) continue;
+      const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
+      // Upright on the lower half of the circle, as the other labels are.
+      const up = normAngle(mid) < Math.PI;
+      ctx.save();
+      ctx.translate(sR * Math.cos(mid), sR * Math.sin(mid));
+      ctx.rotate(mid + (up ? -Math.PI / 2 : Math.PI / 2));
+      ctx.fillStyle = node.seenPct > 0 ? '#166534' : '#a49e96';
+      ctx.fillText(node.data.name, 0, 0);
+      ctx.restore();
+    }
+  }
+
   // Species labels — outside the species ring, deep zoom
   if (xf.k > 5) {
     const spR = LY.species[1] * outerR + 5;
@@ -1070,7 +1114,9 @@ function findNodeAt(mx, my) {
     const fam = binarySearch(precomp.nodesByRank.get('family') || [], theta);
     if (!fam) return null;
     if (r >= fam.r * outerR) {
-      return binarySearch(precomp.nodesByRank.get('genus') || [], theta) || fam;
+      const sf = binarySearch(precomp.nodesByRank.get('subfamily') || [], theta);
+      if (sf && sf.parent === fam && r < sf.r * outerR) return sf;
+      return binarySearch(precomp.nodesByRank.get('genus') || [], theta) || sf || fam;
     }
     if (r >= (fam.baseR || 0) * outerR) return fam;
     return binarySearch(precomp.orderBands, theta);
@@ -1132,10 +1178,11 @@ function showTooltip(node, ex, ey) {
     ttTag.textContent  = node.seenCount > 0 ? '✓ In your list' : 'Not yet seen';
     ttTag.style.color  = node.seenCount > 0 ? '#15803d' : '#6b7280';
   } else {
-    const label = { order:'Superfamily', family:'Family', genus:'Genus' }[d.type] || '';
+    const label = { order:'Superfamily', family:'Family', subfamily:'Subfamily', genus:'Genus' }[d.type] || '';
     ttName.textContent = label + ': ' + d.name;
     ttSci.textContent  = d.type === 'family' ? (d.comName || '')
-                       : d.type === 'order' ? (suborderOf.get(d.name) || '') : '';
+                       : d.type === 'order' ? (suborderOf.get(d.name) || '')
+                       : d.type === 'subfamily' ? d.family : '';
     const pct = (node.seenPct * 100).toFixed(1);
     ttPct.textContent  = `${node.seenCount.toLocaleString()} / ${node.totalCount.toLocaleString()} species seen (${pct}%)`;
     ttTag.textContent  = '';
@@ -1298,11 +1345,10 @@ function updateLayoutNote() {
   const rem = document.getElementById('remark-layout');
   if (!rem) return;
   if (phyloMode) {
-    const m = (window.ODONATA_PHYLOGENY && window.ODONATA_PHYLOGENY.meta) || {};
-    rem.innerHTML = 'Phylogenetic tree built to family level, mainly from ' +
-      '<a href="https://doi.org/10.1016/j.ympev.2021.107115" target="_blank" rel="noopener">Bybee et al. 2021</a>. ' +
-      'Nodes the study left unresolved are drawn as polytomies. <a href="files/odonata_phylogeny.json">Tree and sources</a>' +
-      (m.polytomies ? ` · ${m.polytomies} polytomies.` : '.');
+    rem.innerHTML = 'Phylogenetic tree built to family level from ' +
+      '<a href="https://doi.org/10.48156/1388.2026.1917385" target="_blank" rel="noopener">Carter et al. 2026</a>, Fig. 1. ' +
+      'Sciotropis, which it could not place, is drawn as a polytomy with its superfamily. ' +
+      '<a href="files/odonata_phylogeny.json">Tree and sources</a>.';
   } else {
     rem.textContent = 'Laid out by Linnaean rank — the bundled phylogeny does not fit the ' +
       'families of the taxonomy loaded above.';
