@@ -749,9 +749,9 @@ function render() {
 
 // ── Group outline ─────────────────────────────────────────────
 // The area of a group is the region its own tree lines enclose: out along
-// its leftmost branch to the species dots, across the tips, and back along
-// its rightmost branch. Every line the group contains lies inside that
-// outline, together with the space between them.
+// its leftmost branch to the genus arc where the species fan begins, across
+// it, and back along its rightmost branch. Every line the group contains up
+// to that arc lies inside the outline, together with the space between them.
 function nodeMid(n) { return n.mid + DRAW_OFFSET; }
 
 // One edge of the outline, as [radiusFraction, angle] steps from the base
@@ -764,6 +764,9 @@ function outlineEdge(node, baseR, takeLast, pad) {
   while (n.children && n.children.length) {
     const c = takeLast ? n.children[n.children.length - 1] : n.children[0];
     pts.push([n.r, nodeMid(c) + d]);
+    // Stop at the genus arc: the species fan beyond it is drawn tick by tick,
+    // so a fill there would colour the gaps between unseen species too.
+    if (!c.children || !c.children.length) break;
     pts.push([c.r, nodeMid(c) + d]);
     n = c;
   }
