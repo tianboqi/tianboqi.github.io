@@ -15,6 +15,8 @@ superfamily,Aeshnoidea,蜓总科,,china-odonata.top; HK checklist 2026
 superfamily,Gomphoidea,春蜓总科,,china-odonata.top; HK checklist 2026
 superfamily,Cordulegastroidea,大蜓总科,,china-odonata.top; HK checklist 2026
 superfamily,Libelluloidea,蜻总科,,china-odonata.top; HK checklist 2026; Liu et al. 2025
+superfamily,Megapodagrionoidea,山蟌总科,,Proposed from the type genus
+superfamily,Epiophlebioidea,昔蜓总科,,Proposed from the type genus
 family,Aeshnidae,蜓科,100,
 family,Gomphidae,春蜓科,248,
 family,Chlorogomphidae,裂唇蜓科,492,
@@ -42,6 +44,7 @@ family,Mesopodagrionidae,凸尾山蟌科,,iNaturalist
 family,Priscagrionidae,古山蟌科,,iNaturalist
 family,Idionychidae,异伪蜻科,,Proposed from the type genus
 family,Macromidiidae,中伪蜻科,,Proposed from the type genus
+family,Argiolestidae,野山蟌科,66,
 genus,Aeschnophlebia,黑额蜓属,,Set by site owner
 genus,Aeshna,蜓属,104,
 genus,Anaciaeschna,翠蜓属,118,
@@ -223,3 +226,6 @@ genus,Thecagaster,囊腹大蜓属,,iNaturalist
 genus,Pseudocopera,拟狭扇蟌属,,china-odonata.top; HK checklist 2026
 genus,Ebenocypha,乌鼻蟌属,,Proposed from the Latin meaning
 genus,Scapanocypha,铲鼻蟌属,,Proposed from the Latin meaning
+genus,Podolestes,叶山蟌属,66,
+genus,Oligoaeschna,似沼蜓属,76,
+genus,Eogomphus,曙春蜓属,80,
