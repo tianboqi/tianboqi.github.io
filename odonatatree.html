@@ -107,7 +107,7 @@
     .download-link:hover { color: var(--link-hover); text-decoration: underline; }
 
     .list-actions {
-      display: flex; justify-content: space-between; gap: 8px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 8px;
       margin-top: 6px; font-size: 0.7rem;
     }
     .list-actions a, .list-actions button {
@@ -116,6 +116,14 @@
     }
     .list-actions a:hover, .list-actions button:hover { color: var(--link-hover); text-decoration: underline; }
     .list-actions button[hidden] { display: none; }
+    /* "Build your list" (or "Modify your list" once one is loaded) is the main action. */
+    .list-actions a.cta {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      color: #fff; background: var(--seen-dk); font-weight: 600; line-height: 1;
+      padding: 6px 11px; border-radius: 6px; text-align: center; white-space: nowrap;
+    }
+    .list-actions a.cta .ic { font-size: 0.85em; line-height: 1; }
+    .list-actions a.cta:hover { color: #fff; text-decoration: none; filter: brightness(1.1); }
 
     /* stats */
     .stats-block {
@@ -246,7 +254,7 @@
       <div class="uz-status" id="status-ll"></div>
     </div>
     <div class="list-actions">
-      <a href="odonatalist.html">✎ Build your list</a>
+      <a href="odonatalist.html" id="lnk-build" class="cta"><span class="ic" aria-hidden="true">✎</span><span id="lnk-build-text">Build your list</span></a>
       <button type="button" id="btn-saved" hidden>Use list saved in this browser</button>
     </div>
   </div>
@@ -1282,6 +1290,7 @@ function updateStats() {
   document.getElementById('stat-pct').textContent   = pct + '%';
   document.getElementById('stat-bar').style.width   = pct + '%';
   document.getElementById('stats-panel').style.display = '';
+  document.getElementById('lnk-build-text').textContent = seenSet.size ? 'Modify your list' : 'Build your list';
 }
 
 // ── Layout description in the sidebar ─────────────────────────

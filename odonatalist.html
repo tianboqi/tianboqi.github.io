@@ -78,6 +78,7 @@
 
     .stats-block { background: var(--surface); border-radius: 8px; padding: 12px 14px; }
     .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .stat-row[hidden] { display: none; }
     .stat-label { font-size: 0.72rem; color: var(--ink-faint); }
     .stat-value { font-size: 0.85rem; font-weight: 700; }
     .stat-value.green { color: var(--seen-dk); }
@@ -131,10 +132,13 @@
     }
     .link-btn:hover { text-decoration: underline; }
 
+    .sidebar > * { flex-shrink: 0; }
     .remarks {
       margin-top: auto;
       padding-top: 12px;
       border-top: 1px solid var(--rule);
+      flex: 0 1 auto; min-height: 60px;
+      overflow-y: auto;   /* scrolls on its own when the sidebar is short */
     }
     .remarks ul { padding-left: 14px; }
     .remarks li { margin-bottom: 6px; }
@@ -177,8 +181,12 @@
     .seg button.on { background: var(--seen-dk); color: #fff; }
     select {
       font: 500 0.72rem 'Inter', sans-serif;
-      padding: 4px 6px; border: 1px solid #d6d3cd; border-radius: 6px; background: var(--bg); color: var(--ink-soft);
+      padding: 4px 26px 4px 8px; border: 1px solid #d6d3cd; border-radius: 6px; color: var(--ink-soft);
+      -webkit-appearance: none; appearance: none; cursor: pointer;
+      background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a857d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center;
     }
+    .region-pick { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-faint); }
+    .region-pick[hidden] { display: none; }
     .filters .spacer { flex: 1; }
     .filters .text-btn {
       font: 500 0.72rem 'Inter', sans-serif; color: var(--link);
@@ -287,6 +295,8 @@
       <div class="stat-row"><span class="stat-label">Species ticked</span><span class="stat-value green" id="stat-seen">0</span></div>
       <div class="stat-row" id="row-cn" hidden><span class="stat-label">Species of China</span><span class="stat-value" id="stat-cn">—</span></div>
       <div class="stat-row" id="row-na" hidden><span class="stat-label">Species of North America</span><span class="stat-value" id="stat-na">—</span></div>
+      <div class="stat-row" id="row-eu" hidden><span class="stat-label">Species of Europe</span><span class="stat-value" id="stat-eu">—</span></div>
+      <div class="stat-row" id="row-au" hidden><span class="stat-label">Species of Australia &amp; NZ</span><span class="stat-value" id="stat-au">—</span></div>
       <div class="stat-row"><span class="stat-label">Families</span><span class="stat-value" id="stat-fam">0</span></div>
       <div class="stat-row"><span class="stat-label">Total species</span><span class="stat-value" id="stat-total">—</span></div>
       <div class="progress-bar-wrap"><div class="progress-bar" id="stat-bar" style="width:0%"></div></div>
@@ -334,9 +344,12 @@
         <button data-v="seen">Ticked</button>
         <button data-v="unseen">Not ticked</button>
       </div>
-      <select id="sel-region" aria-label="Region" hidden>
-        <option value="">Worldwide</option>
-      </select>
+      <label class="region-pick" id="region-pick" hidden>
+        <span>Regional filter with English/Chinese names</span>
+        <select id="sel-region">
+          <option value="">Worldwide</option>
+        </select>
+      </label>
       <span class="spacer"></span>
       <button class="text-btn" id="btn-expand">Expand all</button>
       <button class="text-btn" id="btn-collapse">Collapse all</button>
@@ -349,6 +362,8 @@
 <script src="files/odonata_data.js"></script>
 <script src="files/odonata_china.js"></script>
 <script src="files/odonata_north_america.js"></script>
+<script src="files/odonata_europe.js"></script>
+<script src="files/odonata_australia.js"></script>
 <script src="files/odonata_lib.js"></script>
 <script>
 'use strict';
@@ -359,15 +374,23 @@ const seen = new Set();
 let show = 'all';          // all | seen | unseen
 const openFams = new Set(); // families expanded in the browse view
 
-// Regional lists: Chinese names (species, and suborders, families, genera) with
-// the "In China" filter; English names with the "North America" filter. The
+// Regional lists, each a filter with its own names: Chinese for China, English
+// for the others (names differ between regions, so each keeps its own). The
 // filter choice is remembered.
+const W = window;
 const REGIONS = {
-  cn: { data: tax && OdoLib.attachChinese(tax),     has: s => !!s.inCn, label: 'In China 中国', inText: 'in China',
-        source: () => window.ODONATA_CN_SOURCE, note: src => `Chinese names are based on ${src}, with manual addition of recent species.` },
-  na: { data: tax && OdoLib.attachNorthAmerica(tax), has: s => !!s.en, label: 'North America', inText: 'in North America',
-        source: () => window.ODONATA_NA_SOURCE, note: src => `English names are based on ${src}.` },
+  cn: { data: tax && OdoLib.attachRegion(tax, 'cn', W.ODONATA_CN_CSV, 'Chinese Name', W.ODONATA_CN_TAXA_CSV),
+        label: 'In China 中国', inText: 'in China' },
+  na: { data: tax && OdoLib.attachRegion(tax, 'na', W.ODONATA_NA_CSV, 'English Name', W.ODONATA_NA_TAXA_CSV),
+        label: 'North America', inText: 'in North America' },
+  eu: { data: tax && OdoLib.attachRegion(tax, 'eu', W.ODONATA_EU_CSV, 'English Name', W.ODONATA_EU_TAXA_CSV),
+        label: 'Europe', inText: 'in Europe' },
+  au: { data: tax && OdoLib.attachRegion(tax, 'au', W.ODONATA_AU_CSV, 'English Name', W.ODONATA_AU_TAXA_CSV),
+        label: 'Australia & NZ', inText: 'in Australia and New Zealand' },
 };
+for (const [key, r] of Object.entries(REGIONS)) r.has = s => !!(s.regions && s.regions[key]);
+// Every regional name of a species, for search.
+const allNames = s => s.regions ? Object.values(s.regions).flatMap(v => [v.name, ...v.alt]).filter(Boolean) : [];
 const REGION_KEY = 'odonata-list-region-v1';
 let region = '';
 try {
@@ -380,15 +403,14 @@ const content = $('content');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // Search text per species: name, synonyms, genus, family, superfamily, and the
-// Chinese and English names of the species, its genus and family.
+// regional names of the species, its genus and family.
 const hay = new Map();
 const famSpecies = new Map();
 if (tax) {
-  const cnT = n => (tax.cnTaxa && tax.cnTaxa.get(n)) || '';
+  const taxNames = n => Object.values(tax.regionTaxa || {}).map(m => m.get(n) || '');
   for (const s of tax.species) {
     hay.set(s.sci, [s.sci, ...s.synonyms, s.family, s.superfamily, OdoLib.FAMILY_EN[s.family] || '',
-                    s.cn || '', ...(s.cnAlt || []), s.en || '', ...(s.enAlt || []),
-                    cnT(s.genus), cnT(s.family)].join(' | ').toLowerCase());
+                    ...allNames(s), ...taxNames(s.genus), ...taxNames(s.family)].join(' | ').toLowerCase());
     if (!famSpecies.has(s.family)) famSpecies.set(s.family, []);
     famSpecies.get(s.family).push(s);
   }
@@ -430,12 +452,13 @@ function updateStats() {
 // ── Rendering ───────────────────────────────────────────────
 const inRegion = s => !region || REGIONS[region].has(s);
 
-// Names shown in front of the Latin one: the region's own language — English
-// in the North America view, Chinese in the China view. Worldwide is Latin only.
-const cnOf = name => (tax.cnTaxa && tax.cnTaxa.get(name)) || '';
-const enOf = name => (tax.enTaxa && tax.enTaxa.get(name)) || '';
-const frontOf = name => region === 'na' ? enOf(name) : region === 'cn' ? cnOf(name) : '';
-const frontNames = s => region === 'na' ? [s.en, s.enAlt] : region === 'cn' ? [s.cn, s.cnAlt] : [];
+// Names shown in front of the Latin one: the current region's own names.
+// Worldwide is Latin only.
+const frontOf = name => (region && tax.regionTaxa[region].get(name)) || '';
+const frontNames = s => {
+  const v = region && s.regions && s.regions[region];
+  return v ? [v.name, v.alt] : [];
+};
 const taxonLabel = (name, cls) => {
   const v = frontOf(name);
   const sub = v && cls === 'fam-name' ? ' tx-sub' : '';
@@ -521,20 +544,20 @@ function search(q) {
     if (!terms.every(t => h.includes(t))) continue;
     const sci = s.sci.toLowerCase();
     const epi = sci.split(' ')[1];
-    const cn = s.cn || '', en = (s.en || '').toLowerCase();
+    const names = s.regions ? Object.values(s.regions).map(v => v.name.toLowerCase()).filter(Boolean) : [];
     let rank = 4, viaSyn = '', viaAlt = '';
-    if (sci.startsWith(ql) || (cn && cn.startsWith(ql)) || (en && en.startsWith(ql))) rank = 0;
+    if (sci.startsWith(ql) || names.some(n => n.startsWith(ql))) rank = 0;
     else if (epi.startsWith(ql)) rank = 1;
-    else if (terms.every(t => sci.includes(t) || cn.includes(t) || en.includes(t))) rank = 2;
+    else if (terms.every(t => sci.includes(t) || names.some(n => n.includes(t)))) rank = 2;
     else {
       const syn = s.synonyms.find(y => terms.every(t => y.toLowerCase().includes(t)));
-      const alt = [...(s.cnAlt || []), ...(s.enAlt || [])].find(y => terms.every(t => y.toLowerCase().includes(t)));
+      const alt = (s.regions ? Object.values(s.regions).flatMap(v => v.alt) : []).find(y => terms.every(t => y.toLowerCase().includes(t)));
       if (syn) { rank = 3; viaSyn = syn; }
       else if (alt) { rank = 3; viaAlt = alt; }
     }
     // Matched on a common name this view does not show: say which.
     if (!viaSyn && !viaAlt && !terms.every(t => sci.includes(t))) {
-      const nm = [s.cn, s.en].find(n => n && n !== frontNames(s)[0] && terms.every(t => n.toLowerCase().includes(t)));
+      const nm = allNames(s).find(n => n !== frontNames(s)[0] && terms.every(t => n.toLowerCase().includes(t)));
       if (nm) viaAlt = nm;
     }
     out.push({ s, rank, viaSyn, viaAlt });
@@ -708,12 +731,16 @@ if (!tax) {
     o.value = key;
     o.textContent = `${r.label} (${r.data.count})`;
     $('sel-region').appendChild(o);
-    $('sel-region').hidden = false;
+    $('region-pick').hidden = false;
     $('row-' + key).hidden = false;
-    notes.push(r.note(r.source()));
+    notes.push(r.label);
     if (r.data.lost.length) console.warn(`${r.label}: rows not placed`, r.data.lost);
   }
-  if (notes.length) { $('remark-names').textContent = notes.join(' '); $('remark-names').hidden = false; }
+  if (notes.length) {
+    $('remark-names').innerHTML = 'Regional lists and their Chinese and English names: ' +
+      '<a href="files/odonata_name_sources.json">sources</a>.';
+    $('remark-names').hidden = false;
+  }
   $('sel-region').value = region;
   loadSaved();
   updateStats();

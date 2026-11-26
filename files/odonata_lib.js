@@ -197,37 +197,23 @@ window.OdoLib = (function () {
     return { map: out, lost };
   }
 
-  // Species of China: sets s.inCn, and s.cn / s.cnAlt (the Chinese name may
-  // be empty for a species recorded in China with no name in use yet). Also the Chinese names of
-  // suborders, families and genera (from the same book) as tax.cnTaxa, keyed
-  // by scientific name; a genus the list has since sunk simply labels nothing.
-  function attachChinese(tax) {
-    if (typeof window.ODONATA_CN_CSV !== 'string') return null;
-    const { map, lost } = placeRegional(tax, window.ODONATA_CN_CSV, 'Chinese Name');
+  // A regional list: marks its species with s.regions[key] = { name, alt }
+  // (the name may be empty for a species with no name in use yet) and keeps
+  // the names of higher taxa (suborders, superfamilies, families, genera) from
+  // the optional taxa CSV as tax.regionTaxa[key], keyed by scientific name. A
+  // taxon the list has since sunk simply labels nothing.
+  function attachRegion(tax, key, csvText, nameCol, taxaCsvText) {
+    if (typeof csvText !== 'string') return null;
+    const { map, lost } = placeRegional(tax, csvText, nameCol);
     for (const [sci, v] of map) {
       const s = tax.bySci.get(sci);
-      s.inCn = true; s.cn = v.name; s.cnAlt = v.alt.filter(Boolean);
+      (s.regions || (s.regions = {}))[key] = { name: v.name, alt: v.alt.filter(Boolean) };
     }
-    tax.cnTaxa = new Map();
-    if (typeof window.ODONATA_CN_TAXA_CSV === 'string') {
-      for (const r of parseCSV(window.ODONATA_CN_TAXA_CSV)) tax.cnTaxa.set(r['Scientific Name'], r['Chinese Name']);
+    const taxa = new Map();
+    if (typeof taxaCsvText === 'string') {
+      for (const r of parseCSV(taxaCsvText)) if (r[nameCol]) taxa.set(r['Scientific Name'], r[nameCol]);
     }
-    return { count: map.size, lost };
-  }
-
-  // Species of North America: sets s.en / s.enAlt (English names), and the
-  // English names of families and suborders as tax.enTaxa.
-  function attachNorthAmerica(tax) {
-    if (typeof window.ODONATA_NA_CSV !== 'string') return null;
-    const { map, lost } = placeRegional(tax, window.ODONATA_NA_CSV, 'English Name');
-    for (const [sci, v] of map) {
-      const s = tax.bySci.get(sci);
-      s.en = v.name; s.enAlt = v.alt;
-    }
-    tax.enTaxa = new Map();
-    if (typeof window.ODONATA_NA_TAXA_CSV === 'string') {
-      for (const r of parseCSV(window.ODONATA_NA_TAXA_CSV)) tax.enTaxa.set(r['Scientific Name'], r['English Name']);
-    }
+    (tax.regionTaxa || (tax.regionTaxa = {}))[key] = taxa;
     return { count: map.size, lost };
   }
 
@@ -306,6 +292,6 @@ window.OdoLib = (function () {
     });
   }
 
-  return { parseCSV, parseWOL, binomial, resolve, loadBundled, attachChinese, attachNorthAmerica, readLifeList,
+  return { parseCSV, parseWOL, binomial, resolve, loadBundled, attachRegion, readLifeList,
            lifeListCSV, downloadText, loadSaved, save, readFile, FAMILY_EN, STORE_KEY };
 })();

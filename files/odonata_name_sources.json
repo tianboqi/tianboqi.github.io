@@ -1,0 +1,59 @@
+{
+ "sources": [
+  {
+   "region": "China",
+   "language": "Chinese",
+   "files": [
+    "odonata_china.csv",
+    "odonata_china_taxa.csv"
+   ],
+   "main": "Zhang Haomiao (2019) 中国蜻蜓大图鉴 Dragonflies and Damselflies of China, species accounts and checklist of Chinese species (pp. 62-96)",
+   "also": [
+    "Original descriptions of species described since 2019",
+    "china-odonata.top (Odonata Research, Yu Xin)",
+    "iNaturalist (zh-CN names)",
+    "Hong Kong dragonfly checklist 2026 (hkdragonflies.blogspot.com)",
+    "Liu, Zhang et al. (2025) Biodiversity Science 33: 25348",
+    "Names set by the site owner, or formed from the type genus"
+   ]
+  },
+  {
+   "region": "North America",
+   "language": "English",
+   "files": [
+    "odonata_north_america.csv",
+    "odonata_north_america_taxa.csv"
+   ],
+   "main": "North American Odonata, Dragonfly Society of the Americas (updated 18 Feb 2025), https://www.pugetsound.edu/north-american-odonata",
+   "also": [
+    "Dijkstra (2023) Dragonflies and Damselflies of the World (some family names)"
+   ]
+  },
+  {
+   "region": "Europe",
+   "language": "English",
+   "files": [
+    "odonata_europe.csv",
+    "odonata_europe_taxa.csv"
+   ],
+   "main": "Species of the IUCN European Red List of Dragonflies & Damselflies (2024), less its four vagrants; names of Dijkstra, Schröter & Lewington (2020) Field Guide to the Dragonflies of Britain and Europe, as listed on dragonflypix.com",
+   "also": [
+    "Dijkstra (2023) Dragonflies and Damselflies of the World (some family names)",
+    "Wikipedia and the North American list (other family names)"
+   ]
+  },
+  {
+   "region": "Australia & New Zealand",
+   "language": "English",
+   "files": [
+    "odonata_australia.csv",
+    "odonata_australia_taxa.csv"
+   ],
+   "main": "Wikipedia, List of Odonata species of Australia (after Theischinger & Hawking 2021, The Complete Field Guide to Dragonflies of Australia) and List of Odonata species of New Zealand (IUCN Red List names)",
+   "also": [
+    "Dijkstra (2023) Dragonflies and Damselflies of the World (some family names)",
+    "Wikipedia, the North American list, and the shared ending of species names (other family names)"
+   ]
+  }
+ ]
+}

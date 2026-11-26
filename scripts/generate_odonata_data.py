@@ -10,10 +10,10 @@
   files/odonata_phylogeny.js   the same, as window.ODONATA_PHYLOGENY
   files/odonata_china.js       files/odonata_china.csv and odonata_china_taxa.csv
                                as window.ODONATA_CN_CSV / ODONATA_CN_TAXA_CSV
-  files/odonata_north_america.js
-                               files/odonata_north_america.csv and
-                               odonata_north_america_taxa.csv as
-                               window.ODONATA_NA_CSV / ODONATA_NA_TAXA_CSV
+  files/<stem>.js              each English-name region in ENGLISH_REGIONS
+                               (North America, Europe, Australia & NZ):
+                               files/<stem>.csv and <stem>_taxa.csv as
+                               window.<prefix>_CSV / <prefix>_TAXA_CSV
 
 Regional lists (hand-edited; these CSVs are the only copies):
 
@@ -30,12 +30,15 @@ Regional lists (hand-edited; these CSVs are the only copies):
                           the same book; the Note says where any other name
                           came from. A genus the list has since sunk keeps its
                           row but labels nothing.
-  odonata_north_america.csv
-                          the North American checklist with English names
-                          (NA_SOURCE).
-  odonata_north_america_taxa.csv
-                          English names of its families (from the same list)
-                          and of the two suborders.
+  odonata_north_america.csv, odonata_europe.csv, odonata_australia.csv
+                          each region's checklist with English names (the
+                          sources are in ENGLISH_REGIONS). Australia also
+                          covers New Zealand, with a Country column; a species
+                          in both has an Australian row first, so its
+                          Australian name leads and the New Zealand one is an
+                          alternative.
+  <stem>_taxa.csv         English names of higher taxa: North America's
+                          families (from the same list), and the suborders.
 
 The species lists have the columns Scientific Name (as in the World Odonata
 List when made), a name column, and Name in Source (as printed in the source).
@@ -68,12 +71,57 @@ PHY_JS   = FILES / "odonata_phylogeny.js"
 CN_CSV = FILES / "odonata_china.csv"
 CN_TAXA_CSV = FILES / "odonata_china_taxa.csv"
 CN_JS  = FILES / "odonata_china.js"
-NA_CSV = FILES / "odonata_north_america.csv"
-NA_TAXA_CSV = FILES / "odonata_north_america_taxa.csv"
-NA_JS  = FILES / "odonata_north_america.js"
 CHINA_SOURCE = "Zhang Haomiao (2019) 中国蜻蜓大图鉴 Dragonflies and Damselflies of China"
-# From https://www.pugetsound.edu/north-american-odonata
-NA_SOURCE = "North American Odonata, Dragonfly Society of the Americas (updated 18 Feb 2025)"
+# The English-name regions: (label, file stem, JS prefix, source). Each has
+# files/<stem>.csv (Scientific Name, English Name, Name in Source, ...) and an
+# optional <stem>_taxa.csv (Rank, Scientific Name, English Name), embedded in
+# files/<stem>.js as window.<prefix>_CSV / <prefix>_TAXA_CSV / <prefix>_SOURCE.
+ENGLISH_REGIONS = [
+    # From https://www.pugetsound.edu/north-american-odonata
+    ("north america", "odonata_north_america", "ODONATA_NA",
+     "North American Odonata, Dragonfly Society of the Americas (updated 18 Feb 2025)"),
+    # Species: the IUCN European Red List of Dragonflies & Damselflies (2024),
+    # less its four vagrants; names: Dijkstra, Schröter & Lewington (2020) as
+    # listed on dragonflypix.com/checklist_en.html (and excluded.html)
+    ("europe", "odonata_europe", "ODONATA_EU",
+     "Dijkstra, Schröter & Lewington (2020) Field Guide to the Dragonflies of Britain and Europe, "
+     "for the species of the IUCN European Red List of Dragonflies & Damselflies (2024)"),
+    # From en.wikipedia.org "List of Odonata species of Australia" (rev 1378499913)
+    # and "List of Odonata species of New Zealand" (June 2025 version)
+    ("australia/nz", "odonata_australia", "ODONATA_AU",
+     "Theischinger & Hawking (2021) The Complete Field Guide to Dragonflies of Australia "
+     "and the IUCN Red List (New Zealand), as listed on Wikipedia"),
+]
+NAME_SOURCES_JSON = FILES / "odonata_name_sources.json"
+# Where every regional name comes from, written to NAME_SOURCES_JSON (the list
+# page links to it). Each row's Note column in the CSVs says which applies.
+NAME_SOURCES = [
+    {"region": "China", "language": "Chinese", "files": ["odonata_china.csv", "odonata_china_taxa.csv"],
+     "main": CHINA_SOURCE + ", species accounts and checklist of Chinese species (pp. 62-96)",
+     "also": ["Original descriptions of species described since 2019",
+              "china-odonata.top (Odonata Research, Yu Xin)", "iNaturalist (zh-CN names)",
+              "Hong Kong dragonfly checklist 2026 (hkdragonflies.blogspot.com)",
+              "Liu, Zhang et al. (2025) Biodiversity Science 33: 25348",
+              "Names set by the site owner, or formed from the type genus"]},
+    {"region": "North America", "language": "English",
+     "files": ["odonata_north_america.csv", "odonata_north_america_taxa.csv"],
+     "main": "North American Odonata, Dragonfly Society of the Americas (updated 18 Feb 2025), "
+             "https://www.pugetsound.edu/north-american-odonata",
+     "also": ["Dijkstra (2023) Dragonflies and Damselflies of the World (some family names)"]},
+    {"region": "Europe", "language": "English", "files": ["odonata_europe.csv", "odonata_europe_taxa.csv"],
+     "main": "Species of the IUCN European Red List of Dragonflies & Damselflies (2024), less its four "
+             "vagrants; names of Dijkstra, Schröter & Lewington (2020) Field Guide to the Dragonflies of "
+             "Britain and Europe, as listed on dragonflypix.com",
+     "also": ["Dijkstra (2023) Dragonflies and Damselflies of the World (some family names)",
+              "Wikipedia and the North American list (other family names)"]},
+    {"region": "Australia & New Zealand", "language": "English",
+     "files": ["odonata_australia.csv", "odonata_australia_taxa.csv"],
+     "main": "Wikipedia, List of Odonata species of Australia (after Theischinger & Hawking 2021, "
+             "The Complete Field Guide to Dragonflies of Australia) and List of Odonata species of "
+             "New Zealand (IUCN Red List names)",
+     "also": ["Dijkstra (2023) Dragonflies and Damselflies of the World (some family names)",
+              "Wikipedia, the North American list, and the shared ending of species names (other family names)"]},
+]
 PATTERN = re.compile(r"^world_odonata_list_(\d{14})$")
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
@@ -170,15 +218,16 @@ def write_regional(known, fams, genera):
                       ("ODONATA_CN_TAXA_CSV", CN_TAXA_CSV.read_text(encoding="utf-8-sig"))])
     else:
         print("warning       : odonata_china*.csv not found; no Chinese names", file=sys.stderr)
-    if NA_CSV.exists():
-        out.append(check_species(NA_CSV, read_rows(NA_CSV), known, "north america"))
-        variables = [("ODONATA_NA_SOURCE", NA_SOURCE),
-                     ("ODONATA_NA_CSV", NA_CSV.read_text(encoding="utf-8-sig"))]
-        if NA_TAXA_CSV.exists():
-            variables.append(("ODONATA_NA_TAXA_CSV", NA_TAXA_CSV.read_text(encoding="utf-8-sig")))
-        embed(NA_JS, variables)
-    else:
-        print("warning       : odonata_north_america.csv not found", file=sys.stderr)
+    for label, stem, prefix, source in ENGLISH_REGIONS:
+        path, taxa = FILES / f"{stem}.csv", FILES / f"{stem}_taxa.csv"
+        if not path.exists() or not source:
+            print(f"warning       : {path.name} not found or no source; skipped", file=sys.stderr)
+            continue
+        out.append(check_species(path, read_rows(path), known, label))
+        variables = [(f"{prefix}_SOURCE", source), (f"{prefix}_CSV", path.read_text(encoding="utf-8-sig"))]
+        if taxa.exists():
+            variables.append((f"{prefix}_TAXA_CSV", taxa.read_text(encoding="utf-8-sig")))
+        embed(FILES / f"{stem}.js", variables)
     return out
 
 
@@ -301,6 +350,8 @@ def main():
         encoding="utf-8")
 
     regional = write_regional(known, fams, genera)
+    NAME_SOURCES_JSON.write_text(json.dumps({"sources": NAME_SOURCES}, ensure_ascii=False, indent=1) + "\n",
+                                 encoding="utf-8")
 
     print(f"source        : {src.name}  ->  {label}")
     for line in regional:
@@ -308,8 +359,9 @@ def main():
     print(f"species       : {n_species:,} in {len(fams)} families")
     print(f"phylogeny     : {len(t)} tips (match checklist exactly), "
           f"{nodes} internal nodes, max depth {depth}, {poly} polytomies")
-    for p in (DATA_JS, PHY_JSON, PHY_JS, CN_JS, NA_JS):
-        print(f"wrote         : {p.relative_to(ROOT)} ({p.stat().st_size:,} bytes)")
+    english = [FILES / f"{stem}.js" for _, stem, _, src in ENGLISH_REGIONS if src]
+    for p in [DATA_JS, PHY_JSON, PHY_JS, CN_JS, *english, NAME_SOURCES_JSON]:
+        if p.exists(): print(f"wrote         : {p.relative_to(ROOT)} ({p.stat().st_size:,} bytes)")
 
 
 if __name__ == "__main__":
