@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Odonata Tree — Tianbo Qi</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #ffffff;
+      --ink:       #1a1a1a;
+      --ink-soft:  #3a3a3a;
+      --ink-faint: #505050;
+      --rule:      #e6e6e6;
+      --link:      #1a4db5;
+      --link-hover:#ed5b0c;
+      --surface:   #f6f6f6;
+      --sidebar-w: 272px;
+      --seen:      #22c55e;
+      --seen-dk:   #15803d;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 0.875rem;
+      color: var(--ink);
+      background: var(--bg);
+      display: flex;
+    }
+
+    /* ── Sidebar ───────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      height: 100vh;
+      overflow-y: hidden;
+      border-right: 1px solid var(--rule);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      padding: 20px 18px 24px;
+      gap: 20px;
+    }
+
+    .sidebar-title {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+    .sidebar-title a {
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: var(--link);
+      text-decoration: none;
+      display: block;
+      margin-top: 3px;
+    }
+    .sidebar-title a:hover { color: var(--link-hover); }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-faint);
+      margin-bottom: 8px;
+    }
+
+    /* upload zones */
+    .upload-zone {
+      border: 1.5px dashed var(--rule);
+      border-radius: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+      text-align: center;
+    }
+    .upload-zone:hover        { border-color: var(--seen); background: #f0fdf4; }
+    .upload-zone.drag-over    { border-color: var(--seen); background: #f0fdf4; }
+    .upload-zone.loaded       { border-color: var(--seen-dk); background: #f0fdf4; }
+    .upload-zone.error        { border-color: #dc2626; background: #fef2f2; }
+    .upload-zone input        { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-zone .uz-icon     { font-size: 1.2rem; margin-bottom: 2px; }
+    .upload-zone .uz-hint     { font-size: 0.72rem; color: var(--ink-faint); line-height: 1.4; }
+    .upload-zone .uz-status   { font-size: 0.72rem; font-weight: 600; margin-top: 4px; color: var(--seen-dk); }
+    .upload-zone.error .uz-status { color: #dc2626; }
+
+    .download-link {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--link);
+      text-decoration: none;
+      margin-top: 6px;
+      text-align: center;
+    }
+    .download-link:hover { color: var(--link-hover); text-decoration: underline; }
+
+    .list-actions {
+      display: flex; justify-content: space-between; gap: 8px;
+      margin-top: 6px; font-size: 0.7rem;
+    }
+    .list-actions a, .list-actions button {
+      font: inherit; color: var(--link); text-decoration: none;
+      background: none; border: none; padding: 0; cursor: pointer;
+    }
+    .list-actions a:hover, .list-actions button:hover { color: var(--link-hover); text-decoration: underline; }
+    .list-actions button[hidden] { display: none; }
+
+    /* stats */
+    .stats-block {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .stat-row:last-child { margin-bottom: 0; }
+    .stat-label { font-size: 0.72rem; color: var(--ink-faint); }
+    .stat-value { font-size: 0.85rem; font-weight: 700; color: var(--ink); }
+    .stat-value.green { color: var(--seen-dk); }
+
+    .progress-bar-wrap { height: 4px; background: var(--rule); border-radius: 2px; margin-top: 8px; }
+    .progress-bar      { height: 4px; background: var(--seen); border-radius: 2px; transition: width 0.4s; }
+
+    /* legend */
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 0.72rem; color: var(--ink-soft); }
+    .legend-swatch { width: 18px; height: 8px; border-radius: 3px; flex-shrink: 0; }
+    .legend-dot    { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* hint text */
+    .hint-text { font-size: 0.7rem; color: #9ca3af; line-height: 1.5; }
+    .hint-text a { color: var(--link); text-decoration: none; }
+    .hint-text a:hover { color: var(--link-hover); text-decoration: underline; }
+    .hint-text.remarks {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--rule);
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .hint-text.remarks ul { padding-left: 14px; }
+    .hint-text.remarks li { margin-bottom: 6px; }
+    .hint-text.remarks li:last-child { margin-bottom: 0; }
+
+    /* ── Canvas area ───────────────────────────────────────── */
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    canvas#tree-canvas {
+      display: block;
+      cursor: grab;
+      width: 100%;
+      height: 100%;
+    }
+    canvas#tree-canvas:active { cursor: grabbing; }
+
+    /* bottom-right cluster: usage hint beside the zoom controls */
+    .canvas-controls {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      align-items: center;    /* centre the hint against the button stack */
+      gap: 10px;
+    }
+    .canvas-hint {
+      font-size: 0.7rem;
+      color: #a49e96;
+      line-height: 1.7;
+      text-align: right;
+      white-space: nowrap;
+      user-select: none;
+      pointer-events: none;   /* never swallow a drag meant for the canvas */
+    }
+    .zoom-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .zoom-btn {
+      width: 30px; height: 30px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      font-size: 15px;
+      color: var(--ink-soft);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, color 0.12s;
+    }
+    .zoom-btn:hover { background: var(--surface); color: var(--ink); }
+
+    /* ── Tooltip ──────────────────────────────────────────── */
+    #tooltip {
+      position: fixed;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 8px 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      max-width: 240px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      line-height: 1.5;
+    }
+    .tt-name { font-weight: 700; font-size: 0.82rem; color: var(--ink); }
+    .tt-sci  { font-style: italic; font-size: 0.75rem; color: var(--ink-faint); }
+    .tt-pct  { font-size: 0.75rem; color: var(--seen-dk); margin-top: 2px; }
+    .tt-tag  { font-size: 0.72rem; color: var(--link); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div>
+    <div class="sidebar-title">
+      My Odonata Tree
+      <a href="misc.html">← Back to Miscellaneous</a>
+    </div>
+  </div>
+
+  <!-- Life list upload -->
+  <div>
+    <div class="section-label">Your Odonata List</div>
+    <div class="upload-zone" id="zone-ll">
+      <input type="file" id="input-ll" accept=".csv">
+      <div class="uz-icon">📋</div>
+      <div class="uz-hint">Drop the CSV exported from the checklist page, or any CSV with a scientific-name column (e.g. an iNaturalist export)</div>
+      <div class="uz-status" id="status-ll"></div>
+    </div>
+    <div class="list-actions">
+      <a href="odonatalist.html">✎ Build your list</a>
+      <button type="button" id="btn-saved" hidden>Use list saved in this browser</button>
+    </div>
+  </div>
+
+  <!-- Taxonomy -->
+  <div>
+    <div class="section-label">Taxonomy</div>
+    <div class="upload-zone" id="zone-tx">
+      <input type="file" id="input-tx" accept=".csv">
+      <div class="uz-icon">🌿</div>
+      <div class="uz-hint" id="hint-tx">Loading World Odonata List…</div>
+      <div class="uz-status" id="status-tx"></div>
+    </div>
+    <a class="download-link" href="https://www.pugetsound.edu/puget-sound-museum-natural-history/biodiversity-resources/insects/dragonflies/world-odonata-list" target="_blank" rel="noopener">↗ World Odonata List (Puget Sound Museum)</a>
+  </div>
+
+  <!-- Stats (hidden until taxonomy loaded) -->
+  <div id="stats-panel" style="display:none">
+    <div class="section-label">Your List</div>
+    <div class="stats-block">
+      <div class="stat-row">
+        <span class="stat-label">Species seen</span>
+        <span class="stat-value green" id="stat-seen">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Total in taxonomy</span>
+        <span class="stat-value" id="stat-total">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Coverage</span>
+        <span class="stat-value green" id="stat-pct">—</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="stat-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div>
+    <div class="section-label">Legend</div>
+    <div class="legend">
+      <div class="legend-row"><div class="legend-swatch" style="background:#15803d"></div>100% of group seen</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#86efac"></div>Partially seen</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#fff;border:1px solid #cdc9c0"></div>Nothing seen — branch left unfilled</div>
+      <div style="height:4px"></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#15803d"></div>Species in your list</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#cdc9c0"></div>Not yet seen</div>
+    </div>
+  </div>
+
+  <div class="hint-text remarks">
+    <ul>
+      <li id="remark-version">Built from the World Odonata List — drop a newer CSV above to override it.</li>
+      <li id="remark-layout">Laid out by Linnaean rank.</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ── Canvas ─────────────────────────────────────────────── -->
+<div class="canvas-wrap">
+  <canvas id="tree-canvas"></canvas>
+
+  <div class="canvas-controls">
+    <div class="canvas-hint">Scroll to zoom<br>Drag to pan<br>Hover for details</div>
+    <div class="zoom-btns">
+      <button class="zoom-btn" id="btn-zi" title="Zoom in">+</button>
+      <button class="zoom-btn" id="btn-zo" title="Zoom out">−</button>
+      <button class="zoom-btn" id="btn-zr" title="Reset view" style="font-size:12px">⟳</button>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-sci"  id="tt-sci"></div>
+  <div class="tt-pct"  id="tt-pct"></div>
+  <div class="tt-tag"  id="tt-tag"></div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="files/odonata_data.js"></script>
+<script src="files/odonata_phylogeny.js"></script>
+<script src="files/odonata_lib.js"></script>
+<script>
+'use strict';
+
+// ── Tree layout constants ──────────────────────────────────────
+// The circle closes to within a hairline: just enough of a seam to show
+// where the taxa begin and end. The trunk does not live in that seam — it
+// rises from the centre to the middle of the root's two branches.
+const TREE_GAP    = 0.02;                       // radians of open circle (~1.1°)
+const TREE_SPAN   = 2 * Math.PI - TREE_GAP;
+const SEAM_ANGLE  = Math.PI / 2;                // canvas +y is down: 6 o'clock
+const DRAW_OFFSET = SEAM_ANGLE + TREE_GAP / 2;  // first taxon just past the seam
+const STEM_R      = 0.05;                       // where the trunk ends and the tree begins
+
+// Radial bands as a fraction of outerR, per rank. Two layouts:
+//   TAXONOMIC — the flat Linnaean nesting (order ▸ family ▸ genus ▸ species).
+//   PHYLO     — the literature cladogram occupies [0, cladeOut]; families are
+//               its aligned tips, and the order band is kept just inside the
+//               family ring for orientation (generate_odonata_data.py checks that
+//               every superfamily is a clade, so a band never straddles one).
+// [0] is where a rank's CHILDREN attach — so it is also the outer edge of
+// that rank's own silhouette, since children paint over their parent.
+// [0] is the radius at which a rank's CHILDREN attach. Each rank's own area
+// therefore runs from where it leaves its parent out to [0]. The species fan
+// is the last stretch of the tree, ending on the dot at species[1]; it is
+// kept short because thousands of sub-pixel tips merge into a solid band otherwise.
+const LAYOUT_TAXONOMIC = {
+  cladeOut: 0.34,
+  order: [0.34, 0.64], family: [0.64, 0.86], genus: [0.86, 0.93], species: [0.86, 0.93],
+};
+// cladeOut sits just inside the family ring: if the backbone stopped far
+// short of it, every family would trail the same long spoke out to the ring,
+// dwarfing the branches above it.
+// family[0] is where genera attach, so [parent clade radius .. family[0]] is
+// both the family's final branch AND its hoverable band — the two cannot be
+// tuned apart. 0.70 trades a little branch evenness (final branch is ~4.4x a
+// backbone step, against 2.2x at 0.65) for a family band of 33-42px instead
+// of 12-21px, while leaving genus a roomy 63px.
+const LAYOUT_PHYLO = {
+  cladeOut: 0.63,
+  order: [0.63, 0.70], family: [0.70, 0.85], genus: [0.85, 0.93], species: [0.85, 0.93],
+};
+// Per-family genus radius (phylogenetic layout only). Species still attach on
+// one ring, so the outer ring stays a perfect circle; only the family/genus
+// boundary flexes, between GENUS_IN_MIN and GENUS_IN_MAX.
+const FAM_BAND      = 0.14;
+const GENUS_IN_MIN  = 0.66;
+const GENUS_IN_MAX  = 0.79;
+let LY = LAYOUT_TAXONOMIC;
+
+// Siblings are separated by the outline itself: it follows the first and
+// last child's branch, not the group's full angular span, so gaps fall out
+// of the geometry rather than being inset by hand.
+const MIN_ARC = 0.0003;
+const BAND_RANKS = ['order', 'family', 'genus'];
+
+// One line thickness per level — the cladogram down to family, the genus
+// branches, the species fan — so no line reads as more important than its
+// neighbour just because of where it sits in the tree.
+const LW_CLADE   = 1.0;
+const LW_GENUS   = 0.8;
+const LW_SPECIES = 0.72;
+const SPECIES_DOT_R = 2.0;   // shared by the seen-species dot and the hover marker
+
+// ── Global state ──────────────────────────────────────────────
+let precomp      = null;   // { root, nodesByRank, orderBands, totalSpecies }
+let phyloMode    = false;  // true when the literature cladogram is in use
+let seenSet      = new Set();
+let lifeListSource = '';  // where the current list came from, for the status line
+let xf        = { x: 0, y: 0, k: 1.0 };
+let hovNode   = null;
+let outerR    = 300;
+let W = 0, H = 0;
+
+const canvas  = document.getElementById('tree-canvas');
+const ctx     = canvas.getContext('2d');
+let rafId     = null;
+
+// ── Colors ────────────────────────────────────────────────────
+// Coverage colour. Nothing is drawn at 0%, so there is no "unseen" tint:
+// the branch lines carry the structure where no species have been seen.
+function arcColor(node, rank) {
+  const p = node.seenPct || 0;
+  if (p >= 1.0) return { order: '#14532d', family: '#15803d', genus: '#166534' }[rank];
+  const dark = rank === 'order' ? '#14532d' : rank === 'family' ? '#15803d' : '#16a34a';
+  return d3.interpolateRgb('#cdf0da', dark)(Math.pow(p, 0.55));
+}
+
+function hoverColor() { return '#f59e0b'; }
+
+// Fully opaque. Semi-transparent strokes compound where branches cross,
+// printing darker knots at every intersection; these never do.
+function branchStroke(node) {
+  const p = node.seenPct || 0;
+  if (p >= 1) return '#15803d';
+  if (p > 0)  return d3.interpolateRgb('#a9c9b7', '#15803d')(Math.pow(p, 0.55));
+  return '#cdc9c0';   // nothing seen: a warm neutral, not a green-grey
+}
+
+// ── Taxonomy and life list ────────────────────────────────────
+// Parsing the World Odonata List, name matching and the life-list CSV live in
+// files/odonata_lib.js, shared with the checklist page (odonatalist.html).
+let taxonomy       = null;   // OdoLib.parseWOL() result
+let unmatchedCount = 0;      // life-list names the taxonomy does not know
+
+// ── Build hierarchy data structure ────────────────────────────
+// Superfamily ▸ family ▸ genus ▸ species. The superfamily band is drawn with
+// the code the bird tree uses for orders, so its node type stays 'order'.
+function buildHierarchy(tax) {
+  const root = { name: 'Odonata', type: 'root', children: [] };
+  const sMap = new Map(), fMap = new Map(), gMap = new Map();
+  for (const f of tax.families) {
+    if (!sMap.has(f.superfamily)) {
+      const n = { name: f.superfamily, type: 'order', suborder: f.suborder, children: [] };
+      sMap.set(f.superfamily, n); root.children.push(n);
+    }
+    const n = { name: f.name, comName: f.en, type: 'family', order: f.superfamily, children: [] };
+    fMap.set(f.name, n); sMap.get(f.superfamily).children.push(n);
+  }
+  for (const s of tax.species) {
+    const fam = fMap.get(s.family);
+    const gk  = s.family + '\0' + s.genus;
+    if (!gMap.has(gk)) { const n = { name: s.genus, type: 'genus', children: [] }; gMap.set(gk, n); fam.children.push(n); }
+    gMap.get(gk).children.push({ name: s.sci, author: s.author, doubtful: s.doubtful, type: 'species' });
+  }
+  for (const [k, n] of fMap) if (!n.children.length) {     // a family with no species
+    const sup = sMap.get(n.order); sup.children = sup.children.filter(c => c !== n); fMap.delete(k);
+  }
+  return { root, totalSpecies: tax.species.length, famIndex: fMap };
+}
+
+// ── Graft the checklist onto the literature phylogeny ─────────
+// Returns a root whose internal nodes are clades and whose family tips carry
+// the checklist's genus/species subtrees — or null if the two disagree about
+// which families exist, in which case the caller falls back to the flat
+// Linnaean layout. See files/odonata_phylogeny.json and
+// scripts/odonata_phylogeny_source.py for the tree and its sources.
+function graftPhylogeny(phylo, famIndex) {
+  if (!phylo || !phylo.tree) return null;
+  const used = new Set();
+  let missing = 0;
+
+  const build = node => {
+    if (node.rank === 'family') {
+      const fam = famIndex.get(node.name);
+      if (!fam) { missing++; return null; }
+      used.add(node.name);
+      return fam;
+    }
+    const kids = (node.children || []).map(build).filter(Boolean);
+    if (!kids.length) return null;
+    if (kids.length === 1) return kids[0];          // collapse a clade of one
+    return { name: node.name || '', type: 'clade', children: kids };
+  };
+
+  const root = build(phylo.tree);
+  // Every checklist family must be placed, and every tip must exist.
+  if (!root || missing || used.size !== famIndex.size) return null;
+  root.type = 'root';
+  root.name = phylo.tree.name || 'Odonata';
+  return root;
+}
+
+// ── Angular weighting ─────────────────────────────────────────
+// A species would otherwise get 1/6509 of the circle, which makes a
+// one-species family (there are six) a fraction of a pixel wide — invisible and
+// impossible to hover without zooming most of the way in. Any family
+// narrower than FAMILY_MIN_SLOTS species-widths is widened to that, and the
+// extra width is shared evenly among its own species. Everything else shrinks
+// proportionally, so the rings stay perfect circles and
+// only the angular share moves. Area is therefore proportional to species
+// count only above the floor; the tooltip still reports true counts.
+const FAMILY_MIN_SLOTS = 20;
+
+function rollUp(h) {
+  h.eachAfter(n => {
+    if (n.children && n.children.length) {
+      n.value = n.children.reduce((sum, c) => sum + c.value, 0);
+    }
+  });
+}
+
+function assignWeights(h) {
+  h.eachAfter(n => { if (!n.children || !n.children.length) n.value = 1; });
+  rollUp(h);
+  h.each(n => {
+    if (n.data.type !== 'family') return;
+    const k = FAMILY_MIN_SLOTS / n.value;
+    if (k <= 1) return;
+    n.each(d => { if (!d.children || !d.children.length) d.value *= k; });
+  });
+  rollUp(h);
+}
+
+// ── Precompute layout (expensive — once per taxonomy) ─────────
+// Angles come from d3.partition (leaf-count weighted) and work for any tree
+// shape. Radii are assigned by RANK, not by depth, because in phylogeny mode
+// families sit at depths 2..28 and must still land on one ring.
+function precompute(hierarchyRoot, phyloMode) {
+  LY = phyloMode ? LAYOUT_PHYLO : LAYOUT_TAXONOMIC;
+
+  const h = d3.hierarchy(hierarchyRoot);
+  assignWeights(h);
+  d3.partition().size([TREE_SPAN, 1])(h);
+
+  const nodesByRank = new Map();
+  h.each(node => {
+    const rank = node.data.type === 'root' ? 'clade' : node.data.type;
+    node.rank = rank;
+    if (!nodesByRank.has(rank)) nodesByRank.set(rank, []);
+    nodesByRank.get(rank).push(node);
+  });
+  for (const [, arr] of nodesByRank) arr.sort((a, b) => a.x0 - b.x0);
+
+  // Backbone radii. Spacing a node by absolute depth bunches short lineages
+  // near the centre and leaves them one enormous branch out to the family
+  // ring. Instead each node sits a proportional distance along ITS OWN path:
+  // depth / (depth + height), where height is the number of steps left to its
+  // deepest family. Families all land on LY.cladeOut either way, but every
+  // lineage is now spread evenly over the radius it has.
+  const fams = nodesByRank.get('family') || [];
+  h.eachAfter(n => {
+    if (n.rank === 'family') { n.bbHeight = 0; return; }
+    if (n.rank !== 'clade') return;
+    let hi = 0;
+    for (const c of n.children) if (c.bbHeight !== undefined) hi = Math.max(hi, c.bbHeight + 1);
+    n.bbHeight = hi;
+  });
+  // Proportional placement alone is not enough: a polytomy holding both a
+  // one-step lineage and the 28-step passerines still sits near the centre,
+  // leaving its shallow child one huge spoke. A mild power eases the whole
+  // scale outward, trading some spacing among the deepest clades (which the
+  // chart is zoomable for) against far shorter shallow branches. 0.45 was
+  // picked by measuring both: it roughly minimises longest-branch / median-step.
+  const BB_EASE = 0.45;
+  for (const node of nodesByRank.get('clade') || []) {
+    const total = node.depth + node.bbHeight;
+    const t = total > 0 ? Math.pow(node.depth / total, BB_EASE) : 0;
+    node.r = STEM_R + (LY.cladeOut - STEM_R) * t;   // root at the top of the trunk
+  }
+  for (const rank of BAND_RANKS) {
+    for (const n of nodesByRank.get(rank) || []) n.r = LY[rank][0];
+  }
+  // A species is a tip: its branch ends on its dot.
+  for (const n of nodesByRank.get('species') || []) n.r = LY.species[1];
+  // Families attach at the inner edge of their own ring, not at the order
+  // band, so every branch line runs unbroken from the backbone to the
+  // species ticks — one continuous tree rather than two stacked pictures.
+
+
+  // Order bands. In taxonomic mode the orders are real nodes; in phylogeny
+  // mode they are synthesised from runs of families sharing an order.
+  let orderBands;
+  if (nodesByRank.has('order')) {
+    orderBands = nodesByRank.get('order');
+    for (const b of orderBands) b.families = b.children || [];
+  } else {
+    orderBands = [];
+    let cur = null;
+    for (const f of fams) {
+      const name = f.data.order || '';
+      if (!cur || cur.data.name !== name) {
+        cur = { rank: 'order', data: { name, type: 'order' },
+                x0: f.x0, x1: f.x1, families: [f] };
+        orderBands.push(cur);
+      } else {
+        cur.x1 = f.x1;
+        cur.families.push(f);
+      }
+    }
+  }
+
+  // Angular position of each node. A leaf keeps its own slot; an internal
+  // node sits halfway between its outermost children, so every branch point
+  // lands between the branches it joins. Using the midpoint of a node's
+  // species span instead would drag the junction onto whichever child holds
+  // the most species — Neognathae has 99% of them, which put the root's fork
+  // practically on top of it.
+  h.eachAfter(n => {
+    n.mid = (n.children && n.children.length)
+      ? (n.children[0].mid + n.children[n.children.length - 1].mid) / 2
+      : (n.x0 + n.x1) / 2;
+  });
+
+  // Where each highlightable branch leaves its parent — the tip of its
+  // hover shape. Orders are monophyletic, so a synthesised band's branch is
+  // the clade whose span matches it.
+  for (const rank of BAND_RANKS.concat('species')) {
+    for (const n of nodesByRank.get(rank) || []) n.baseR = n.parent ? n.parent.r : 0;
+  }
+
+  // A family's band IS its final branch: [parent clade radius .. where its
+  // genera attach]. With one global genus radius a deep family — every
+  // passerine — ends up with a sliver while a shallow one gets a slab. Each
+  // family therefore picks its own genus radius, aiming for FAM_BAND of
+  // depth and clamped so the genus ring always keeps something to hover.
+  // Species still attach on one ring, so the outer edge stays a true circle.
+  if (phyloMode) {
+    for (const f of nodesByRank.get('family') || []) {
+      f.r = Math.min(GENUS_IN_MAX, Math.max(GENUS_IN_MIN, f.baseR + FAM_BAND));
+    }
+    for (const g of nodesByRank.get('genus') || []) g.baseR = g.parent.r;
+  }
+  const eps = 1e-9;
+  for (const b of orderBands) {
+    if (b.depth !== undefined) { b.baseR = b.parent ? b.parent.r : 0; b.walk = b; continue; }
+    let n = b.families[0];
+    while (n.parent && (n.x0 > b.x0 + eps || n.x1 < b.x1 - eps)) n = n.parent;
+    b.baseR = n.parent ? n.parent.r : 0;
+    b.walk  = n;      // the hierarchy node whose subtree this band covers
+  }
+
+  precomp = { root: h, nodesByRank, orderBands,
+              totalSpecies: (nodesByRank.get('species') || []).length };
+}
+
+// ── Annotate tree with seen counts ────────────────────────────
+function annotate() {
+  if (!precomp) return;
+  precomp.root.eachAfter(node => {
+    if (!node.children) {
+      node.seenCount  = seenSet.has(node.data.name) ? 1 : 0;
+      node.totalCount = 1;
+    } else {
+      node.totalCount = d3.sum(node.children, c => c.totalCount);
+      node.seenCount  = d3.sum(node.children, c => c.seenCount);
+    }
+    node.seenPct = node.totalCount > 0 ? node.seenCount / node.totalCount : 0;
+  });
+  // Synthesised order bands are outside the hierarchy, so roll them up here.
+  for (const b of precomp.orderBands) {
+    if (b.depth !== undefined) continue;          // a real node; already done
+    b.totalCount = d3.sum(b.families, f => f.totalCount);
+    b.seenCount  = d3.sum(b.families, f => f.seenCount);
+    b.seenPct    = b.totalCount > 0 ? b.seenCount / b.totalCount : 0;
+  }
+}
+
+// ── Parse the life list ───────────────────────────────────────
+// Rows are kept, not just the resolved names, so a list can be re-resolved
+// against a different taxonomy dropped in later.
+let lifeListRows = null;
+
+function parseLifeList(rows) {
+  const { seen, unmatched } = OdoLib.readLifeList(taxonomy, rows);
+  unmatchedCount = unmatched.length;
+  if (unmatched.length) console.info('Unmatched names:', unmatched.join(', '));
+  return seen;
+}
+
+// Status line for the life-list zone; flags names the taxonomy has no slot for.
+function lifeListStatus() {
+  const base = `${seenSet.size.toLocaleString()} species ${lifeListSource}`;
+  return unmatchedCount ? `${base} · ${unmatchedCount.toLocaleString()} unmatched` : base;
+}
+
+// ── Render ────────────────────────────────────────────────────
+function scheduleRender() {
+  if (rafId) return;
+  rafId = requestAnimationFrame(() => { rafId = null; render(); });
+}
+
+function render() {
+  const dpr = window.devicePixelRatio || 1;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!precomp) {
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 14px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Loading taxonomy…', W / 2, H / 2);
+    ctx.restore();
+    return;
+  }
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.translate(W / 2 + xf.x, H / 2 + xf.y);
+  ctx.scale(xf.k, xf.k);
+
+  drawFills(ctx);
+  drawHoverHighlight(ctx);
+  drawBranches(ctx);
+  drawHoverTip(ctx);
+  drawLabels(ctx);
+
+  ctx.restore();
+}
+
+// ── Group outline ─────────────────────────────────────────────
+// The area of a group is the region its own tree lines enclose: out along
+// its leftmost branch to the species dots, across the tips, and back along
+// its rightmost branch. Every line the group contains lies inside that
+// outline, together with the space between them.
+function nodeMid(n) { return n.mid + DRAW_OFFSET; }
+
+// One edge of the outline, as [radiusFraction, angle] steps from the base
+// outward. Alternating radial and angular moves trace the connector lines
+// exactly, so the outline hugs the drawn tree rather than approximating it.
+function outlineEdge(node, baseR, takeLast, pad) {
+  const d = takeLast ? pad : -pad;
+  const pts = [[baseR, nodeMid(node) + d], [node.r, nodeMid(node) + d]];
+  let n = node;
+  while (n.children && n.children.length) {
+    const c = takeLast ? n.children[n.children.length - 1] : n.children[0];
+    pts.push([n.r, nodeMid(c) + d]);
+    pts.push([c.r, nodeMid(c) + d]);
+    n = c;
+  }
+  return pts;
+}
+
+function emitEdge(ctx, pts, outward) {
+  const seq = outward ? pts : pts.slice().reverse();
+  for (let i = 1; i < seq.length; i++) {
+    const a = seq[i - 1], b = seq[i];
+    if (b[0] !== a[0]) {
+      ctx.lineTo(b[0] * outerR * Math.cos(b[1]), b[0] * outerR * Math.sin(b[1]));
+    } else if (b[1] !== a[1]) {
+      ctx.arc(0, 0, b[0] * outerR, a[1], b[1], b[1] < a[1]);
+    }
+  }
+}
+
+function groupPath(ctx, node) {
+  const w    = node.walk || node;
+  const base = node.baseR || 0;
+  // Widen by about a pixel so a group whose branch is a single line still
+  // encloses something. Inflating the path beats stroking it: one fill means
+  // a translucent colour cannot darken where fill and stroke would overlap.
+  const pad  = 1.1 / Math.max(outerR * LY.species[1], 1);
+  const L = outlineEdge(w, base, false, pad);
+  const R = outlineEdge(w, base, true, pad);
+  const lTip = L[L.length - 1], rTip = R[R.length - 1];
+
+  ctx.beginPath();
+  ctx.moveTo(L[0][0] * outerR * Math.cos(L[0][1]), L[0][0] * outerR * Math.sin(L[0][1]));
+  emitEdge(ctx, L, true);
+  ctx.arc(0, 0, lTip[0] * outerR, lTip[1], rTip[1], rTip[1] < lTip[1]);
+  emitEdge(ctx, R, false);
+  ctx.closePath();
+}
+
+// ── Draw filled areas ─────────────────────────────────────────
+// One outline per order, family and genus, shaded by the share of its
+// species seen, parents first so children sit on top. A group with nothing
+// seen is not drawn — its connector lines carry the structure instead.
+function drawFills(ctx) {
+  for (const rank of BAND_RANKS) {
+    const list = rank === 'order' ? precomp.orderBands
+                                  : (precomp.nodesByRank.get(rank) || []);
+    for (const node of list) {
+      if (!(node.seenPct > 0)) continue;
+      groupPath(ctx, node);
+      ctx.fillStyle = arcColor(node, rank);
+      ctx.fill();
+    }
+  }
+}
+
+// ── Hover highlight ────────────────────────────────────────────
+// The same outline in the highlight colour, flat, with no contour of its own.
+// Groups get a filled area; the unnamed backbone clades get nothing, since a
+// wedge on a deep clade sweeps most of the chart and reads as noise.
+const HOVER_AREA_RANKS = new Set(['order', 'family', 'genus']);
+const HOVER_FILL = 'rgba(255,167,38,0.55)';
+const HOVER_LINE = '#ef8f12';
+
+function drawHoverHighlight(ctx) {
+  if (!hovNode || !HOVER_AREA_RANKS.has(hovNode.rank)) return;
+  groupPath(ctx, hovNode);
+  ctx.fillStyle = HOVER_FILL;
+  ctx.fill();
+}
+
+// A single species is about a pixel wide, so an area fill is invisible — and
+// it would be painted over by the species' own tick anyway. Its branch is
+// restated in the highlight colour instead, at exactly the weight a seen
+// species is drawn at, and AFTER the branch pass so nothing covers it.
+function drawHoverTip(ctx) {
+  if (!hovNode || hovNode.rank !== 'species') return;
+  const mid = nodeMid(hovNode);
+  const pR  = LY.genus[0]   * outerR;
+  const oR  = LY.species[1] * outerR;
+
+  ctx.save();
+  ctx.lineCap    = 'round';
+  ctx.lineWidth  = LW_SPECIES;
+  ctx.strokeStyle = HOVER_LINE;
+  ctx.beginPath();
+  ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
+  ctx.lineTo(oR * Math.cos(mid), oR * Math.sin(mid));
+  ctx.stroke();
+
+  ctx.fillStyle = HOVER_LINE;
+  ctx.beginPath();
+  ctx.arc(oR * Math.cos(mid), oR * Math.sin(mid), SPECIES_DOT_R, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── Draw branch connector lines (cladogram style) ─────────────
+// Right-angle connections: an arc at the parent's radius spanning its
+// children, plus a radial line out to each child. The clade region and the
+// family/genus/species rings use the same idiom, so the phylogeny reads as a
+// continuation of the Linnaean rings rather than a separate picture.
+function drawBranches(ctx) {
+  ctx.lineCap  = 'round';
+  ctx.lineJoin = 'round';
+
+  // Clade region (and, in taxonomic mode, the root → order stubs)
+  for (const par of precomp.nodesByRank.get('clade') || []) {
+    const ch = par.children;
+    if (!ch || !ch.length) continue;
+    const span = par.x1 - par.x0;
+    if (span < MIN_ARC) continue;
+
+    ctx.lineWidth = LW_CLADE;
+    const pR = par.r * outerR;
+    const firstMid = nodeMid(ch[0]);
+    const lastMid  = nodeMid(ch[ch.length - 1]);
+
+    // The root: a single trunk from the centre, meeting its arc halfway
+    // between the first two branches so the tree forks symmetrically off it.
+    if (!par.parent) {
+      const stem = nodeMid(par);   // == halfway between the first two branches
+      ctx.strokeStyle = branchStroke(par);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(pR * Math.cos(stem), pR * Math.sin(stem));
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = branchStroke(par);
+    if (ch.length > 1 && pR > 0.5) {
+      ctx.beginPath();
+      ctx.arc(0, 0, pR, firstMid, lastMid);
+      ctx.stroke();
+    }
+    for (const child of ch) {
+      const cs = child.x1 - child.x0;
+      if (cs < MIN_ARC) continue;
+      const cR  = child.r * outerR;
+      if (cR - pR < 0.3) continue;
+      const cMid = nodeMid(child);
+      ctx.beginPath();
+      ctx.moveTo(pR * Math.cos(cMid), pR * Math.sin(cMid));
+      ctx.lineTo(cR * Math.cos(cMid), cR * Math.sin(cMid));
+      ctx.strokeStyle = branchStroke(child);
+      ctx.stroke();
+    }
+  }
+
+  // Ring ranks: order ▸ family ▸ genus ▸ species
+  const CHAIN = [['order', 'family', LW_CLADE], ['family', 'genus', LW_GENUS],
+                 ['genus', 'species', LW_SPECIES]];
+  for (const [pRank, cRank, lw] of CHAIN) {
+    ctx.lineWidth = lw;
+
+    for (const par of precomp.nodesByRank.get(pRank) || []) {
+      const pR = par.r * outerR;
+      if (!par.children || !par.children.length) continue;
+      const span = par.x1 - par.x0;
+      if (span < MIN_ARC) continue;
+
+      const ch = par.children;
+      const firstMid = nodeMid(ch[0]);
+      const lastMid  = nodeMid(ch[ch.length - 1]);
+
+      ctx.strokeStyle = branchStroke(par);
+      if (ch.length > 1) {
+        ctx.beginPath();
+        ctx.arc(0, 0, pR, firstMid, lastMid);
+        ctx.stroke();
+      }
+      if (cRank === 'species') continue;   // drawn as ticks below
+      for (const child of ch) {
+        const cs = child.x1 - child.x0;
+        const cR = child.r * outerR;
+        if (cs < MIN_ARC || cs * cR < 0.4) continue;
+        const childMid = nodeMid(child);
+        ctx.beginPath();
+        ctx.moveTo(pR * Math.cos(childMid), pR * Math.sin(childMid));
+        ctx.lineTo(cR * Math.cos(childMid), cR * Math.sin(childMid));
+        ctx.strokeStyle = branchStroke(child);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Species tick lines, batched by colour so the ring is two stroke() calls.
+  {
+    const species = precomp.nodesByRank.get('species') || [];
+    const pR = LY.genus[0] * outerR;      // the genus arc: where the fan starts
+    const oR = LY.species[1] * outerR;    // the dot: where the tree ends
+    ctx.lineWidth = LW_SPECIES;
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#cdc9c0';
+    for (const sp of species) {
+      if (sp.seenCount > 0) continue;
+      const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
+      ctx.lineTo(oR * Math.cos(mid), oR * Math.sin(mid));
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#15803d';
+    for (const sp of species) {
+      if (sp.seenCount === 0) continue;
+      const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      ctx.moveTo(pR * Math.cos(mid), pR * Math.sin(mid));
+      ctx.lineTo(oR * Math.cos(mid), oR * Math.sin(mid));
+    }
+    ctx.stroke();
+
+    // Green dots last so they sit in front of the ticks
+    ctx.fillStyle = '#15803d';
+    for (const sp of species) {
+      if (sp.seenCount === 0) continue;
+      const mid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      ctx.beginPath();
+      ctx.arc(oR * Math.cos(mid), oR * Math.sin(mid), SPECIES_DOT_R, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+}
+
+// ── Draw labels ────────────────────────────────────────────────
+function normAngle(a) {
+  return ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+}
+function shouldFlip(angle) {
+  const n = normAngle(angle);
+  return n > Math.PI / 2 && n < 3 * Math.PI / 2;
+}
+
+function drawLabels(ctx) {
+  ctx.textBaseline = 'middle';
+
+  // Order labels — just outside the species ring
+  const lblR = LY.species[1] * outerR + 10;
+  for (const node of precomp.orderBands) {
+    const span = node.x1 - node.x0;
+    if (span < 0.035) continue;
+    const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
+    const flip = shouldFlip(mid);
+    ctx.save();
+    ctx.translate(lblR * Math.cos(mid), lblR * Math.sin(mid));
+    ctx.rotate(mid + (flip ? Math.PI : 0));
+    ctx.textAlign = flip ? 'right' : 'left';
+    const fs = Math.max(5, Math.min(9, span * outerR * 0.5));
+    ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = node.seenPct > 0 ? '#14532d' : '#857f76';
+    ctx.fillText(node.data.name, 0, 0);
+    ctx.restore();
+  }
+
+  // Family labels — inside the family band, when zoomed in
+  if (xf.k > 2) {
+    for (const node of precomp.nodesByRank.get('family') || []) {
+      // Middle of this family's own visible region, which runs from where it
+      // leaves its parent to where its genera take over.
+      const fR = ((node.baseR || 0) + node.r) / 2 * outerR;
+      const span = node.x1 - node.x0;
+      if (span * fR * xf.k < 18) continue;
+      const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
+      const flip = shouldFlip(mid);
+      ctx.save();
+      ctx.translate(fR * Math.cos(mid), fR * Math.sin(mid));
+      ctx.rotate(mid + (flip ? Math.PI : 0));
+      ctx.textAlign = 'center';
+      ctx.font = '500 7px Inter, system-ui, sans-serif';
+      ctx.fillStyle = node.seenPct > 0 ? '#166534' : '#a49e96';
+      ctx.fillText(node.data.name, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  // Species labels — outside the species ring, deep zoom
+  if (xf.k > 5) {
+    const spR = LY.species[1] * outerR + 5;
+    for (const node of precomp.nodesByRank.get('species') || []) {
+      const span = node.x1 - node.x0;
+      if (span * spR * xf.k < 10) continue;
+      const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
+      const flip = shouldFlip(mid);
+      ctx.save();
+      ctx.translate(spR * Math.cos(mid), spR * Math.sin(mid));
+      ctx.rotate(mid + (flip ? Math.PI : 0));
+      ctx.textAlign = flip ? 'right' : 'left';
+      ctx.font = 'italic 400 5px Inter, system-ui, sans-serif';
+      ctx.fillStyle = node.seenCount > 0 ? '#15803d' : '#a9a49c';
+      ctx.fillText(node.data.name, 0, 0);
+      ctx.restore();
+    }
+  }
+}
+
+// ── Polar hit testing ──────────────────────────────────────────
+function binarySearch(nodes, theta) {
+  let lo = 0, hi = nodes.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if      (nodes[mid].x1 <= theta) lo = mid + 1;
+    else if (nodes[mid].x0 >  theta) hi = mid - 1;
+    else return nodes[mid];
+  }
+  return null;
+}
+
+function findNodeAt(mx, my) {
+  if (!precomp) return null;
+  const wx = (mx - W / 2 - xf.x) / xf.k;
+  const wy = (my - H / 2 - xf.y) / xf.k;
+  const r  = Math.hypot(wx, wy);
+
+  // Convert canvas angle back to partition space
+  let theta = Math.atan2(wy, wx) - DRAW_OFFSET;
+  theta = ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  if (theta > TREE_SPAN) return null; // inside the gap
+
+  // Which silhouette is on top here? Children paint over their parents, and
+  // each starts at its own attachment radius, so the visible rank at a point
+  // follows directly from those radii. Hit testing mirrors that exactly, so
+  // the hover highlight always matches what the cursor is over.
+  if (r < LY.genus[0] * outerR) {
+    const fam = binarySearch(precomp.nodesByRank.get('family') || [], theta);
+    if (!fam) return null;
+    if (r >= fam.r * outerR) {
+      return binarySearch(precomp.nodesByRank.get('genus') || [], theta) || fam;
+    }
+    if (r >= (fam.baseR || 0) * outerR) return fam;
+    return binarySearch(precomp.orderBands, theta);
+  }
+
+  const tickInner = LY.genus[0] * outerR;
+  const tickOuter = LY.species[1] * outerR;
+  const nodes4    = precomp.nodesByRank.get('species') || [];
+
+  // Dot check (highest priority): covers the full 2px dot [tickOuter-2, tickOuter+3].
+  // A dot covers ~24 species partitions, so scan ±30 neighbours by Euclidean distance
+  // rather than relying on angle-based binary search.
+  if (r >= tickOuter - 2 && r <= tickOuter + 3) {
+    let lo = 0, hi = nodes4.length - 1, idx = 0;
+    while (lo <= hi) {
+      const m = (lo + hi) >> 1;
+      if      (nodes4[m].x1 <= theta) { lo = m + 1; idx = lo; }
+      else if (nodes4[m].x0  > theta)   hi = m - 1;
+      else                             { idx = m; break; }
+    }
+    let best = null, bestDist = 3.0;
+    const lo2 = Math.max(0, idx - 30), hi2 = Math.min(nodes4.length - 1, idx + 30);
+    for (let i = lo2; i <= hi2; i++) {
+      const sp = nodes4[i];
+      if (sp.seenCount === 0) continue;
+      const spMid = (sp.x0 + sp.x1) / 2 + DRAW_OFFSET;
+      const d = Math.hypot(wx - tickOuter * Math.cos(spMid),
+                           wy - tickOuter * Math.sin(spMid));
+      if (d < bestDist) { bestDist = d; best = sp; }
+    }
+    if (best) return best;  // on a green dot — return seen species
+    // Not on any dot; fall through to tick-zone handling below
+  }
+
+  // Tick zone [species[0], species[1]]: binary search by angle — any species
+  if (r >= tickInner && r <= tickOuter) {
+    return binarySearch(nodes4, theta);
+  }
+  return null;
+}
+
+// ── Tooltip ────────────────────────────────────────────────────
+const ttEl   = document.getElementById('tooltip');
+const ttName = document.getElementById('tt-name');
+const ttSci  = document.getElementById('tt-sci');
+const ttPct  = document.getElementById('tt-pct');
+const ttTag  = document.getElementById('tt-tag');
+
+function showTooltip(node, ex, ey) {
+  const d = node.data;
+  // No common names for species: the binomial is the headline, in italics,
+  // and the second line carries the authority (or a family's English name).
+  ttName.style.fontStyle = d.type === 'species' ? 'italic' : 'normal';
+  ttSci.style.fontStyle  = 'normal';
+  if (d.type === 'species') {
+    ttName.textContent = d.name;
+    ttSci.textContent  = d.author + (d.doubtful ? ' · doubtful species' : '');
+    ttPct.textContent  = '';
+    ttTag.textContent  = node.seenCount > 0 ? '✓ In your list' : 'Not yet seen';
+    ttTag.style.color  = node.seenCount > 0 ? '#15803d' : '#6b7280';
+  } else {
+    const label = { order:'Superfamily', family:'Family', genus:'Genus' }[d.type] || '';
+    ttName.textContent = label + ': ' + d.name;
+    ttSci.textContent  = d.type === 'family' ? (d.comName || '')
+                       : d.type === 'order' ? (suborderOf.get(d.name) || '') : '';
+    const pct = (node.seenPct * 100).toFixed(1);
+    ttPct.textContent  = `${node.seenCount.toLocaleString()} / ${node.totalCount.toLocaleString()} species seen (${pct}%)`;
+    ttTag.textContent  = '';
+  }
+  posTooltip(ex, ey);
+  ttEl.style.display = 'block';
+}
+
+function posTooltip(ex, ey) {
+  const tw = ttEl.offsetWidth  || 180;
+  const th = ttEl.offsetHeight || 70;
+  let lx = ex + 14, ly = ey + 12;
+  if (lx + tw > window.innerWidth)  lx = ex - tw - 14;
+  if (ly + th > window.innerHeight) ly = ey - th - 12;
+  ttEl.style.left = lx + 'px';
+  ttEl.style.top  = ly + 'px';
+}
+
+function hideTooltip() { ttEl.style.display = 'none'; }
+
+// ── Mouse / wheel / touch events ──────────────────────────────
+let drag = null;
+
+canvas.addEventListener('mousedown', e => {
+  drag = { sx: e.clientX, sy: e.clientY, ox: xf.x, oy: xf.y };
+  canvas.style.cursor = 'grabbing';
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (drag) {
+    xf.x = drag.ox + (e.clientX - drag.sx);
+    xf.y = drag.oy + (e.clientY - drag.sy);
+    hideTooltip();
+    scheduleRender();
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const node = findNodeAt(e.clientX - rect.left, e.clientY - rect.top);
+  if (node !== hovNode) { hovNode = node; scheduleRender(); }
+  if (node) showTooltip(node, e.clientX, e.clientY);
+  else hideTooltip();
+});
+
+canvas.addEventListener('mouseup',    () => { drag = null; canvas.style.cursor = 'grab'; });
+canvas.addEventListener('mouseleave', () => {
+  drag = null; canvas.style.cursor = 'grab';
+  hovNode = null; hideTooltip(); scheduleRender();
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const newK = Math.max(0.08, Math.min(50, xf.k * factor));
+  const sc   = newK / xf.k;
+  xf.x = mx - W/2 + (xf.x - (mx - W/2)) * sc;
+  xf.y = my - H/2 + (xf.y - (my - H/2)) * sc;
+  xf.k = newK;
+  scheduleRender();
+}, { passive: false });
+
+let pinch = null;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    pinch = { dist: Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                               e.touches[0].clientY - e.touches[1].clientY), k: xf.k };
+  } else if (e.touches.length === 1) {
+    drag = { sx: e.touches[0].clientX, sy: e.touches[0].clientY, ox: xf.x, oy: xf.y };
+  }
+}, { passive: true });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 2 && pinch) {
+    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                         e.touches[0].clientY - e.touches[1].clientY);
+    xf.k = Math.max(0.08, Math.min(50, pinch.k * (d / pinch.dist)));
+    scheduleRender();
+  } else if (e.touches.length === 1 && drag) {
+    xf.x = drag.ox + (e.touches[0].clientX - drag.sx);
+    xf.y = drag.oy + (e.touches[0].clientY - drag.sy);
+    scheduleRender();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { drag = null; pinch = null; });
+
+// ── Zoom buttons ───────────────────────────────────────────────
+document.getElementById('btn-zi').onclick = () => { xf.k = Math.min(50, xf.k * 1.4); scheduleRender(); };
+document.getElementById('btn-zo').onclick = () => { xf.k = Math.max(0.08, xf.k / 1.4); scheduleRender(); };
+document.getElementById('btn-zr').onclick = () => { xf = { x: 0, y: 0, k: 1 }; scheduleRender(); };
+
+// ── Resize ─────────────────────────────────────────────────────
+function resize() {
+  const sidebar = document.querySelector('.sidebar');
+  W = window.innerWidth - sidebar.offsetWidth;
+  H = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  outerR = Math.min(W, H) / 2 - 90;
+  scheduleRender();
+}
+window.addEventListener('resize', resize);
+
+// ── File upload helpers ────────────────────────────────────────
+function setupZone(zoneId, inputId, onFile) {
+  const zone  = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  const take  = async f => {
+    if (!f) return;
+    try { onFile(OdoLib.parseCSV(await OdoLib.readFile(f)), f.name); }
+    catch (e) { zoneError(zoneId, e.message); }
+  };
+
+  input.addEventListener('change', () => { take(input.files[0]); input.value = ''; });
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    take(e.dataTransfer.files[0]);
+  });
+}
+
+function zoneLoaded(zoneId, statusId, msg) {
+  const z = document.getElementById(zoneId);
+  z.classList.remove('drag-over','error');
+  z.classList.add('loaded');
+  document.getElementById(statusId).textContent = msg;
+}
+
+function zoneError(zoneId, msg) {
+  const z = document.getElementById(zoneId);
+  z.classList.remove('loaded');
+  z.classList.add('error');
+  const sid = zoneId === 'zone-tx' ? 'status-tx' : 'status-ll';
+  document.getElementById(sid).textContent = '⚠ ' + msg.split('\n')[0];
+}
+
+// ── Stats update ───────────────────────────────────────────────
+function updateStats() {
+  if (!precomp) return;
+  const total = precomp.totalSpecies;
+  const seen  = seenSet.size > 0 ? precomp.root.seenCount : 0;
+  const pct   = total > 0 ? (seen / total * 100).toFixed(1) : '0.0';
+  document.getElementById('stat-seen').textContent  = seen.toLocaleString();
+  document.getElementById('stat-total').textContent = total.toLocaleString();
+  document.getElementById('stat-pct').textContent   = pct + '%';
+  document.getElementById('stat-bar').style.width   = pct + '%';
+  document.getElementById('stats-panel').style.display = '';
+}
+
+// ── Layout description in the sidebar ─────────────────────────
+function updateLayoutNote() {
+  const rem = document.getElementById('remark-layout');
+  if (!rem) return;
+  if (phyloMode) {
+    const m = (window.ODONATA_PHYLOGENY && window.ODONATA_PHYLOGENY.meta) || {};
+    rem.innerHTML = 'Phylogenetic tree built to family level, mainly from ' +
+      '<a href="https://doi.org/10.1016/j.ympev.2021.107115" target="_blank" rel="noopener">Bybee et al. 2021</a>. ' +
+      'Nodes the study left unresolved are drawn as polytomies. <a href="files/odonata_phylogeny.json">Tree and sources</a>' +
+      (m.polytomies ? ` · ${m.polytomies} polytomies.` : '.');
+  } else {
+    rem.textContent = 'Laid out by Linnaean rank — the bundled phylogeny does not fit the ' +
+      'families of the taxonomy loaded above.';
+  }
+}
+
+// ── Process taxonomy ───────────────────────────────────────────
+// The phylogeny is grafted whenever its tips are exactly the taxonomy's
+// families (graftPhylogeny checks this), so a newer World Odonata List with
+// the same families keeps the phylogenetic layout.
+let suborderOf = new Map();
+
+function processTaxonomy(rows, label) {
+  const tax = OdoLib.parseWOL(rows);
+  taxonomy = tax;
+  suborderOf = new Map(tax.families.map(f => [f.superfamily, f.suborder]));
+  const { root, totalSpecies, famIndex } = buildHierarchy(tax);
+
+  let layoutRoot = root;
+  phyloMode = false;
+  const grafted = graftPhylogeny(window.ODONATA_PHYLOGENY, famIndex);
+  if (grafted) { layoutRoot = grafted; phyloMode = true; }
+  precompute(layoutRoot, phyloMode);
+  updateLayoutNote();
+  // A list loaded under the previous taxonomy must be re-resolved, since the
+  // accepted names it was mapped onto may have changed.
+  if (lifeListRows) seenSet = parseLifeList(lifeListRows);
+  annotate();
+  updateStats();
+  scheduleRender();
+  const layoutName = phyloMode ? 'phylogenetic' : 'taxonomic';
+  zoneLoaded('zone-tx', 'status-tx',
+             `${label} · ${totalSpecies.toLocaleString()} species · ${layoutName} layout`);
+  if (lifeListRows) zoneLoaded('zone-ll', 'status-ll', lifeListStatus());
+}
+
+// ── Process life list ──────────────────────────────────────────
+function processLifeList(rows, source) {
+  if (!taxonomy) throw new Error('Load a taxonomy first.');
+  const seen = parseLifeList(rows);
+  if (seen.size === 0) throw new Error('No species in this file match the World Odonata List.');
+  lifeListRows   = rows;
+  lifeListSource = source;
+  seenSet = seen;
+  annotate();
+  updateStats();
+  scheduleRender();
+  zoneLoaded('zone-ll', 'status-ll', lifeListStatus());
+}
+
+// The list ticked on odonatalist.html, kept in this browser's storage.
+function useSavedList() {
+  const saved = OdoLib.loadSaved();
+  if (!saved || !saved.species.length) return false;
+  const rows = saved.species.map(n => ({ 'Scientific Name': n }));
+  try { processLifeList(rows, 'saved in this browser'); return true; }
+  catch (e) { zoneError('zone-ll', e.message); return false; }
+}
+
+// ── Upload zones ───────────────────────────────────────────────
+setupZone('zone-tx', 'input-tx', (rows, fname) => {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('hint-tx').textContent = `Custom upload · ${today} · Drop another to replace`;
+  processTaxonomy(rows, fname);
+});
+
+setupZone('zone-ll', 'input-ll', (rows, fname) => processLifeList(rows, 'from ' + fname));
+
+document.getElementById('btn-saved').addEventListener('click', useSavedList);
+
+// ── Auto-load the World Odonata List from files/odonata_data.js ─
+// Embedded by scripts/generate_odonata_data.py and loaded with a <script>
+// tag, which works from file:// as well as from a server (fetch() does not).
+(function autoLoad() {
+  const hintEl = document.getElementById('hint-tx');
+  const today  = new Date().toISOString().slice(0, 10);
+
+  if (typeof window.WOL_CSV_TEXT === 'string') {
+    const label = window.WOL_LABEL || 'World Odonata List';
+    hintEl.textContent = `${label} · auto-loaded ${today} · Drop file to override`;
+    document.getElementById('remark-version').textContent =
+      `Built from the ${label} — drop a newer CSV above to override it.`;
+    processTaxonomy(OdoLib.parseCSV(window.WOL_CSV_TEXT), label);
+  } else {
+    hintEl.textContent = 'Drop World Odonata List CSV here, or run scripts/generate_odonata_data.py';
+  }
+
+  // A list ticked on the checklist page is picked up automatically; the
+  // button brings it back after a dropped file has replaced it.
+  const saved = OdoLib.loadSaved();
+  if (saved && saved.species.length) {
+    const btn = document.getElementById('btn-saved');
+    btn.hidden = false;
+    btn.textContent = `Use list saved in this browser (${saved.species.length})`;
+    if (taxonomy) useSavedList();
+  }
+})();
+
+// Ticks made on the checklist page in another tab show up here live, as long
+// as the saved list (not a dropped file) is the one on display.
+window.addEventListener('storage', e => {
+  if (e.key !== OdoLib.STORE_KEY) return;
+  const saved = OdoLib.loadSaved();
+  const btn = document.getElementById('btn-saved');
+  btn.hidden = !(saved && saved.species.length);
+  if (saved) btn.textContent = `Use list saved in this browser (${saved.species.length})`;
+  if ((!lifeListRows || lifeListSource === 'saved in this browser') && saved && saved.species.length) useSavedList();
+});
+
+// ── Init ───────────────────────────────────────────────────────
+resize();
+scheduleRender();
+</script>
+</body>
+</html>

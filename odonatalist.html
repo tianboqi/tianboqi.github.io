@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Odonata List — Tianbo Qi</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Same palette and type as birdtree.html / odonatatree.html */
+    :root {
+      --bg:        #ffffff;
+      --ink:       #1a1a1a;
+      --ink-soft:  #3a3a3a;
+      --ink-faint: #505050;
+      --muted:     #8a857d;
+      --rule:      #e6e6e6;
+      --link:      #1a4db5;
+      --link-hover:#ed5b0c;
+      --surface:   #f6f6f6;
+      --sidebar-w: 272px;
+      --seen:      #22c55e;
+      --seen-dk:   #15803d;
+      --seen-bg:   #f0fdf4;
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 0.875rem;
+      color: var(--ink);
+      background: var(--bg);
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ───────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--rule);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 18px 24px;
+      gap: 20px;
+    }
+    .sidebar-title {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    .sidebar-title a {
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: var(--link);
+      text-decoration: none;
+      display: block;
+      margin-top: 3px;
+    }
+    .sidebar-title a:hover { color: var(--link-hover); }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-faint);
+      margin-bottom: 8px;
+    }
+
+    .stats-block { background: var(--surface); border-radius: 8px; padding: 12px 14px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .stat-label { font-size: 0.72rem; color: var(--ink-faint); }
+    .stat-value { font-size: 0.85rem; font-weight: 700; }
+    .stat-value.green { color: var(--seen-dk); }
+    .progress-bar-wrap { height: 4px; background: var(--rule); border-radius: 2px; margin-top: 8px; }
+    .progress-bar      { height: 4px; background: var(--seen); border-radius: 2px; transition: width 0.3s; }
+
+    .btn {
+      display: block; width: 100%;
+      font: 600 0.8rem 'Inter', sans-serif;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--seen-dk);
+      background: var(--seen-dk);
+      color: #fff;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn:hover { background: #166534; }
+    .btn:disabled { background: var(--rule); border-color: var(--rule); color: var(--muted); cursor: default; }
+    .btn.secondary { background: var(--bg); color: var(--seen-dk); margin-top: 6px; }
+    .btn.secondary:hover { background: var(--seen-bg); }
+
+    .hint-text { font-size: 0.7rem; color: #8b877f; line-height: 1.5; margin-top: 6px; }
+    .hint-text a { color: var(--link); text-decoration: none; }
+    .hint-text a:hover { color: var(--link-hover); text-decoration: underline; }
+    .save-warn { color: #b45309; }
+
+    .upload-zone {
+      border: 1.5px dashed var(--rule);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      position: relative;
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--seen); background: var(--seen-bg); }
+    .upload-zone.error  { border-color: #dc2626; background: #fef2f2; }
+    .upload-zone input  { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .uz-hint   { font-size: 0.72rem; color: var(--ink-faint); line-height: 1.4; }
+    .uz-status { font-size: 0.72rem; font-weight: 600; margin-top: 4px; color: var(--seen-dk); }
+    .upload-zone.error .uz-status { color: #dc2626; }
+    #unmatched { font-size: 0.7rem; color: var(--ink-faint); margin-top: 6px; }
+    #unmatched summary { cursor: pointer; color: var(--link); }
+    #unmatched div { font-style: italic; max-height: 120px; overflow-y: auto; margin-top: 4px; line-height: 1.5; }
+
+    .link-btn {
+      font: 500 0.72rem 'Inter', sans-serif;
+      color: #b91c1c; background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .link-btn:hover { text-decoration: underline; }
+
+    .remarks {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--rule);
+    }
+    .remarks ul { padding-left: 14px; }
+    .remarks li { margin-bottom: 6px; }
+
+    /* ── Main ──────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+    }
+    .toolbar {
+      position: sticky; top: 0; z-index: 5;
+      background: var(--surface);
+      padding: 18px 28px 12px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .search {
+      width: 100%;
+      font: 400 0.95rem 'Inter', sans-serif;
+      padding: 11px 14px;
+      border: 1px solid #d6d3cd;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--ink);
+      outline: none;
+    }
+    .search:focus { border-color: var(--seen-dk); box-shadow: 0 0 0 3px rgba(21,128,61,0.12); }
+    .filters {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+      margin-top: 10px; font-size: 0.75rem; color: var(--ink-faint);
+    }
+    .seg { display: inline-flex; border: 1px solid #d6d3cd; border-radius: 6px; overflow: hidden; }
+    .seg button {
+      font: 500 0.72rem 'Inter', sans-serif;
+      padding: 5px 10px; border: none; background: var(--bg); color: var(--ink-soft); cursor: pointer;
+    }
+    .seg button + button { border-left: 1px solid #d6d3cd; }
+    .seg button.on { background: var(--seen-dk); color: #fff; }
+    select {
+      font: 500 0.72rem 'Inter', sans-serif;
+      padding: 4px 6px; border: 1px solid #d6d3cd; border-radius: 6px; background: var(--bg); color: var(--ink-soft);
+    }
+    .filters .spacer { flex: 1; }
+    .filters .text-btn {
+      font: 500 0.72rem 'Inter', sans-serif; color: var(--link);
+      background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .filters .text-btn:hover { color: var(--link-hover); text-decoration: underline; }
+    #result-note { font-size: 0.72rem; color: var(--muted); margin-top: 8px; min-height: 1em; }
+
+    .content { padding: 14px 28px 60px; }
+
+    /* Suborder / superfamily headings */
+    .suborder-h {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 1.05rem; font-weight: 600;
+      margin: 18px 0 4px;
+    }
+    .suborder-h:first-child { margin-top: 4px; }
+    .superfam-h {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--muted); margin: 12px 0 6px;
+    }
+
+    /* Family cards */
+    details.fam {
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+    details.fam > summary {
+      list-style: none;
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 9px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    details.fam > summary::-webkit-details-marker { display: none; }
+    details.fam > summary::before {
+      content: '▸'; color: var(--muted); font-size: 0.75rem; width: 10px; flex-shrink: 0;
+      transition: transform 0.12s;
+    }
+    details.fam[open] > summary::before { transform: rotate(90deg); }
+    .fam-name { font-weight: 600; }
+    .fam-name.tx-sub { color: var(--muted); font-weight: 400; }
+    .fam-count { margin-left: auto; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .fam-count.has { color: var(--seen-dk); font-weight: 600; }
+    .fam-body { padding: 2px 14px 12px 34px; }
+
+    .genus-h { font-size: 0.78rem; font-weight: 600; font-style: italic; color: var(--ink-soft); margin: 8px 0 2px; }
+    .sp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0 18px; }
+
+    label.sp {
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 3px 6px; margin: 0 -6px;
+      border-radius: 5px;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    label.sp:hover { background: var(--surface); }
+    label.sp.on { background: var(--seen-bg); }
+    label.sp input { accent-color: var(--seen-dk); transform: translateY(1px); flex-shrink: 0; cursor: pointer; }
+    .sp-name { font-style: italic; }
+    label.sp.on .sp-name { color: var(--seen-dk); font-weight: 500; }
+    .sp-name-sub, label.sp.on .sp-name-sub { color: var(--muted); font-weight: 400; }
+    .sp-cn   { font-size: 0.88rem; color: var(--ink); }
+    label.sp.on .sp-cn { color: var(--seen-dk); font-weight: 500; }
+    .tx-cn   { font-style: normal; font-weight: 600; color: var(--ink); }
+    .genus-h .tx-cn { font-weight: 600; color: var(--ink-soft); }
+    .genus-la { font-style: italic; }
+    .superfam-h .tx-cn { text-transform: none; letter-spacing: 0; }
+    .sp-tag  { font-size: 0.66rem; color: #b45309; border: 1px solid #f3d6a8; border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+    .sp-ctx  { font-size: 0.72rem; color: var(--muted); margin-left: auto; white-space: nowrap; padding-left: 10px; }
+    .sp-syn  { font-size: 0.72rem; color: var(--ink-faint); }
+    .sp-syn i { font-style: italic; }
+
+    .results { background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 14px; }
+    .empty { color: var(--muted); padding: 24px 0; text-align: center; }
+
+    /* ── Narrow screens: sidebar stacks above the list ─────── */
+    @media (max-width: 760px) {
+      body { flex-direction: column; overflow: auto; height: auto; }
+      html { height: auto; }
+      .sidebar { width: auto; min-width: 0; height: auto; overflow: visible; border-right: none; border-bottom: 1px solid var(--rule); padding: 16px; }
+      .remarks { display: none; }   /* keep the search box near the top */
+      main { height: auto; overflow: visible; }
+      .toolbar { padding: 12px 16px 10px; }
+      .content { padding: 12px 16px 48px; }
+      .fam-body { padding-left: 14px; }
+      .sp-ctx { display: none; }
+      .sp-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-title">
+    My Odonata List
+    <a href="misc.html">← Back to Miscellaneous</a>
+    <a href="odonatatree.html">→ See it on the tree</a>
+  </div>
+
+  <div>
+    <div class="section-label">Your List</div>
+    <div class="stats-block">
+      <div class="stat-row"><span class="stat-label">Species ticked</span><span class="stat-value green" id="stat-seen">0</span></div>
+      <div class="stat-row" id="row-cn" hidden><span class="stat-label">Species of China</span><span class="stat-value" id="stat-cn">—</span></div>
+      <div class="stat-row" id="row-na" hidden><span class="stat-label">Species of North America</span><span class="stat-value" id="stat-na">—</span></div>
+      <div class="stat-row"><span class="stat-label">Families</span><span class="stat-value" id="stat-fam">0</span></div>
+      <div class="stat-row"><span class="stat-label">Total species</span><span class="stat-value" id="stat-total">—</span></div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="stat-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">Export</div>
+    <button class="btn" id="btn-export" disabled>Download CSV for the tree</button>
+    <a class="btn secondary" href="odonatatree.html">Open the tree</a>
+    <div class="hint-text">Drop the CSV on the tree page. In this browser the tree also picks up your list on its own. <span id="save-note"></span></div>
+  </div>
+
+  <div>
+    <div class="section-label">Import</div>
+    <div class="upload-zone" id="zone-imp">
+      <input type="file" id="input-imp" accept=".csv">
+      <div class="uz-hint">Drop a CSV to add to your list: an earlier export from this page, or any CSV with a scientific-name column (e.g. iNaturalist)</div>
+      <div class="uz-status" id="status-imp"></div>
+    </div>
+    <details id="unmatched" hidden><summary></summary><div></div></details>
+  </div>
+
+  <div>
+    <button class="link-btn" id="btn-clear">Clear list…</button>
+  </div>
+
+  <div class="hint-text remarks">
+    <ul>
+      <li id="remark-version">Species from the World Odonata List.</li>
+      <li>Your ticks are saved in this browser as you go. Export the CSV to keep a copy or move it to another device.</li>
+      <li>Search also finds species by synonym, original combination, Chinese name and English name.</li>
+      <li id="remark-names" hidden></li>
+    </ul>
+  </div>
+</aside>
+
+<main>
+  <div class="toolbar">
+    <input class="search" id="q" type="search" autocomplete="off" spellcheck="false"
+           placeholder="Search species, genus, family, synonym, Chinese or English name…" aria-label="Search species">
+    <div class="filters">
+      <div class="seg" id="seg-show" role="group" aria-label="Show">
+        <button data-v="all" class="on">All</button>
+        <button data-v="seen">Ticked</button>
+        <button data-v="unseen">Not ticked</button>
+      </div>
+      <select id="sel-region" aria-label="Region" hidden>
+        <option value="">Worldwide</option>
+      </select>
+      <span class="spacer"></span>
+      <button class="text-btn" id="btn-expand">Expand all</button>
+      <button class="text-btn" id="btn-collapse">Collapse all</button>
+    </div>
+    <div id="result-note"></div>
+  </div>
+  <div class="content" id="content"><div class="empty">Loading the World Odonata List…</div></div>
+</main>
+
+<script src="files/odonata_data.js"></script>
+<script src="files/odonata_china.js"></script>
+<script src="files/odonata_north_america.js"></script>
+<script src="files/odonata_lib.js"></script>
+<script>
+'use strict';
+
+const MAX_RESULTS = 300;
+const tax = OdoLib.loadBundled();
+const seen = new Set();
+let show = 'all';          // all | seen | unseen
+const openFams = new Set(); // families expanded in the browse view
+
+// Regional lists: Chinese names (species, and suborders, families, genera) with
+// the "In China" filter; English names with the "North America" filter. The
+// filter choice is remembered.
+const REGIONS = {
+  cn: { data: tax && OdoLib.attachChinese(tax),     has: s => !!s.inCn, label: 'In China 中国', inText: 'in China',
+        source: () => window.ODONATA_CN_SOURCE, note: src => `Chinese names are based on ${src}, with manual addition of recent species.` },
+  na: { data: tax && OdoLib.attachNorthAmerica(tax), has: s => !!s.en, label: 'North America', inText: 'in North America',
+        source: () => window.ODONATA_NA_SOURCE, note: src => `English names are based on ${src}.` },
+};
+const REGION_KEY = 'odonata-list-region-v1';
+let region = '';
+try {
+  const r = localStorage.getItem(REGION_KEY);
+  if (REGIONS[r] && REGIONS[r].data) region = r;
+} catch (e) {}
+
+const $ = id => document.getElementById(id);
+const content = $('content');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// Search text per species: name, synonyms, genus, family, superfamily, and the
+// Chinese and English names of the species, its genus and family.
+const hay = new Map();
+const famSpecies = new Map();
+if (tax) {
+  const cnT = n => (tax.cnTaxa && tax.cnTaxa.get(n)) || '';
+  for (const s of tax.species) {
+    hay.set(s.sci, [s.sci, ...s.synonyms, s.family, s.superfamily, OdoLib.FAMILY_EN[s.family] || '',
+                    s.cn || '', ...(s.cnAlt || []), s.en || '', ...(s.enAlt || []),
+                    cnT(s.genus), cnT(s.family)].join(' | ').toLowerCase());
+    if (!famSpecies.has(s.family)) famSpecies.set(s.family, []);
+    famSpecies.get(s.family).push(s);
+  }
+}
+
+// ── Persistence ─────────────────────────────────────────────
+function loadSaved() {
+  const saved = OdoLib.loadSaved();
+  seen.clear();
+  if (saved) for (const n of saved.species) {
+    const sci = OdoLib.resolve(tax, n);   // re-resolve: names can change between list versions
+    if (sci) seen.add(sci);
+  }
+}
+
+function persist() {
+  const ok = OdoLib.save(seen);
+  $('save-note').innerHTML = ok ? ''
+    : '<span class="save-warn">This browser is not saving the list — export the CSV to keep it.</span>';
+}
+
+// ── Stats ───────────────────────────────────────────────────
+function updateStats() {
+  const fams = new Set();
+  for (const sci of seen) fams.add(tax.bySci.get(sci).family);
+  $('stat-seen').textContent  = seen.size.toLocaleString();
+  $('stat-fam').textContent   = `${fams.size} / ${tax.families.length}`;
+  $('stat-total').textContent = tax.species.length.toLocaleString();
+  $('stat-bar').style.width   = (seen.size / tax.species.length * 100).toFixed(2) + '%';
+  $('btn-export').disabled    = seen.size === 0;
+  for (const [key, r] of Object.entries(REGIONS)) {
+    if (!r.data) continue;
+    let n = 0;
+    for (const sci of seen) if (r.has(tax.bySci.get(sci))) n++;
+    $('stat-' + key).textContent = `${n.toLocaleString()} / ${r.data.count.toLocaleString()}`;
+  }
+}
+
+// ── Rendering ───────────────────────────────────────────────
+const inRegion = s => !region || REGIONS[region].has(s);
+
+// Names shown in front of the Latin one: the region's own language — English
+// in the North America view, Chinese in the China view. Worldwide is Latin only.
+const cnOf = name => (tax.cnTaxa && tax.cnTaxa.get(name)) || '';
+const enOf = name => (tax.enTaxa && tax.enTaxa.get(name)) || '';
+const frontOf = name => region === 'na' ? enOf(name) : region === 'cn' ? cnOf(name) : '';
+const frontNames = s => region === 'na' ? [s.en, s.enAlt] : region === 'cn' ? [s.cn, s.cnAlt] : [];
+const taxonLabel = (name, cls) => {
+  const v = frontOf(name);
+  const sub = v && cls === 'fam-name' ? ' tx-sub' : '';
+  return (v ? `<span class="tx-cn">${esc(v)}</span> ` : '') + `<span class="${cls}${sub}">${esc(name)}</span>`;
+};
+
+function passes(s) {
+  if (!inRegion(s)) return false;
+  if (show === 'seen')   return seen.has(s.sci);
+  if (show === 'unseen') return !seen.has(s.sci);
+  return true;
+}
+
+function spRow(s, opts = {}) {
+  const on = seen.has(s.sci);
+  const syn = opts.viaSyn ? ` <span class="sp-syn">(as <i>${esc(opts.viaSyn)}</i>)</span>`
+            : opts.viaAlt ? ` <span class="sp-syn">(as ${esc(opts.viaAlt)})</span>` : '';
+  const ctx = opts.context
+    ? `<span class="sp-ctx">${frontOf(s.family) ? esc(frontOf(s.family)) + ' ' : ''}${esc(s.family)}</span>` : '';
+  const alsoTitle = alt => alt && alt.length ? ` title="Also ${esc(alt.join(', '))}"` : '';
+  const [frontName, frontAlt] = frontNames(s);
+  const front = frontName ? `<span class="sp-cn"${alsoTitle(frontAlt)}>${esc(frontName)}</span> ` : '';
+  const latinCls = front ? 'sp-name sp-name-sub' : 'sp-name';
+  return `<label class="sp${on ? ' on' : ''}"><input type="checkbox" data-sci="${esc(s.sci)}"${on ? ' checked' : ''}>` +
+         `<span>${front}<span class="${latinCls}">${esc(s.sci)}</span>${syn}` +
+         (s.doubtful ? ' <span class="sp-tag">doubtful</span>' : '') + `</span>${ctx}</label>`;
+}
+
+function famCount(fam) {
+  const list = (famSpecies.get(fam) || []).filter(inRegion);
+  let n = 0;
+  for (const s of list) if (seen.has(s.sci)) n++;
+  return [n, list.length];
+}
+
+function famBody(fam) {
+  let html = '', genus = '', open = false;
+  for (const s of famSpecies.get(fam) || []) {
+    if (!passes(s)) continue;
+    if (s.genus !== genus) {
+      if (open) html += '</div>';
+      genus = s.genus;
+      html += `<div class="genus-h">${taxonLabel(genus, 'genus-la')}</div><div class="sp-grid">`;
+      open = true;
+    }
+    html += spRow(s);
+  }
+  if (open) html += '</div>';
+  return html || '<div class="empty">No species match the filters.</div>';
+}
+
+// Browse view: suborder ▸ superfamily ▸ family cards. A family's species are
+// only built into the page when the card is opened.
+function renderBrowse() {
+  let html = '', sub = '', sup = '', shown = 0, nSp = 0;
+  for (const f of tax.families) {
+    const list = (famSpecies.get(f.name) || []).filter(passes);
+    if (!list.length) continue;
+    shown++; nSp += list.length;
+    if (f.suborder !== sub) { sub = f.suborder; sup = ''; html += `<h2 class="suborder-h">${taxonLabel(sub, 'sub-la')}</h2>`; }
+    if (f.superfamily !== sup) { sup = f.superfamily; html += `<div class="superfam-h">${taxonLabel(sup, 'sup-la')}</div>`; }
+    const [n, total] = famCount(f.name);
+    const isOpen = openFams.has(f.name) || show === 'seen';
+    html += `<details class="fam" data-fam="${esc(f.name)}"${isOpen ? ' open' : ''}>` +
+      `<summary><span>${taxonLabel(f.name, 'fam-name')}</span>` +
+      `<span class="fam-count${n ? ' has' : ''}">${n} / ${total}</span></summary>` +
+      `<div class="fam-body">${isOpen ? famBody(f.name) : ''}</div></details>`;
+  }
+  content.innerHTML = html || '<div class="empty">Nothing ticked yet — search above or open a family to start.</div>';
+  $('result-note').textContent = show === 'seen' && nSp
+    ? `${nSp.toLocaleString()} species ticked in ${shown} famil${shown === 1 ? 'y' : 'ies'}` +
+      (region ? ' ' + REGIONS[region].inText : '') : '';
+}
+
+// Search view: a flat, ranked list of matches.
+function search(q) {
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const ql = terms.join(' ');
+  const out = [];
+  for (const s of tax.species) {
+    if (!passes(s)) continue;
+    const h = hay.get(s.sci);
+    if (!terms.every(t => h.includes(t))) continue;
+    const sci = s.sci.toLowerCase();
+    const epi = sci.split(' ')[1];
+    const cn = s.cn || '', en = (s.en || '').toLowerCase();
+    let rank = 4, viaSyn = '', viaAlt = '';
+    if (sci.startsWith(ql) || (cn && cn.startsWith(ql)) || (en && en.startsWith(ql))) rank = 0;
+    else if (epi.startsWith(ql)) rank = 1;
+    else if (terms.every(t => sci.includes(t) || cn.includes(t) || en.includes(t))) rank = 2;
+    else {
+      const syn = s.synonyms.find(y => terms.every(t => y.toLowerCase().includes(t)));
+      const alt = [...(s.cnAlt || []), ...(s.enAlt || [])].find(y => terms.every(t => y.toLowerCase().includes(t)));
+      if (syn) { rank = 3; viaSyn = syn; }
+      else if (alt) { rank = 3; viaAlt = alt; }
+    }
+    // Matched on a common name this view does not show: say which.
+    if (!viaSyn && !viaAlt && !terms.every(t => sci.includes(t))) {
+      const nm = [s.cn, s.en].find(n => n && n !== frontNames(s)[0] && terms.every(t => n.toLowerCase().includes(t)));
+      if (nm) viaAlt = nm;
+    }
+    out.push({ s, rank, viaSyn, viaAlt });
+  }
+  out.sort((a, b) => a.rank - b.rank);   // stable: list order within a rank
+  return out;
+}
+
+function renderSearch(q) {
+  const hits = search(q);
+  const shown = hits.slice(0, MAX_RESULTS);
+  content.innerHTML = shown.length
+    ? `<div class="results">${shown.map(h => spRow(h.s, { context: true, viaSyn: h.viaSyn, viaAlt: h.viaAlt })).join('')}</div>`
+    : '<div class="empty">No species match.</div>';
+  $('result-note').textContent = hits.length > MAX_RESULTS
+    ? `${hits.length.toLocaleString()} matches — showing the first ${MAX_RESULTS}. Keep typing to narrow.`
+    : `${hits.length.toLocaleString()} match${hits.length === 1 ? '' : 'es'}`;
+  return hits;
+}
+
+function render() {
+  const q = $('q').value.trim();
+  if (q.length >= 2) renderSearch(q); else renderBrowse();
+}
+
+// ── Ticking ─────────────────────────────────────────────────
+function setSeen(sci, on) {
+  if (on) seen.add(sci); else seen.delete(sci);
+  persist();
+  updateStats();
+  // Update the rows and the family count in place, so the list does not jump.
+  for (const cb of content.querySelectorAll(`input[data-sci="${CSS.escape(sci)}"]`)) {
+    cb.checked = on;
+    cb.closest('label').classList.toggle('on', on);
+  }
+  const fam = tax.bySci.get(sci).family;
+  const card = content.querySelector(`details.fam[data-fam="${CSS.escape(fam)}"] .fam-count`);
+  if (card) {
+    const [n, total] = famCount(fam);
+    card.textContent = `${n} / ${total}`;
+    card.classList.toggle('has', n > 0);
+  }
+}
+
+content.addEventListener('change', e => {
+  const cb = e.target.closest('input[data-sci]');
+  if (cb) setSeen(cb.dataset.sci, cb.checked);
+});
+
+content.addEventListener('toggle', e => {
+  const d = e.target;
+  if (!d.matches || !d.matches('details.fam')) return;
+  const fam = d.dataset.fam;
+  if (d.open) {
+    openFams.add(fam);
+    const body = d.querySelector('.fam-body');
+    if (!body.innerHTML) body.innerHTML = famBody(fam);
+  } else {
+    openFams.delete(fam);
+  }
+}, true);
+
+// ── Controls ────────────────────────────────────────────────
+let searchTimer = null;
+$('q').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(render, 120);
+});
+$('q').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const q = $('q').value.trim();
+  if (q.length < 2) return;
+  clearTimeout(searchTimer);
+  const hits = renderSearch(q);
+  if (hits.length === 1) {
+    const sci = hits[0].s.sci;
+    setSeen(sci, !seen.has(sci));
+    $('q').select();   // ready for the next name
+  }
+});
+
+$('seg-show').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  show = b.dataset.v;
+  for (const x of $('seg-show').children) x.classList.toggle('on', x === b);
+  render();
+});
+
+$('sel-region').addEventListener('change', e => {
+  region = e.target.value;
+  try { localStorage.setItem(REGION_KEY, region); } catch (err) {}
+  render();
+});
+
+$('btn-expand').addEventListener('click', () => {
+  $('q').value = '';
+  for (const f of tax.families) openFams.add(f.name);
+  renderBrowse();
+});
+$('btn-collapse').addEventListener('click', () => {
+  $('q').value = '';
+  openFams.clear();
+  if (show === 'seen') { show = 'all'; for (const x of $('seg-show').children) x.classList.toggle('on', x.dataset.v === 'all'); }
+  renderBrowse();
+});
+
+$('btn-export').addEventListener('click', () => {
+  const day = new Date().toISOString().slice(0, 10);
+  OdoLib.downloadText(OdoLib.lifeListCSV(tax, seen), `odonata_list_${day}.csv`);
+});
+
+$('btn-clear').addEventListener('click', () => {
+  if (!seen.size) return;
+  if (!confirm(`Remove all ${seen.size.toLocaleString()} species from your list? Export the CSV first if you want a copy.`)) return;
+  seen.clear();
+  persist();
+  updateStats();
+  render();
+});
+
+// ── Import ──────────────────────────────────────────────────
+(function setupImport() {
+  const zone = $('zone-imp'), input = $('input-imp'), status = $('status-imp');
+  const take = async f => {
+    if (!f) return;
+    try {
+      const { seen: found, unmatched } = OdoLib.readLifeList(tax, OdoLib.parseCSV(await OdoLib.readFile(f)));
+      let added = 0;
+      for (const sci of found) if (!seen.has(sci)) { seen.add(sci); added++; }
+      persist();
+      updateStats();
+      render();
+      zone.classList.remove('error');
+      status.textContent = `${f.name}: ${added.toLocaleString()} added` +
+        (found.size - added ? `, ${(found.size - added).toLocaleString()} already ticked` : '') +
+        (unmatched.length ? `, ${unmatched.length} unmatched` : '');
+      const um = $('unmatched');
+      um.hidden = !unmatched.length;
+      um.querySelector('summary').textContent = `Show ${unmatched.length} unmatched name${unmatched.length === 1 ? '' : 's'}`;
+      um.querySelector('div').textContent = unmatched.join(', ');
+    } catch (e) {
+      zone.classList.add('error');
+      status.textContent = '⚠ ' + e.message;
+    }
+  };
+  input.addEventListener('change', () => { take(input.files[0]); input.value = ''; });
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); take(e.dataTransfer.files[0]); });
+})();
+
+// Another tab (or the tree page) changed the saved list.
+window.addEventListener('storage', e => {
+  if (e.key !== OdoLib.STORE_KEY) return;
+  loadSaved();
+  updateStats();
+  render();
+});
+
+// ── Init ────────────────────────────────────────────────────
+if (!tax) {
+  content.innerHTML = '<div class="empty">Could not load files/odonata_data.js — run scripts/generate_odonata_data.py.</div>';
+} else {
+  $('remark-version').textContent =
+    `${tax.species.length.toLocaleString()} species from the ${window.WOL_LABEL || 'World Odonata List'}.`;
+  const notes = [];
+  for (const [key, r] of Object.entries(REGIONS)) {
+    if (!r.data) continue;
+    const o = document.createElement('option');
+    o.value = key;
+    o.textContent = `${r.label} (${r.data.count})`;
+    $('sel-region').appendChild(o);
+    $('sel-region').hidden = false;
+    $('row-' + key).hidden = false;
+    notes.push(r.note(r.source()));
+    if (r.data.lost.length) console.warn(`${r.label}: rows not placed`, r.data.lost);
+  }
+  if (notes.length) { $('remark-names').textContent = notes.join(' '); $('remark-names').hidden = false; }
+  $('sel-region').value = region;
+  loadSaved();
+  updateStats();
+  render();
+}
+</script>
+</body>
+</html>
