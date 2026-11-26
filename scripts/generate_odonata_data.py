@@ -19,7 +19,8 @@ Regional lists (hand-edited; these CSVs are the only copies):
 
   odonata_china.csv       species recorded in China with their Chinese names,
                           one row per species in CHINA_SOURCE, transcribed from
-                          the book's table of contents (Source Page). A row
+                          the book's table of contents and its checklist of
+                          Chinese species (pp. 62-96) (Source Page). A row
                           with no Source Page was added from elsewhere, and its
                           Note says where; a Note on a book row explains a
                           re-identification. The Chinese Name may be empty.
