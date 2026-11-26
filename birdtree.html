@@ -952,7 +952,7 @@ function drawBranches(ctx) {
     }
 
     ctx.strokeStyle = branchStroke(par);
-    if (ch.length > 1 && pR > 0.5) {
+    if (ch.length > 1 && pR * xf.k > 0.5) {
       ctx.beginPath();
       ctx.arc(0, 0, pR, firstMid, lastMid);
       ctx.stroke();
@@ -961,7 +961,7 @@ function drawBranches(ctx) {
       const cs = child.x1 - child.x0;
       if (cs < MIN_ARC) continue;
       const cR  = child.r * outerR;
-      if (cR - pR < 0.3) continue;
+      if ((cR - pR) * xf.k < 0.3) continue;
       const cMid = nodeMid(child);
       ctx.beginPath();
       ctx.moveTo(pR * Math.cos(cMid), pR * Math.sin(cMid));
@@ -997,7 +997,7 @@ function drawBranches(ctx) {
       for (const child of ch) {
         const cs = child.x1 - child.x0;
         const cR = child.r * outerR;
-        if (cs < MIN_ARC || cs * cR < 0.4) continue;
+        if (cs < MIN_ARC || cs * cR * xf.k < 0.4) continue;   // under ~half a pixel on screen
         const childMid = nodeMid(child);
         ctx.beginPath();
         ctx.moveTo(pR * Math.cos(childMid), pR * Math.sin(childMid));
@@ -1056,64 +1056,73 @@ function shouldFlip(angle) {
   return n > Math.PI / 2 && n < 3 * Math.PI / 2;
 }
 
+// Label sizes are set on screen, not in tree units. A label grows with zoom
+// a little more slowly than the tree does (base · k^LABEL_GROW, up to a cap),
+// so it stays readable without swelling over its neighbours. Every label of
+// one level is the same size: labels are radial, so their height runs along
+// the arc, and one whose branch has too little room across it is left out
+// rather than shrunk or overlapped. Species are not labelled: the tooltip
+// names them, and thousands of labels slowed every redraw.
+const LABEL_GROW = 0.7;
+const LABEL_FONT = 'Inter, system-ui, sans-serif';
+
+// On-screen size for a level's labels.
+function labelPx(base, cap) {
+  return Math.min(cap, base * Math.pow(xf.k, LABEL_GROW));
+}
+// Whether a label of `px` fits across `room` screen pixels.
+function fits(px, room) { return room >= px * 1.15; }
+
+// Draws `text` along the radius at angle `mid`, upright on either side.
+// `from` is 'out' (starts at r and runs outward) or 'center' (centred on r).
+function radialText(ctx, text, r, mid, from) {
+  const flip = shouldFlip(mid);
+  ctx.save();
+  ctx.translate(r * Math.cos(mid), r * Math.sin(mid));
+  ctx.rotate(mid + (flip ? Math.PI : 0));
+  ctx.textAlign = from === 'center' ? 'center' : flip ? 'right' : 'left';
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
 function drawLabels(ctx) {
   ctx.textBaseline = 'middle';
+  const k = xf.k;
+  const ringR = LY.species[1] * outerR;
 
-  // Order labels — just outside the species ring
-  const lblR = LY.species[1] * outerR + 10;
-  for (const node of precomp.orderBands) {
-    const span = node.x1 - node.x0;
-    if (span < 0.035) continue;
-    const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
-    const flip = shouldFlip(mid);
-    ctx.save();
-    ctx.translate(lblR * Math.cos(mid), lblR * Math.sin(mid));
-    ctx.rotate(mid + (flip ? Math.PI : 0));
-    ctx.textAlign = flip ? 'right' : 'left';
-    const fs = Math.max(5, Math.min(9, span * outerR * 0.5));
-    ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
-    ctx.fillStyle = node.seenPct > 0 ? '#14532d' : '#857f76';
-    ctx.fillText(node.data.name, 0, 0);
-    ctx.restore();
-  }
-
-  // Family labels — inside the family band, when zoomed in
-  if (xf.k > 2) {
-    for (const node of precomp.nodesByRank.get('family') || []) {
-      // Middle of this family's own visible region, which runs from where it
-      // leaves its parent to where its genera take over.
-      const fR = ((node.baseR || 0) + node.r) / 2 * outerR;
+  // Order labels — outside the species ring, with a gap that grows with the
+  // label so they stay clear of the tips (and the seen-species dots) at any zoom.
+  {
+    const px = labelPx(9, 36);
+    const lblR = ringR + SPECIES_DOT_R + px * 0.8 / k;
+    ctx.font = `600 ${px / k}px ${LABEL_FONT}`;
+    for (const node of precomp.orderBands) {
       const span = node.x1 - node.x0;
-      if (span * fR * xf.k < 18) continue;
-      const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
-      const flip = shouldFlip(mid);
-      ctx.save();
-      ctx.translate(fR * Math.cos(mid), fR * Math.sin(mid));
-      ctx.rotate(mid + (flip ? Math.PI : 0));
-      ctx.textAlign = 'center';
-      ctx.font = '500 7px Inter, system-ui, sans-serif';
-      ctx.fillStyle = node.seenPct > 0 ? '#166534' : '#a49e96';
-      ctx.fillText(node.data.comName || node.data.name, 0, 0);
-      ctx.restore();
+      if (!fits(px, span * lblR * k)) continue;
+      ctx.fillStyle = node.seenPct > 0 ? '#14532d' : '#857f76';
+      radialText(ctx, node.data.name, lblR, (node.x0 + node.x1) / 2 + DRAW_OFFSET, 'out');
     }
   }
 
-  // Species labels — outside the species ring, deep zoom
-  if (xf.k > 5) {
-    const spR = LY.species[1] * outerR + 5;
-    for (const node of precomp.nodesByRank.get('species') || []) {
-      const span = node.x1 - node.x0;
-      if (span * spR * xf.k < 10) continue;
-      const mid  = (node.x0 + node.x1) / 2 + DRAW_OFFSET;
-      const flip = shouldFlip(mid);
-      ctx.save();
-      ctx.translate(spR * Math.cos(mid), spR * Math.sin(mid));
-      ctx.rotate(mid + (flip ? Math.PI : 0));
-      ctx.textAlign = flip ? 'right' : 'left';
-      ctx.font = '400 5px Inter, system-ui, sans-serif';
-      ctx.fillStyle = node.seenCount > 0 ? '#15803d' : '#a9a49c';
-      ctx.fillText(node.data.comName, 0, 0);
-      ctx.restore();
+  // Family labels — centred in the group's own band, when
+  // zoomed in, and only where the name fits inside that band.
+  if (k > 2) {
+    for (const [rank, base, cap, style, text] of [
+      ['family', 7, 32, '500', n => n.data.comName || n.data.name],
+    ]) {
+      const px = labelPx(base, cap);
+      ctx.font = `${style} ${px / k}px ${LABEL_FONT}`;
+      for (const node of precomp.nodesByRank.get(rank) || []) {
+        // Middle of this group's own visible region, which runs from where it
+        // leaves its parent to where its children take over.
+        const inR = node.baseR || 0;
+        const r   = (inR + node.r) / 2 * outerR;
+        if (!fits(px, (node.x1 - node.x0) * r * k)) continue;
+        const name = text(node);
+        if (ctx.measureText(name).width > (node.r - inR) * outerR) continue;
+        ctx.fillStyle = node.seenPct > 0 ? '#166534' : '#a49e96';
+        radialText(ctx, name, r, (node.x0 + node.x1) / 2 + DRAW_OFFSET, 'center');
+      }
     }
   }
 }
